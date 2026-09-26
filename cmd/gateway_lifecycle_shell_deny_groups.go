@@ -7,6 +7,7 @@ import (
 	"github.com/nextlevelbuilder/goclaw/internal/bus"
 	"github.com/nextlevelbuilder/goclaw/internal/config"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/wire"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 	"github.com/nextlevelbuilder/goclaw/internal/tools"
 )
@@ -80,10 +81,13 @@ func reloadShellDenyProviderPolicies(providerReg *providers.Registry, provStore 
 		if !p.Enabled {
 			continue
 		}
-		switch p.ProviderType {
-		case store.ProviderClaudeCLI:
+		// Subprocess brands are dispatched on the brand's declared CLI kind, the
+		// same data the wire registry uses.
+		brand, _ := wire.BrandFor(p.ProviderType)
+		switch brand.CLIKind {
+		case wire.CLIKindClaude:
 			registerClaudeCLIFromDB(providerReg, p, gatewayAddr, snapshot.Gateway.Token, mcpStore, snapshot)
-		case store.ProviderACP:
+		case wire.CLIKindACP:
 			registerACPFromDB(providerReg, p, snapshot.ShellDenyGroupsSnapshot())
 		}
 	}

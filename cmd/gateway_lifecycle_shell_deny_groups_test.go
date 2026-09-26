@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -259,6 +260,32 @@ func (s *shellDenyGroupsProviderStore) UpdateProvider(context.Context, uuid.UUID
 func (s *shellDenyGroupsProviderStore) DeleteProvider(context.Context, uuid.UUID) error {
 	return errors.New("not implemented")
 }
+
+// Per-model catalog + quirks (provider rework, phase 1): the stub declares no models.
+func (s *shellDenyGroupsProviderStore) ListModels(context.Context, uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+func (s *shellDenyGroupsProviderStore) UpsertModels(context.Context, uuid.UUID, []store.LLMModel) error {
+	return nil
+}
+func (s *shellDenyGroupsProviderStore) SetModelEnabled(context.Context, uuid.UUID, string, bool) error {
+	return nil
+}
+func (s *shellDenyGroupsProviderStore) ListQuirks(context.Context, string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): these stubs never touch cooldown
+// state, so they report a provider that never failed.
+func (s *shellDenyGroupsProviderStore) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (s *shellDenyGroupsProviderStore) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (s *shellDenyGroupsProviderStore) RecordProviderSuccess(context.Context, uuid.UUID) error { return nil }
+func (s *shellDenyGroupsProviderStore) MarkProviderProbe(context.Context, uuid.UUID) error     { return nil }
+func (s *shellDenyGroupsProviderStore) ResetProviderHealth(context.Context, uuid.UUID) error   { return nil }
 
 func writeTestExecutable(t *testing.T) string {
 	t.Helper()

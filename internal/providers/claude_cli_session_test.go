@@ -195,3 +195,58 @@ func TestClaudeCLIDisallowedToolsExcludeRemovedReadOnlyTools(t *testing.T) {
 		}
 	}
 }
+
+// TestEncodeClaudeProjectDir pins the Claude CLI project-directory encoding.
+// The expected values were read back from ~/.claude/projects/ after running
+// Claude Code 2.1.282 in each probe directory; a narrower replacement set
+// (separators, "_", ".", ":" only) misses spaces and punctuation, which makes
+// sessionFileExists point at a directory the CLI never writes and turns every
+// follow-up turn into "Session ID <uuid> is already in use."
+func TestEncodeClaudeProjectDir(t *testing.T) {
+	cases := []struct {
+		name string
+		dir  string
+		want string
+	}{
+		{
+			name: "windows path with space in user name",
+			dir:  `C:\Users\Bruce Le\.goclaw\data\cli-workspaces\default`,
+			want: "C--Users-Bruce-Le--goclaw-data-cli-workspaces-default",
+		},
+		{
+			name: "windows path with space underscore dot colon at",
+			dir:  `C:\AppData\Local\Temp\enc-probe\a b_c.d@e#f+g(h),i'j`,
+			want: "C--AppData-Local-Temp-enc-probe-a-b-c-d-e-f-g-h--i-j",
+		},
+		{
+			// Non-ASCII BMP rune (U+1EC3) = one UTF-16 code unit = one dash.
+			name: "non-ascii bmp rune collapses to one dash",
+			dir:  `C:\AppData\Local\Temp\enc-probe2\a+@bểc`,
+			want: "C--AppData-Local-Temp-enc-probe2-a--b-c",
+		},
+		{
+			// Non-BMP rune (U+1F600) = surrogate pair = two code units = two dashes.
+			name: "non-bmp rune collapses to two dashes",
+			dir:  `C:\AppData\Local\Temp\enc-probe3\x😀y`,
+			want: "C--AppData-Local-Temp-enc-probe3-x--y",
+		},
+		{
+			name: "unix path",
+			dir:  "/home/jane doe/.goclaw/data",
+			want: "-home-jane-doe--goclaw-data",
+		},
+		{
+			name: "already hyphenated segments are preserved",
+			dir:  `C:\goclaw\data\cli-workspaces\agent-little-fox-ws-direct-adbce685`,
+			want: "C--goclaw-data-cli-workspaces-agent-little-fox-ws-direct-adbce685",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := encodeClaudeProjectDir(tc.dir); got != tc.want {
+				t.Errorf("encodeClaudeProjectDir(%q) = %q, want %q", tc.dir, got, tc.want)
+			}
+		})
+	}
+}

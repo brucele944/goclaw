@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/google/uuid"
 	"github.com/nextlevelbuilder/goclaw/internal/config"
@@ -43,6 +44,17 @@ var cliNativeToolsAlwaysBlocked = []string{
 }
 
 var unknownDisallowedToolRe = regexp.MustCompile(`Permission deny rule "([^"]+)" matches no known tool`)
+
+// sessionIDInUseRe matches the Claude CLI's refusal to create a session whose ID
+// already exists in the CLI's own session store. That happens when our
+// sessionFileExists lookup disagrees with the CLI (see encodeClaudeProjectDir);
+// the call must then be retried with --resume.
+var sessionIDInUseRe = regexp.MustCompile(`Session ID [0-9a-fA-F-]+ is already in use`)
+
+// sessionIDInUse reports whether stderr carries the CLI's duplicate-session-ID refusal.
+func sessionIDInUse(stderr string) bool {
+	return sessionIDInUseRe.MatchString(stderr)
+}
 
 // disallowedCLITools computes the --disallowedTools value for the Claude CLI
 // subprocess from the agent's policy-filtered allowed GoClaw tool names.
@@ -103,24 +115,31 @@ func (p *ClaudeCLIProvider) noteInvalidDisallowedTool(stderr string) (string, bo
 
 // validCLIModels lists accepted model aliases for the Claude CLI.
 var validCLIModels = map[string]bool{
-	"sonnet": true, "opus": true, "haiku": true,
+	// Granular model IDs - verified against Claude CLI (2026-09-26).
+	"claude-opus-4-6":           true,
+	"claude-sonnet-4-6":         true,
+	"claude-haiku-4-5-20251001": true,
+	"sonnet[1m]":                true,
+	"sonnet":                    true, "opus": true, "haiku": true,
 }
 
 // validateCLIModel checks if a model alias is supported by the Claude CLI.
 func validateCLIModel(model string) error {
 	if !validCLIModels[model] {
-		return fmt.Errorf("claude-cli: unsupported model %q (valid: sonnet, opus, haiku)", model)
+		return fmt.Errorf("claude-cli: unsupported model %q", model)
 	}
 	return nil
 }
 
 // buildArgs constructs CLI arguments.
 // mcpConfigPath is the resolved per-session MCP config file (may differ per call).
+// forceResume forces --resume even when the session file lookup says otherwise
+// (used to recover from a CLI-side "Session ID ... is already in use" collision).
 // effort is the reasoning effort level (low/medium/high); empty or "off" omits the flag.
 // allowedToolNames is the agent's policy-filtered canonical GoClaw tool set for this
 // turn; it drives which Claude CLI native built-in tools are permitted (see
 // disallowedCLITools). nil means "no tools allowed" (fail closed).
-func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliSessionID uuid.UUID, outputFormat string, hasImages, disableTools bool, effort string, allowedToolNames []string) []string {
+func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliSessionID uuid.UUID, forceResume bool, outputFormat string, hasImages, disableTools bool, effort string, allowedToolNames []string) []string {
 	args := []string{
 		"-p",
 		"--output-format", outputFormat,
@@ -144,9 +163,9 @@ func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliS
 
 	// Session persistence: check if CLI session file exists on disk.
 	// If exists → --resume (continue conversation). If not → --session-id (create new).
-	// Session files live at ~/.claude/projects/<sanitized-workdir>/<uuid>.jsonl
+	// Session files live at ~/.claude/projects/<encoded-workdir>/<uuid>.jsonl
 	sid := cliSessionID.String()
-	if sessionFileExists(workDir, cliSessionID) {
+	if forceResume || sessionFileExists(workDir, cliSessionID) {
 		args = append(args, "--resume", sid)
 	} else {
 		args = append(args, "--session-id", sid)
@@ -311,26 +330,68 @@ func deriveSessionUUID(sessionKey string) uuid.UUID {
 	return uuid.NewSHA1(uuid.NameSpaceDNS, []byte(sessionKey))
 }
 
-// sessionFileExists checks if a Claude CLI session file exists for the given work directory.
-// Claude CLI resolves symlinks (e.g. /var/folders → /private/var/folders on macOS)
-// before encoding the path, so we must do the same.
-func sessionFileExists(workDir string, sessionID uuid.UUID) bool {
+// encodeClaudeProjectDir mirrors the Claude CLI's encoding of a working
+// directory into a ~/.claude/projects/ entry name: every UTF-16 code unit
+// outside [A-Za-z0-9] becomes "-" (case preserved).
+//
+// Verified against Claude Code 2.1.282 on Windows by running the CLI in probe
+// directories and reading back the created entry names:
+//
+//	C:\AppData\Local\Temp\enc-probe\a b_c.d@e#f+g(h),i'j → ...-enc-probe-a-b-c-d-e-f-g-h--i-j
+//	C:\AppData\Local\Temp\enc-probe2\a+@bểc             → ...-enc-probe2-a--b-c
+//	C:\AppData\Local\Temp\enc-probe3\x😀y               → ...-enc-probe3-x--y
+//	C:\Users\Jane Doe\.goclaw\data\cli-workspaces\x     → C--Users-Jane-Doe--goclaw-data-cli-workspaces-x
+//
+// The last two probes pin the unit: "ể" (U+1EC3, one UTF-16 code unit) yields one
+// dash while "😀" (U+1F600, a surrogate pair) yields two — the CLI replaces per
+// code unit, not per rune. Non-ASCII workdir segments therefore must collapse per
+// unit too, which is why this iterates utf16.Encode rather than the runes.
+//
+// A narrower replacement set (separators, "_", ".", ":" only) silently misses
+// spaces and other punctuation. The encode then points at a directory the CLI
+// never writes, sessionFileExists reports "no session", we pass --session-id for
+// an ID the CLI already has and the turn dies with
+// "Session ID <uuid> is already in use." — on every turn after the first, and on
+// every host whose data dir contains a space (e.g. C:\Users\Jane Doe\...).
+func encodeClaudeProjectDir(dir string) string {
+	var b strings.Builder
+	b.Grow(len(dir))
+	for _, u := range utf16.Encode([]rune(dir)) {
+		switch {
+		case u >= 'a' && u <= 'z', u >= 'A' && u <= 'Z', u >= '0' && u <= '9':
+			b.WriteRune(rune(u))
+		default:
+			b.WriteByte('-')
+		}
+	}
+	return b.String()
+}
+
+// claudeSessionFilePath returns the CLI session .jsonl path the Claude CLI uses
+// for a session run in workDir. Claude CLI resolves symlinks (e.g. /var/folders →
+// /private/var/folders on macOS) before encoding, so we do the same.
+// Returns "" when the home directory cannot be resolved.
+func claudeSessionFilePath(workDir string, sessionID uuid.UUID) string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return false
+		return ""
 	}
-	// Resolve symlinks to match CLI's path encoding (macOS: /var → /private/var)
 	resolved, err := filepath.EvalSymlinks(workDir)
 	if err != nil {
 		resolved = workDir
 	}
-	// Claude CLI stores sessions at: ~/.claude/projects/<encoded-path>/<session-id>.jsonl
-	// CLI replaces path separators, "_", ".", and ":" with "-" in the path encoding.
-	// On Windows: C:\Users\foo → C--Users-foo (backslash + colon both become "-")
-	// On macOS/Linux: /home/foo → -home-foo (forward slash becomes "-")
-	encoded := strings.NewReplacer(string(filepath.Separator), "-", "_", "-", ".", "-", ":", "-").Replace(resolved)
-	sessionFile := filepath.Join(home, ".claude", "projects", encoded, sessionID.String()+".jsonl")
-	_, err = os.Stat(sessionFile)
+	encoded := encodeClaudeProjectDir(resolved)
+	return filepath.Join(home, ".claude", "projects", encoded, sessionID.String()+".jsonl")
+}
+
+// sessionFileExists reports whether the CLI already has a session file for the
+// given work directory (→ the next call must use --resume, not --session-id).
+func sessionFileExists(workDir string, sessionID uuid.UUID) bool {
+	path := claudeSessionFilePath(workDir, sessionID)
+	if path == "" {
+		return false
+	}
+	_, err := os.Stat(path)
 	return err == nil
 }
 
@@ -391,14 +452,7 @@ func ResetCLISession(baseWorkDir, sessionKey string) {
 	sessionID := deriveSessionUUID(sessionKey)
 
 	// Delete CLI session .jsonl file from ~/.claude/projects/
-	home, err := os.UserHomeDir()
-	if err == nil {
-		resolved, err := filepath.EvalSymlinks(workDir)
-		if err != nil {
-			resolved = workDir
-		}
-		encoded := strings.NewReplacer(string(filepath.Separator), "-", "_", "-", ".", "-", ":", "-").Replace(resolved)
-		sessionFile := filepath.Join(home, ".claude", "projects", encoded, sessionID.String()+".jsonl")
+	if sessionFile := claudeSessionFilePath(workDir, sessionID); sessionFile != "" {
 		if err := os.Remove(sessionFile); err == nil {
 			slog.Info("claude-cli: deleted session file on /reset", "path", sessionFile)
 		}

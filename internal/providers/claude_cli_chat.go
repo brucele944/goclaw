@@ -47,14 +47,23 @@ func (p *ClaudeCLIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRes
 	}
 	effortLevel := extractStringOpt(req.Options, OptThinkingLevel)
 	allowedToolNames := extractStringSliceOpt(req.Options, OptAllowedToolNames)
-	args := p.buildArgs(model, workDir, mcpPath, cliSessionID, outputFmt, len(images) > 0, disableTools, effortLevel, allowedToolNames)
 
+	// rebuild re-creates args (and stdin for image turns) for a retry that needs
+	// a different session mode.
+	var args []string
 	var stdin *bytes.Reader
-	if len(images) > 0 {
-		stdin = buildStreamJSONInput(userMsg, images)
-	} else {
-		args = append(args, "--", userMsg)
+	resumeRetried := false
+	rebuild := func(forceResume bool) {
+		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, outputFmt, len(images) > 0, disableTools, effortLevel, allowedToolNames)
+		stdin = nil
+		if len(images) > 0 {
+			stdin = buildStreamJSONInput(userMsg, images)
+		} else {
+			args = append(args, "--", userMsg)
+		}
 	}
+
+	rebuild(false)
 
 	for {
 		cmd := exec.CommandContext(ctx, p.cliPath, args...)
@@ -76,20 +85,51 @@ func (p *ClaudeCLIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRes
 		if err != nil {
 			if tool, retry := p.noteInvalidDisallowedTool(stderr.String()); retry {
 				slog.Warn("claude-cli: retrying without unsupported --disallowedTools rule", "tool", tool)
-				args = p.buildArgs(model, workDir, mcpPath, cliSessionID, outputFmt, len(images) > 0, disableTools, effortLevel, allowedToolNames)
-				if len(images) == 0 {
-					args = append(args, "--", userMsg)
-				}
-				if len(images) > 0 {
-					stdin = buildStreamJSONInput(userMsg, images)
-				}
+				// Keep the resume decision: rebuilding from scratch would send
+				// --session-id again and re-trigger the duplicate-session error.
+				rebuild(resumeRetried)
 				continue
 			}
-			return nil, fmt.Errorf("claude-cli: %w (stderr: %s)", err, stderr.String())
+			// The CLI's own store already owns this session ID (our file lookup
+			// disagreed with it) — resume instead of failing the turn.
+			if !resumeRetried && sessionIDInUse(stderr.String()) {
+				resumeRetried = true
+				slog.Warn("claude-cli: session ID already exists in CLI store, retrying with --resume", "session_id", cliSessionID.String())
+				rebuild(true)
+				continue
+			}
+			return nil, fmt.Errorf("claude-cli: %w%s", err, cliFailureSuffix(output, stderr.String()))
 		}
 
-		return parseJSONResponse(output)
+		resp, parseErr := parseJSONResponse(output)
+		if parseErr != nil {
+			// The CLI can exit 0 while reporting the failure only in its JSON
+			// events (no content to parse) — surface that reason instead of a
+			// bare "empty response".
+			if reason := cliFailureReason(output); reason != "" {
+				return nil, fmt.Errorf("claude-cli: %s", reason)
+			}
+			return nil, parseErr
+		}
+		return resp, nil
 	}
+}
+
+// cliFailureSuffix renders the failure detail appended to a Chat error.
+// The structured stdout reason wins over stderr because stderr is frequently
+// empty for API/quota failures (see cliFailureReason).
+func cliFailureSuffix(output []byte, stderr string) string {
+	parts := make([]string, 0, 2)
+	if reason := cliFailureReason(output); reason != "" {
+		parts = append(parts, "stdout: "+reason)
+	}
+	if s := strings.TrimSpace(stderr); s != "" {
+		parts = append(parts, "stderr: "+s)
+	}
+	if len(parts) == 0 {
+		return " (no output)"
+	}
+	return " (" + strings.Join(parts, "; ") + ")"
 }
 
 // ChatStream runs the CLI with stream-json output, calling onChunk for each text delta.
@@ -123,14 +163,23 @@ func (p *ClaudeCLIProvider) ChatStream(ctx context.Context, req ChatRequest, onC
 	mcpPath := p.resolveMCPConfigPath(ctx, sessionKey, bc)
 	effortLevel := extractStringOpt(req.Options, OptThinkingLevel)
 	allowedToolNames := extractStringSliceOpt(req.Options, OptAllowedToolNames)
-	args := p.buildArgs(model, workDir, mcpPath, cliSessionID, "stream-json", len(images) > 0, disableTools, effortLevel, allowedToolNames)
 
+	// rebuild re-creates args (and stdin for image turns) for a retry that needs
+	// a different session mode.
+	var args []string
 	var stdin *bytes.Reader
-	if len(images) > 0 {
-		stdin = buildStreamJSONInput(userMsg, images)
-	} else {
-		args = append(args, "--", userMsg)
+	resumeRetried := false
+	rebuild := func(forceResume bool) {
+		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, "stream-json", len(images) > 0, disableTools, effortLevel, allowedToolNames)
+		stdin = nil
+		if len(images) > 0 {
+			stdin = buildStreamJSONInput(userMsg, images)
+		} else {
+			args = append(args, "--", userMsg)
+		}
 	}
+
+	rebuild(false)
 
 	for {
 		cmd := exec.CommandContext(ctx, p.cliPath, args...)
@@ -258,12 +307,17 @@ func (p *ClaudeCLIProvider) ChatStream(ctx context.Context, req ChatRequest, onC
 			stderrStr := strings.TrimSpace(stderrBuf.String())
 			if tool, retry := p.noteInvalidDisallowedTool(stderrStr); retry {
 				slog.Warn("claude-cli: retrying without unsupported --disallowedTools rule", "tool", tool)
-				args = p.buildArgs(model, workDir, mcpPath, cliSessionID, "stream-json", len(images) > 0, disableTools, effortLevel, allowedToolNames)
-				if len(images) == 0 {
-					args = append(args, "--", userMsg)
-				} else {
-					stdin = buildStreamJSONInput(userMsg, images)
-				}
+				// Keep the resume decision: rebuilding from scratch would send
+				// --session-id again and re-trigger the duplicate-session error.
+				rebuild(resumeRetried)
+				continue
+			}
+			// The CLI's own store already owns this session ID (our file lookup
+			// disagreed with it) — resume instead of failing the turn.
+			if !resumeRetried && sessionIDInUse(stderrStr) {
+				resumeRetried = true
+				slog.Warn("claude-cli: session ID already exists in CLI store, retrying with --resume", "session_id", cliSessionID.String())
+				rebuild(true)
 				continue
 			}
 			if stderrStr == "" && finalResp.FinishReason == "error" {

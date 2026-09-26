@@ -53,7 +53,7 @@ var agentAllowedFields = map[string]bool{
 	"emoji": true, "agent_description": true, "thinking_level": true, "max_tokens": true,
 	"self_evolve": true, "skill_evolve": true, "skill_nudge_interval": true,
 	"reasoning_config": true, "workspace_sharing": true, "chatgpt_oauth_routing": true,
-	"model_fallback": true, "shell_deny_groups": true, "kg_dedup_config": true,
+	"model_fallback": true, "model_roles": true, "shell_deny_groups": true, "kg_dedup_config": true,
 }
 
 var providerAllowedFields = map[string]bool{
@@ -61,6 +61,12 @@ var providerAllowedFields = map[string]bool{
 	"api_base": true, "base_url": true, "default_model": true,
 	"extra_headers": true, "config": true, "enabled": true,
 	"display_name": true, "display_order": true, "settings": true,
+	// Declaration columns. store.ValidateProviderUpdates validates them and
+	// derives both from a changed provider_type, so a repointed provider cannot
+	// keep dispatching through the previous brand's transport. exec_path stays
+	// out: it selects the executable the gateway runs and is written by the
+	// migration only.
+	"wire_api": true, "auth_kind": true,
 }
 
 var customToolAllowedFields = map[string]bool{

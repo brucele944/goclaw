@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -77,6 +78,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 				TenantID:     tenantID,
 				Name:         "db-aimlapi",
 				ProviderType: store.ProviderAIMLAPI,
+				WireAPI:      store.WireAPIOpenAICompletions,
 				APIKey:       "aimlapi-token",
 				Enabled:      true,
 			},
@@ -85,6 +87,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 				TenantID:     tenantID,
 				Name:         "db-atlascloud",
 				ProviderType: store.ProviderAtlasCloud,
+				WireAPI:      store.WireAPIOpenAICompletions,
 				APIKey:       "atlas-token",
 				Enabled:      true,
 			},
@@ -93,6 +96,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 				TenantID:     tenantID,
 				Name:         "db-minimax",
 				ProviderType: store.ProviderMiniMax,
+				WireAPI:      store.WireAPIOpenAICompletions,
 				APIKey:       "minimax-token",
 				Enabled:      true,
 			},
@@ -101,6 +105,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 				TenantID:     tenantID,
 				Name:         "db-zai",
 				ProviderType: store.ProviderZai,
+				WireAPI:      store.WireAPIOpenAICompletions,
 				APIKey:       "zai-token",
 				Enabled:      true,
 			},
@@ -109,6 +114,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 				TenantID:     tenantID,
 				Name:         "db-zai-coding",
 				ProviderType: store.ProviderZaiCoding,
+				WireAPI:      store.WireAPIOpenAICompletions,
 				APIKey:       "zai-coding-token",
 				Enabled:      true,
 			},
@@ -116,7 +122,7 @@ func TestRegisterProvidersFromDBUsesCurrentMiniMaxAndZaiDefaults(t *testing.T) {
 	}
 
 	registry := providers.NewRegistry(nil)
-	registerProvidersFromDB(registry, providerStore, nil, "", "", nil, &config.Config{}, providers.NewInMemoryRegistry())
+	registerProvidersFromDB(registry, providerStore, nil, "", "", nil, &config.Config{}, providers.NewInMemoryRegistry(), nil)
 
 	assertProviderDefault(t, registry, tenantID, "db-aimlapi", providers.AIMLAPIDefaultModel, providers.AIMLAPIDefaultAPIBase)
 	assertProviderDefault(t, registry, tenantID, "db-atlascloud", "qwen/qwen3.5-flash", "https://api.atlascloud.ai/v1")
@@ -174,3 +180,29 @@ func (s gatewayProvidersStoreStub) UpdateProvider(context.Context, uuid.UUID, ma
 func (s gatewayProvidersStoreStub) DeleteProvider(context.Context, uuid.UUID) error {
 	return errors.New("not implemented")
 }
+
+// Per-model catalog + quirks (provider rework, phase 1): the stub declares no models.
+func (s gatewayProvidersStoreStub) ListModels(context.Context, uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+func (s gatewayProvidersStoreStub) UpsertModels(context.Context, uuid.UUID, []store.LLMModel) error {
+	return nil
+}
+func (s gatewayProvidersStoreStub) SetModelEnabled(context.Context, uuid.UUID, string, bool) error {
+	return nil
+}
+func (s gatewayProvidersStoreStub) ListQuirks(context.Context, string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): these stubs never touch cooldown
+// state, so they report a provider that never failed.
+func (s gatewayProvidersStoreStub) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (s gatewayProvidersStoreStub) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (s gatewayProvidersStoreStub) RecordProviderSuccess(context.Context, uuid.UUID) error { return nil }
+func (s gatewayProvidersStoreStub) MarkProviderProbe(context.Context, uuid.UUID) error     { return nil }
+func (s gatewayProvidersStoreStub) ResetProviderHealth(context.Context, uuid.UUID) error   { return nil }

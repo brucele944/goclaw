@@ -12,6 +12,9 @@ type cliJSONResponse struct {
 	Model     string    `json:"model"`
 	CostUSD   float64   `json:"cost_usd"`
 	Usage     *cliUsage `json:"usage"`
+	// IsError is the authoritative failure signal: the CLI sets it for quota,
+	// auth and API failures even when subtype stays "success".
+	IsError bool `json:"is_error,omitempty"`
 }
 
 // cliUsage maps Claude CLI usage counters.

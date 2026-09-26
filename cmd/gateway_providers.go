@@ -16,9 +16,42 @@ import (
 	"github.com/nextlevelbuilder/goclaw/internal/config"
 	"github.com/nextlevelbuilder/goclaw/internal/oauth"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/compat"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/wire"
+	"github.com/nextlevelbuilder/goclaw/internal/scheduler"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 	"github.com/nextlevelbuilder/goclaw/internal/tools"
 )
+
+// providerConcurrencyGate builds a providers.ConcurrencyGate backed by a
+// dedicated scheduler.Lane for one provider (llm_providers.settings.max_in_flight).
+// lanes is namespaced separately from the run-scheduler's lanes
+// (main/subagent/team/cron, see internal/scheduler.DefaultLanes) so a
+// provider's concurrency cap never competes with, or is confused with,
+// per-channel run scheduling. Returns nil (no gate) when lanes is nil or the
+// provider declares no cap — Chat/ChatStream then run unbounded exactly as
+// before this feature existed.
+func providerConcurrencyGate(lanes *scheduler.LaneManager, providerName string, maxInFlight int) providers.ConcurrencyGate {
+	if lanes == nil || maxInFlight <= 0 {
+		return nil
+	}
+	lane := lanes.GetOrCreate("provider:"+providerName, maxInFlight)
+	return func(ctx context.Context, fn func()) error {
+		done := make(chan struct{})
+		if err := lane.Submit(ctx, func() {
+			defer close(done)
+			fn()
+		}); err != nil {
+			return err
+		}
+		select {
+		case <-done:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
 
 // loopbackAddr normalizes a gateway address for local connections.
 // CLI processes on the same machine can't connect to 0.0.0.0 on some OSes.
@@ -29,201 +62,74 @@ func loopbackAddr(host string, port int) string {
 	return net.JoinHostPort(host, strconv.Itoa(port))
 }
 
+// registerProviders registers the providers declared in the config file / env.
+//
+// Every transport is constructed by the wire registry from a brand declaration:
+// base URLs, default models, identity headers and provider_type reflection rules
+// are catalog data (internal/providers/wire/brand.go), so this file contains no
+// per-brand construction logic.
 func registerProviders(registry *providers.Registry, cfg *config.Config, modelReg providers.ModelRegistry) {
+	if cfg == nil {
+		return
+	}
+
+	// Plain OpenAI-compatible brands: name, brand id, credentials, api_base.
+	// Empty credentials mean "not configured" and the brand is skipped.
+	for _, spec := range configOpenAICompatBrands(cfg) {
+		if spec.apiKey == "" {
+			continue
+		}
+		api, ok := wire.APIForBrand(spec.providerType)
+		if !ok {
+			slog.Error("provider.brand.unknown", "name", spec.name, "provider_type", spec.providerType)
+			continue
+		}
+		build := wire.Config{
+			API:          api,
+			Source:       wire.SourceConfig,
+			Name:         spec.name,
+			ProviderType: spec.providerType,
+			APIKey:       spec.apiKey,
+			BaseURL:      spec.apiBase,
+			DefaultModel: spec.defaultModel,
+		}
+		if spec.withRegistry {
+			build.Registry = modelReg
+		}
+		registerConfigProvider(registry, build)
+	}
+
 	if cfg.Providers.Anthropic.APIKey != "" {
-		registry.Register(providers.NewAnthropicProvider(cfg.Providers.Anthropic.APIKey,
-			providers.WithAnthropicBaseURL(cfg.Providers.Anthropic.APIBase),
-			providers.WithAnthropicRegistry(modelReg)))
-		slog.Info("registered provider", "name", "anthropic")
+		registerConfigProvider(registry, wire.Config{
+			API:          wire.AnthropicMessages,
+			Source:       wire.SourceConfig,
+			Name:         "anthropic",
+			ProviderType: store.ProviderAnthropicNative,
+			APIKey:       cfg.Providers.Anthropic.APIKey,
+			BaseURL:      cfg.Providers.Anthropic.APIBase,
+			Registry:     modelReg,
+		})
 	}
 
-	if cfg.Providers.OpenAI.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("openai", cfg.Providers.OpenAI.APIKey, cfg.Providers.OpenAI.APIBase, "gpt-4o").
-			WithRegistry(modelReg))
-		slog.Info("registered provider", "name", "openai")
-	}
-
-	if cfg.Providers.AtlasCloud.APIKey != "" {
-		base := cfg.Providers.AtlasCloud.APIBase
-		if base == "" {
-			base = store.AtlasCloudDefaultAPIBase
-		}
-		prov := providers.NewOpenAIProvider("atlascloud", cfg.Providers.AtlasCloud.APIKey, base, store.AtlasCloudDefaultModel)
-		prov.WithProviderType(store.ProviderAtlasCloud)
-		registry.Register(prov)
-		slog.Info("registered provider", "name", "atlascloud")
-	}
-
-	if cfg.Providers.OpenRouter.APIKey != "" {
-		orProv := providers.NewOpenAIProvider("openrouter", cfg.Providers.OpenRouter.APIKey, "https://openrouter.ai/api/v1", "anthropic/claude-sonnet-4-5-20250929")
-		orProv.WithSiteInfo("https://goclaw.sh", "GoClaw")
-		registry.Register(orProv)
-		slog.Info("registered provider", "name", "openrouter")
-	}
-
-	if cfg.Providers.Groq.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("groq", cfg.Providers.Groq.APIKey, "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"))
-		slog.Info("registered provider", "name", "groq")
-	}
-
-	if cfg.Providers.DeepSeek.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("deepseek", cfg.Providers.DeepSeek.APIKey, "https://api.deepseek.com/v1", "deepseek-chat"))
-		slog.Info("registered provider", "name", "deepseek")
-	}
-
-	if cfg.Providers.Gemini.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("gemini", cfg.Providers.Gemini.APIKey, "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.0-flash"))
-		slog.Info("registered provider", "name", "gemini")
-	}
-
-	if cfg.Providers.Mistral.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("mistral", cfg.Providers.Mistral.APIKey, "https://api.mistral.ai/v1", "mistral-large-latest"))
-		slog.Info("registered provider", "name", "mistral")
-	}
-
-	if cfg.Providers.XAI.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("xai", cfg.Providers.XAI.APIKey, "https://api.x.ai/v1", "grok-3-mini"))
-		slog.Info("registered provider", "name", "xai")
-	}
-
-	if cfg.Providers.MiniMax.APIKey != "" {
-		base := cfg.Providers.MiniMax.APIBase
-		if base == "" {
-			base = store.MiniMaxDefaultAPIBase
-		}
-		registry.Register(providers.NewOpenAIProvider("minimax", cfg.Providers.MiniMax.APIKey, base, store.MiniMaxDefaultModel))
-		slog.Info("registered provider", "name", "minimax")
-	}
-
-	if cfg.Providers.Cohere.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("cohere", cfg.Providers.Cohere.APIKey, "https://api.cohere.ai/compatibility/v1", "command-a"))
-		slog.Info("registered provider", "name", "cohere")
-	}
-
-	if cfg.Providers.Perplexity.APIKey != "" {
-		registry.Register(providers.NewOpenAIProvider("perplexity", cfg.Providers.Perplexity.APIKey, "https://api.perplexity.ai", "sonar-pro"))
-		slog.Info("registered provider", "name", "perplexity")
-	}
-
-	if cfg.Providers.DashScope.APIKey != "" {
-		registry.Register(providers.NewDashScopeProvider("dashscope", cfg.Providers.DashScope.APIKey, cfg.Providers.DashScope.APIBase, "qwen3-max"))
-		slog.Info("registered provider", "name", "dashscope")
-	}
-
-	if cfg.Providers.Bailian.APIKey != "" {
-		base := cfg.Providers.Bailian.APIBase
-		if base == "" {
-			base = "https://coding-intl.dashscope.aliyuncs.com/v1"
-		}
-		registry.Register(providers.NewOpenAIProvider("bailian", cfg.Providers.Bailian.APIKey, base, "qwen3.5-plus").
-			WithProviderType(store.ProviderBailian))
-		slog.Info("registered provider", "name", "bailian")
-	}
-
-	if cfg.Providers.Zai.APIKey != "" {
-		base := cfg.Providers.Zai.APIBase
-		if base == "" {
-			base = store.ZaiDefaultAPIBase
-		}
-		registry.Register(providers.NewOpenAIProvider("zai", cfg.Providers.Zai.APIKey, base, store.ZaiDefaultModel))
-		slog.Info("registered provider", "name", "zai")
-	}
-
-	if cfg.Providers.ZaiCoding.APIKey != "" {
-		base := cfg.Providers.ZaiCoding.APIBase
-		if base == "" {
-			base = store.ZaiCodingDefaultAPIBase
-		}
-		registry.Register(providers.NewOpenAIProvider("zai-coding", cfg.Providers.ZaiCoding.APIKey, base, store.ZaiDefaultModel))
-		slog.Info("registered provider", "name", "zai-coding")
-	}
-
-	// Local / self-hosted Ollama — gated on Host, no API key required.
-	// Uses the native Ollama Go client for proper options.num_ctx support.
-	if cfg.Providers.Ollama.Host != "" {
-		host := cfg.Providers.Ollama.Host
-		ctx5s, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		numCtx := providers.FetchOllamaModelContext(ctx5s, config.DockerLocalhost(host), "llama3.3", "")
-		cancel()
-		var numCtxPtr *int
-		if numCtx != providers.OllamaDefaultNumCtx {
-			numCtxPtr = &numCtx
-		}
-		registry.Register(providers.NewOllamaProvider("ollama", host, "llama3.3", numCtxPtr, nil))
-		slog.Info("registered provider", "name", "ollama")
-	}
-
-	// Ollama Cloud — API key required (generate at ollama.com/settings/keys).
-	// Uses the native Ollama Go client; the cloud endpoint is Ollama-native, not OpenAI-compat.
-	if cfg.Providers.OllamaCloud.APIKey != "" {
-		base := cfg.Providers.OllamaCloud.APIBase
-		if base == "" {
-			base = "https://ollama.com"
-		}
-		ctx5s, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		numCtx := providers.FetchOllamaModelContext(ctx5s, config.DockerLocalhost(base), "llama3.3", "")
-		cancel()
-		var numCtxPtr *int
-		if numCtx != providers.OllamaDefaultNumCtx {
-			numCtxPtr = &numCtx
-		}
-		registry.Register(providers.NewOllamaProvider("ollama-cloud", base, "llama3.3", numCtxPtr, nil))
-		slog.Info("registered provider", "name", "ollama-cloud")
-	}
-
-	// Novita AI — OpenAI-compatible endpoint.
-	if cfg.Providers.Novita.APIKey != "" {
-		base := cfg.Providers.Novita.APIBase
-		if base == "" {
-			base = store.NovitaDefaultAPIBase
-		}
-		registry.Register(providers.NewOpenAIProvider("novita", cfg.Providers.Novita.APIKey, base, store.NovitaDefaultModel))
-		slog.Info("registered provider", "name", "novita")
-	}
-
-	// BytePlus ModelArk — OpenAI-compatible (standard Bearer auth).
-	if cfg.Providers.BytePlus.APIKey != "" {
-		base := cfg.Providers.BytePlus.APIBase
-		if base == "" {
-			base = store.BytePlusDefaultAPIBase
-		}
-		prov := providers.NewOpenAIProvider("byteplus", cfg.Providers.BytePlus.APIKey, base, store.BytePlusDefaultModel)
-		prov.WithProviderType(store.ProviderBytePlus)
-		registry.Register(prov)
-		slog.Info("registered provider", "name", "byteplus")
-	}
-
-	// BytePlus ModelArk Coding Plan — separate endpoint for developer tools quota.
-	if cfg.Providers.BytePlusCoding.APIKey != "" {
-		base := cfg.Providers.BytePlusCoding.APIBase
-		if base == "" {
-			base = store.BytePlusCodingDefaultAPIBase
-		}
-		prov := providers.NewOpenAIProvider("byteplus-coding", cfg.Providers.BytePlusCoding.APIKey, base, store.BytePlusDefaultModel)
-		prov.WithProviderType(store.ProviderBytePlusCoding)
-		registry.Register(prov)
-		slog.Info("registered provider", "name", "byteplus-coding")
-	}
+	registerOllamaFromConfig(registry, cfg)
 
 	// Google Cloud Vertex AI — OAuth2 service account or Application Default Credentials.
 	// Registers when project_id + region are set. Credential sources (priority order):
 	// inline JSON (APIKey) → file path (CredentialsFile) → ADC.
 	if cfg.Providers.Vertex.ProjectID != "" && cfg.Providers.Vertex.Region != "" {
-		vcfg := providers.VertexConfig{
-			Name:            "vertex",
-			CredentialsJSON: cfg.Providers.Vertex.APIKey,
-			CredentialsFile: cfg.Providers.Vertex.CredentialsFile,
-			ProjectID:       cfg.Providers.Vertex.ProjectID,
-			Region:          cfg.Providers.Vertex.Region,
-			DefaultModel:    cfg.Providers.Vertex.Model,
-		}
-		prov, err := providers.NewVertexProviderWithTimeout(vcfg)
-		if err != nil {
-			slog.Warn("vertex: initialization failed", "error", err)
-		} else {
-			registry.Register(prov)
-			slog.Info("registered provider", "name", "vertex", "region", cfg.Providers.Vertex.Region, "project", cfg.Providers.Vertex.ProjectID)
-		}
+		registerConfigProvider(registry, wire.Config{
+			API:          wire.GoogleVertex,
+			Source:       wire.SourceConfig,
+			Name:         "vertex",
+			ProviderType: store.ProviderVertex,
+			APIKey:       cfg.Providers.Vertex.APIKey,
+			Vertex: &wire.VertexSettings{
+				ProjectID:       cfg.Providers.Vertex.ProjectID,
+				Region:          cfg.Providers.Vertex.Region,
+				Model:           cfg.Providers.Vertex.Model,
+				CredentialsFile: cfg.Providers.Vertex.CredentialsFile,
+			},
+		})
 	}
 
 	registerClaudeCLIFromConfig(registry, cfg)
@@ -232,6 +138,107 @@ func registerProviders(registry *providers.Registry, cfg *config.Config, modelRe
 	if cfg.Providers.ACP.Binary != "" {
 		registerACPFromConfig(registry, cfg.Providers.ACP, configuredShellDenyGroups(cfg))
 	}
+}
+
+// configOpenAICompatBrand specifies a config-declared brand that builds a plain
+// transport straight from its config block.
+type configOpenAICompatBrand struct {
+	name         string
+	providerType string
+	apiKey       string
+	apiBase      string
+	// defaultModel overrides the brand default (used where the config path has
+	// historically pinned a different model than the vendor default).
+	defaultModel string
+	// withRegistry mirrors the historical per-brand model-registry wiring.
+	withRegistry bool
+}
+
+func configOpenAICompatBrands(cfg *config.Config) []configOpenAICompatBrand {
+	p := cfg.Providers
+	return []configOpenAICompatBrand{
+		{name: "openai", providerType: store.ProviderOpenAICompat, apiKey: p.OpenAI.APIKey, apiBase: p.OpenAI.APIBase, withRegistry: true},
+		{name: "atlascloud", providerType: store.ProviderAtlasCloud, apiKey: p.AtlasCloud.APIKey, apiBase: p.AtlasCloud.APIBase},
+		{name: "openrouter", providerType: store.ProviderOpenRouter, apiKey: p.OpenRouter.APIKey, apiBase: p.OpenRouter.APIBase},
+		{name: "groq", providerType: store.ProviderGroq, apiKey: p.Groq.APIKey, apiBase: p.Groq.APIBase},
+		{name: "deepseek", providerType: store.ProviderDeepSeek, apiKey: p.DeepSeek.APIKey, apiBase: p.DeepSeek.APIBase},
+		{name: "gemini", providerType: store.ProviderGeminiNative, apiKey: p.Gemini.APIKey, apiBase: p.Gemini.APIBase},
+		{name: "mistral", providerType: store.ProviderMistral, apiKey: p.Mistral.APIKey, apiBase: p.Mistral.APIBase},
+		{name: "xai", providerType: store.ProviderXAI, apiKey: p.XAI.APIKey, apiBase: p.XAI.APIBase},
+		{name: "minimax", providerType: store.ProviderMiniMax, apiKey: p.MiniMax.APIKey, apiBase: p.MiniMax.APIBase},
+		{name: "cohere", providerType: store.ProviderCohere, apiKey: p.Cohere.APIKey, apiBase: p.Cohere.APIBase},
+		{name: "perplexity", providerType: store.ProviderPerplexity, apiKey: p.Perplexity.APIKey, apiBase: p.Perplexity.APIBase},
+		{name: "dashscope", providerType: store.ProviderDashScope, apiKey: p.DashScope.APIKey, apiBase: p.DashScope.APIBase, defaultModel: "qwen3-max"},
+		{name: "bailian", providerType: store.ProviderBailian, apiKey: p.Bailian.APIKey, apiBase: p.Bailian.APIBase},
+		{name: "zai", providerType: store.ProviderZai, apiKey: p.Zai.APIKey, apiBase: p.Zai.APIBase},
+		{name: "zai-coding", providerType: store.ProviderZaiCoding, apiKey: p.ZaiCoding.APIKey, apiBase: p.ZaiCoding.APIBase},
+		{name: "novita", providerType: store.ProviderNovita, apiKey: p.Novita.APIKey, apiBase: p.Novita.APIBase},
+		{name: "byteplus", providerType: store.ProviderBytePlus, apiKey: p.BytePlus.APIKey, apiBase: p.BytePlus.APIBase},
+		{name: "byteplus-coding", providerType: store.ProviderBytePlusCoding, apiKey: p.BytePlusCoding.APIKey, apiBase: p.BytePlusCoding.APIBase},
+	}
+}
+
+// registerOllamaFromConfig registers the two native Ollama transports. Both use
+// the Ollama Go client (/api/chat), not the OpenAI-compatible shim, so they take
+// the ollama-native wire API; local Ollama is gated on Host and needs no key,
+// Ollama Cloud is gated on an API key.
+func registerOllamaFromConfig(registry *providers.Registry, cfg *config.Config) {
+	if cfg.Providers.Ollama.Host != "" {
+		host := cfg.Providers.Ollama.Host
+		registerConfigProvider(registry, wire.Config{
+			API:          wire.OllamaNative,
+			Source:       wire.SourceConfig,
+			Name:         "ollama",
+			ProviderType: store.ProviderOllama,
+			BaseURL:      host,
+			OllamaNumCtx: probeOllamaNumCtx(config.DockerLocalhost(host)),
+		})
+	}
+
+	if cfg.Providers.OllamaCloud.APIKey != "" {
+		// The probe needs the effective base URL, so resolve the brand default here
+		// rather than duplicating it.
+		base := cfg.Providers.OllamaCloud.APIBase
+		if base == "" {
+			base, _, _, _ = wire.BrandDefaults(store.ProviderOllamaCloud)
+		}
+		registerConfigProvider(registry, wire.Config{
+			API:          wire.OllamaNative,
+			Source:       wire.SourceConfig,
+			Name:         "ollama-cloud",
+			ProviderType: store.ProviderOllamaCloud,
+			APIKey:       cfg.Providers.OllamaCloud.APIKey,
+			BaseURL:      cfg.Providers.OllamaCloud.APIBase,
+			OllamaNumCtx: probeOllamaNumCtx(config.DockerLocalhost(base)),
+		})
+	}
+}
+
+// probeOllamaNumCtx asks a reachable Ollama endpoint for a default model's
+// context window. A result equal to the built-in default carries no information,
+// so it is reported as "unset" and the provider resolves it per model instead.
+func probeOllamaNumCtx(apiBase string) *int {
+	ctx5s, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	numCtx := providers.FetchOllamaModelContext(ctx5s, apiBase, "llama3.3", "")
+	if numCtx == providers.OllamaDefaultNumCtx {
+		return nil
+	}
+	return &numCtx
+}
+
+// registerConfigProvider builds a config-declared provider through the wire
+// registry. Construction failures are logged and skipped; a broken optional
+// provider must not stop the gateway from booting.
+func registerConfigProvider(registry *providers.Registry, cfg wire.Config) bool {
+	prov, err := wire.Build(cfg)
+	if err != nil {
+		slog.Error("provider.register.failed", "name", cfg.Name, "wire_api", string(cfg.API), "error", err)
+		return false
+	}
+	registry.Register(prov)
+	slog.Info("registered provider", "name", cfg.Name)
+	return true
 }
 
 // buildMCPServerLookup creates an MCPServerLookup from an MCPServerStore.
@@ -300,186 +307,179 @@ func jsonToStringMap(data json.RawMessage) map[string]string {
 // gatewayAddr is used to inject GoClaw MCP bridge for Claude CLI providers.
 // mcpStore is optional; when provided, per-agent MCP servers are injected into CLI config.
 // cfg provides fallback api_base values from config/env when DB providers have none set.
-func registerProvidersFromDB(registry *providers.Registry, provStore store.ProviderStore, secretStore store.ConfigSecretsStore, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config, modelReg providers.ModelRegistry) {
+//
+// Dispatch is on llm_providers.wire_api alone: a row whose wire_api is not
+// registered is logged and skipped, never silently downgraded to an
+// OpenAI-compatible transport. Per-brand data (base URL, default model, identity
+// headers, provider_type reflection) comes from the wire brand catalog.
+func registerProvidersFromDB(registry *providers.Registry, provStore store.ProviderStore, secretStore store.ConfigSecretsStore, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config, modelReg providers.ModelRegistry, providerLanes *scheduler.LaneManager) {
 	dbProviders, err := provStore.ListAllProviders(context.Background())
 	if err != nil {
 		slog.Warn("failed to load providers from DB", "error", err)
 		return
 	}
 	for _, p := range dbProviders {
-		// Claude CLI doesn't need API key
 		if !p.Enabled {
 			continue
 		}
-		if p.ProviderType == store.ProviderClaudeCLI {
-			registerClaudeCLIFromDB(registry, p, gatewayAddr, gatewayToken, mcpStore, cfg)
+		if !registerDBProvider(registry, p, secretStore, gatewayAddr, gatewayToken, mcpStore, cfg, modelReg, provStore, providerLanes) {
 			continue
-		}
-		// ACP provider — no API key needed (agents manage their own auth).
-		if p.ProviderType == store.ProviderACP {
-			registerACPFromDB(registry, p, configuredShellDenyGroups(cfg))
-			continue
-		}
-		// Local Ollama requires no API key — handle before the key guard (same pattern as ClaudeCLI).
-		// api_base is stored with /v1 (normalized at write time), so no suffix appending needed.
-		if p.ProviderType == store.ProviderOllama {
-			host := p.APIBase
-			if host == "" {
-				host = "http://localhost:11434"
-			}
-			numCtx := resolveOllamaNumCtx(&p)
-			prov := providers.NewOllamaProvider(p.Name, config.DockerLocalhost(host), "llama3.3", numCtx, nil).
-				WithThinkingEnabled(store.ParseThinkingEnabled(p.Settings))
-			registry.RegisterForTenant(p.TenantID, prov)
-			slog.Info("registered provider from DB", "name", p.Name)
-			continue
-		}
-		// Vertex supports ADC (empty api_key) — handle before the generic key guard.
-		if p.ProviderType == store.ProviderVertex {
-			vsettings := store.ParseVertexProviderSettings(p.Settings)
-			if vsettings == nil {
-				slog.Warn("vertex: missing project_id/region in settings, skipping", "name", p.Name)
-				continue
-			}
-			vcfg := providers.VertexConfig{
-				Name:            p.Name,
-				CredentialsJSON: p.APIKey,
-				ProjectID:       vsettings.ProjectID,
-				Region:          vsettings.Region,
-				DefaultModel:    vsettings.Model,
-				APIBaseOverride: p.APIBase,
-			}
-			prov, err := providers.NewVertexProviderWithTimeout(vcfg)
-			if err != nil {
-				slog.Warn("vertex: init from DB failed", "name", p.Name, "error", err)
-				continue
-			}
-			registry.RegisterForTenant(p.TenantID, prov)
-			slog.Info("registered provider from DB", "name", p.Name, "type", "vertex", "region", vsettings.Region)
-			continue
-		}
-
-		if p.APIKey == "" {
-			continue
-		}
-		// Fall back to config/env api_base when DB provider has none set.
-		if p.APIBase == "" && cfg != nil {
-			if base := cfg.Providers.APIBaseForType(p.ProviderType); base != "" {
-				p.APIBase = base
-				slog.Info("provider api_base inherited from config", "name", p.Name, "api_base", base)
-			}
-		}
-		switch p.ProviderType {
-		case store.ProviderChatGPTOAuth:
-			ts := oauth.NewDBTokenSource(provStore, secretStore, p.Name).WithTenantID(p.TenantID)
-			codex := providers.NewCodexProvider(p.Name, ts, p.APIBase, "")
-			if oauthSettings := store.ParseChatGPTOAuthProviderSettings(p.Settings); oauthSettings != nil {
-				codex.WithRoutingDefaults(oauthSettings.CodexPool.Strategy, oauthSettings.CodexPool.ExtraProviderNames)
-			}
-			registry.RegisterForTenant(p.TenantID, codex)
-		case store.ProviderAnthropicNative:
-			registry.RegisterForTenant(p.TenantID, providers.NewAnthropicProvider(p.APIKey,
-				providers.WithAnthropicName(p.Name),
-				providers.WithAnthropicBaseURL(p.APIBase),
-				providers.WithAnthropicRegistry(modelReg)))
-		case store.ProviderDashScope:
-			registry.RegisterForTenant(p.TenantID, providers.NewDashScopeProvider(p.Name, p.APIKey, p.APIBase, ""))
-		case store.ProviderBailian:
-			base := p.APIBase
-			if base == "" {
-				base = "https://coding-intl.dashscope.aliyuncs.com/v1"
-			}
-			registry.RegisterForTenant(p.TenantID, providers.NewOpenAIProvider(p.Name, p.APIKey, base, "qwen3.5-plus").
-				WithProviderType(p.ProviderType))
-		case store.ProviderZai:
-			base := p.APIBase
-			if base == "" {
-				base = store.ZaiDefaultAPIBase
-			}
-			registry.RegisterForTenant(p.TenantID, providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.ZaiDefaultModel))
-		case store.ProviderZaiCoding:
-			base := p.APIBase
-			if base == "" {
-				base = store.ZaiCodingDefaultAPIBase
-			}
-			registry.RegisterForTenant(p.TenantID, providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.ZaiDefaultModel))
-		case store.ProviderOllamaCloud:
-			base := p.APIBase
-			if base == "" {
-				base = "https://ollama.com"
-			}
-			numCtx := resolveOllamaNumCtx(&p)
-			prov := providers.NewOllamaProvider(p.Name, base, "llama3.3", numCtx, nil).
-				WithThinkingEnabled(store.ParseThinkingEnabled(p.Settings))
-			registry.RegisterForTenant(p.TenantID, prov)
-		case store.ProviderNovita:
-			base := p.APIBase
-			if base == "" {
-				base = store.NovitaDefaultAPIBase
-			}
-			registry.RegisterForTenant(p.TenantID, providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.NovitaDefaultModel))
-		case store.ProviderBytePlus:
-			base := p.APIBase
-			if base == "" {
-				base = store.BytePlusDefaultAPIBase
-			}
-			prov := providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.BytePlusDefaultModel)
-			prov.WithProviderType(p.ProviderType)
-			registry.RegisterForTenant(p.TenantID, prov)
-		case store.ProviderBytePlusCoding:
-			base := p.APIBase
-			if base == "" {
-				base = store.BytePlusCodingDefaultAPIBase
-			}
-			prov := providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.BytePlusDefaultModel)
-			prov.WithProviderType(p.ProviderType)
-			registry.RegisterForTenant(p.TenantID, prov)
-		case store.ProviderKimiCoding:
-			// Moonshot Kimi Coding requires a fixed User-Agent on every request.
-			// OpenAI-compatible wire shape otherwise.
-			base := p.APIBase
-			if base == "" {
-				base = store.KimiCodingDefaultAPIBase
-			}
-			prov := providers.NewOpenAIProvider(p.Name, p.APIKey, base, store.KimiCodingDefaultModel)
-			prov.WithProviderType(p.ProviderType)
-			prov.WithExtraHeaders(map[string]string{
-				"User-Agent": store.KimiCodingRequiredUserAgent,
-			})
-			registry.RegisterForTenant(p.TenantID, prov)
-		case store.ProviderAIMLAPI:
-			prov := providers.NewAIMLAPIProvider(p.Name, p.APIKey, p.APIBase)
-			prov.WithProviderType(p.ProviderType)
-			registry.RegisterForTenant(p.TenantID, prov)
-		default:
-			base, model := openAIProviderDefaults(p.ProviderType, p.APIBase)
-			prov := providers.NewOpenAIProvider(p.Name, p.APIKey, base, model)
-			prov.WithProviderType(p.ProviderType)
-			prov.WithThinkingEnabled(store.ParseThinkingEnabled(p.Settings))
-			if p.ProviderType == store.ProviderOpenRouter {
-				prov.WithSiteInfo("https://goclaw.sh", "GoClaw")
-			}
-			registry.RegisterForTenant(p.TenantID, prov)
 		}
 		slog.Info("registered provider from DB", "name", p.Name)
 	}
 }
 
-func openAIProviderDefaults(providerType, apiBase string) (string, string) {
-	switch providerType {
-	case store.ProviderMiniMax:
-		if apiBase == "" {
-			apiBase = store.MiniMaxDefaultAPIBase
-		}
-		return apiBase, store.MiniMaxDefaultModel
-	case store.ProviderAtlasCloud:
-		if apiBase == "" {
-			apiBase = store.AtlasCloudDefaultAPIBase
-		}
-		return apiBase, store.AtlasCloudDefaultModel
-	default:
-		return apiBase, ""
+// registerDBProvider builds and registers one row. It reports whether the
+// provider was registered; every skip path has already been logged.
+func registerDBProvider(registry *providers.Registry, p store.LLMProviderData, secretStore store.ConfigSecretsStore, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config, modelReg providers.ModelRegistry, provStore store.ProviderStore, providerLanes *scheduler.LaneManager) bool {
+	desc, ok := wire.Lookup(wire.API(p.WireAPI))
+	if !ok {
+		slog.Error("provider.wire_api.unknown",
+			"provider", p.Name,
+			"wire_api", p.WireAPI,
+			"hint", "fix the llm_providers.wire_api value or upgrade this build; the provider is skipped (no default transport is assumed)")
+		return false
 	}
+
+	// Fall back to config/env api_base when the row has none set.
+	if p.APIBase == "" && cfg != nil {
+		if base := cfg.Providers.APIBaseForType(p.ProviderType); base != "" {
+			p.APIBase = base
+			slog.Info("provider api_base inherited from config", "name", p.Name, "api_base", base)
+		}
+	}
+
+	// Keyless, service-account and delegated transports register without a
+	// credential; static-key and OAuth rows need one present (the OAuth token
+	// itself lives in the credential store, not in the row).
+	if desc.RequiresAPIKey && p.APIKey == "" {
+		return false
+	}
+
+	build := wire.Config{
+		API:             desc.API,
+		Source:          wire.SourceDB,
+		Name:            p.Name,
+		ProviderType:    p.ProviderType,
+		APIKey:          p.APIKey,
+		BaseURL:         p.APIBase,
+		Timeout:         wire.TimeoutFromSettings(p.Settings),
+		ConcurrencyGate: providerConcurrencyGate(providerLanes, p.Name, wire.MaxInFlightFromSettings(p.Settings)),
+		Thinking:        store.ParseThinkingEnabled(p.Settings),
+		OllamaNumCtx:    resolveOllamaNumCtx(&p),
+	}
+	if provStore != nil {
+		build.Quirks = loadQuirks(context.Background(), provStore, p.WireAPI)
+		build.ModelCompat = loadModelCompat(context.Background(), provStore, p.ID)
+	}
+
+	switch desc.API {
+	case wire.OpenAICodexResponses:
+		if secretStore == nil && provStore == nil {
+			slog.Error("provider.register.failed", "provider", p.Name, "wire_api", p.WireAPI, "error", "no credential store available for OAuth")
+			return false
+		}
+		build.TokenSource = oauth.NewDBTokenSource(provStore, secretStore, p.Name).WithTenantID(p.TenantID)
+		if s := store.ParseChatGPTOAuthProviderSettings(p.Settings); s != nil && s.CodexPool != nil {
+			build.Routing = &providers.CodexRoutingDefaults{
+				Strategy:           s.CodexPool.Strategy,
+				ExtraProviderNames: s.CodexPool.ExtraProviderNames,
+			}
+		}
+	case wire.AnthropicMessages:
+		build.Registry = modelReg
+	case wire.GoogleVertex:
+		vs := store.ParseVertexProviderSettings(p.Settings)
+		if vs == nil {
+			slog.Warn("vertex: missing project_id/region in settings, skipping", "name", p.Name)
+			return false
+		}
+		build.Vertex = &wire.VertexSettings{ProjectID: vs.ProjectID, Region: vs.Region, Model: vs.Model}
+	case wire.CLIDelegated:
+		cli, ok := cliSettingsFromRow(p, gatewayAddr, gatewayToken, mcpStore, cfg)
+		if !ok {
+			return false
+		}
+		build.CLI = cli
+	}
+
+	prov, err := wire.Build(build)
+	if err != nil {
+		slog.Error("provider.register.failed", "provider", p.Name, "wire_api", p.WireAPI, "error", err)
+		return false
+	}
+	registry.RegisterForTenant(p.TenantID, prov)
+	return true
+}
+
+// loadQuirks reads the operator's declared quirk rows for a wire API and
+// converts them to the resolver's plain-value form. A store failure is a warning
+// (the bundled seeds still apply), never a registration failure.
+func loadQuirks(ctx context.Context, provStore store.ProviderStore, wireAPI string) []compat.Quirk {
+	rows, err := provStore.ListQuirks(ctx, wireAPI)
+	if err != nil {
+		slog.Warn("provider.quirks.load_failed", "wire_api", wireAPI, "error", err)
+		return nil
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	out := make([]compat.Quirk, 0, len(rows))
+	for _, row := range rows {
+		q := compat.Quirk{
+			WireAPI: row.WireAPI,
+			Compat:  row.Compat,
+			Source:  row.Source,
+			Enabled: row.Enabled,
+			Note:    derefQuirkString(row.Note),
+		}
+		if row.EndpointFamily != nil {
+			q.EndpointFamily = *row.EndpointFamily
+		}
+		if row.ModelPattern != nil {
+			q.ModelPattern = *row.ModelPattern
+		}
+		// Invalid operator data is skipped loudly rather than reaching a request.
+		if err := compat.Validate(q.Compat); err != nil {
+			slog.Warn("provider.quirks.invalid", "wire_api", row.WireAPI, "error", err)
+			continue
+		}
+		out = append(out, q)
+	}
+	return out
+}
+
+// loadModelCompat reads a provider's catalogue rows and returns the non-empty
+// llm_models.compat fragments by model id, so the wire builder resolves each
+// model's compat once at registration.
+func loadModelCompat(ctx context.Context, provStore store.ProviderStore, providerID uuid.UUID) map[string]json.RawMessage {
+	rows, err := provStore.ListModels(ctx, providerID)
+	if err != nil {
+		slog.Warn("provider.models.load_failed", "provider_id", providerID, "error", err)
+		return nil
+	}
+	out := make(map[string]json.RawMessage, len(rows))
+	for _, row := range rows {
+		if len(row.Compat) == 0 {
+			continue
+		}
+		if err := compat.Validate(row.Compat); err != nil {
+			slog.Warn("provider.models.invalid_compat", "provider_id", providerID, "model", row.ModelID, "error", err)
+			continue
+		}
+		out[row.ModelID] = row.Compat
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func derefQuirkString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 // resolveOllamaNumCtx returns the operator-configured num_ctx for an Ollama
@@ -497,32 +497,27 @@ func resolveOllamaNumCtx(p *store.LLMProviderData) *int {
 	return nil
 }
 
-func registerClaudeCLIFromConfig(registry *providers.Registry, cfg *config.Config) {
-	if cfg == nil || cfg.Providers.ClaudeCLI.CLIPath == "" {
-		return
+// cliSettingsFromRow assembles the subprocess configuration for a cli-delegated
+// row. exec_path is authoritative; api_base is the one-release dual-read
+// fallback for rows written before phase 1. Which subprocess contract applies
+// is brand data (claude_cli vs acp), not a switch here.
+func cliSettingsFromRow(p store.LLMProviderData, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config) (*wire.CLISettings, bool) {
+	brand, _ := wire.BrandFor(p.ProviderType)
+	switch brand.CLIKind {
+	case wire.CLIKindClaude:
+		return claudeCLISettingsFromRow(p, gatewayAddr, gatewayToken, mcpStore, cfg)
+	case wire.CLIKindACP:
+		return acpSettingsFromRow(p, cfg)
+	default:
+		slog.Error("provider.register.failed", "provider", p.Name, "wire_api", p.WireAPI,
+			"error", "cli-delegated row has no known subprocess brand; expected "+wire.CLIKindClaude+" or "+wire.CLIKindACP)
+		return nil, false
 	}
-	cliPath := cfg.Providers.ClaudeCLI.CLIPath
-	var opts []providers.ClaudeCLIOption
-	if cfg.Providers.ClaudeCLI.Model != "" {
-		opts = append(opts, providers.WithClaudeCLIModel(cfg.Providers.ClaudeCLI.Model))
-	}
-	if cfg.Providers.ClaudeCLI.BaseWorkDir != "" {
-		opts = append(opts, providers.WithClaudeCLIWorkDir(cfg.Providers.ClaudeCLI.BaseWorkDir))
-	}
-	if cfg.Providers.ClaudeCLI.PermMode != "" {
-		opts = append(opts, providers.WithClaudeCLIPermMode(cfg.Providers.ClaudeCLI.PermMode))
-	}
-	gatewayAddr := loopbackAddr(cfg.Gateway.Host, cfg.Gateway.Port)
-	mcpData := providers.BuildCLIMCPConfigData(cfg.Tools.McpServers, gatewayAddr, cfg.Gateway.Token)
-	opts = append(opts, providers.WithClaudeCLIMCPConfigData(mcpData))
-	opts = append(opts, providers.WithClaudeCLISecurityHooks(
-		cfg.Providers.ClaudeCLI.BaseWorkDir, true, configuredShellDenyPatterns(cfg)))
-	registry.Register(providers.NewClaudeCLIProvider(cliPath, opts...))
-	slog.Info("registered provider", "name", "claude-cli")
 }
 
-func registerClaudeCLIFromDB(registry *providers.Registry, p store.LLMProviderData, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config) bool {
-	cliPath := p.APIBase // reuse APIBase field for CLI path
+// claudeCLISettingsFromRow builds the Claude CLI subprocess configuration.
+func claudeCLISettingsFromRow(p store.LLMProviderData, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config) (*wire.CLISettings, bool) {
+	cliPath := cliExecPath(p)
 	if cliPath == "" {
 		cliPath = "claude"
 	}
@@ -533,17 +528,113 @@ func registerClaudeCLIFromDB(registry *providers.Registry, p store.LLMProviderDa
 	}
 	if _, err := exec.LookPath(cliPath); err != nil {
 		slog.Warn("claude-cli: binary not found, skipping", "path", cliPath, "error", err)
-		return false
+		return nil, false
 	}
-	var cliOpts []providers.ClaudeCLIOption
-	cliOpts = append(cliOpts, providers.WithClaudeCLIName(p.Name))
-	cliOpts = append(cliOpts, providers.WithClaudeCLISecurityHooks("", true, configuredShellDenyPatterns(cfg)))
+	cli := &wire.CLISettings{
+		Name:          p.Name,
+		Path:          cliPath,
+		SecurityHooks: true,
+		DenyPatterns:  configuredShellDenyPatterns(cfg),
+	}
 	if gatewayAddr != "" {
 		mcpData := providers.BuildCLIMCPConfigData(nil, gatewayAddr, gatewayToken)
 		mcpData.AgentMCPLookup = buildMCPServerLookup(mcpStore)
-		cliOpts = append(cliOpts, providers.WithClaudeCLIMCPConfigData(mcpData))
+		cli.MCP = mcpData
 	}
-	registry.RegisterForTenant(p.TenantID, providers.NewClaudeCLIProvider(cliPath, cliOpts...))
+	return cli, true
+}
+
+// acpSettingsFromRow builds the ACP subprocess configuration from a DB row.
+func acpSettingsFromRow(p store.LLMProviderData, cfg *config.Config) (*wire.CLISettings, bool) {
+	return acpCLISettings(p, tools.ResolveDenyPatterns(configuredShellDenyGroups(cfg)))
+}
+
+// acpCLISettings validates a row's executable and assembles its ACP subprocess
+// configuration. The path allowlist matches the create/update validator: a bare
+// known agent name or an absolute path.
+func acpCLISettings(p store.LLMProviderData, denyPatterns []*regexp.Regexp) (*wire.CLISettings, bool) {
+	binary := cliExecPath(p)
+	if binary == "" {
+		slog.Warn("acp: no binary specified in DB provider", "name", p.Name)
+		return nil, false
+	}
+	if binary != "claude" && binary != "codex" && binary != "gemini" && !filepath.IsAbs(binary) {
+		slog.Warn("security.acp: invalid binary path from DB", "path", binary)
+		return nil, false
+	}
+	if _, err := exec.LookPath(binary); err != nil {
+		slog.Warn("acp: binary not found, skipping", "binary", binary, "error", err)
+		return nil, false
+	}
+	settings := parsedACPSettings(p)
+	workDir := settings.WorkDir
+	if workDir == "" {
+		workDir = defaultACPWorkDir()
+	}
+	return &wire.CLISettings{
+		Name:         p.Name,
+		Path:         binary,
+		Model:        p.Name,
+		Args:         settings.Args,
+		WorkDir:      workDir,
+		IdleTTL:      settings.idleTTL(),
+		PermMode:     settings.PermMode,
+		DenyPatterns: denyPatterns,
+	}, true
+}
+
+// cliExecPath resolves a cli-delegated row's executable: exec_path is
+// authoritative, api_base is the fallback for one release.
+func cliExecPath(p store.LLMProviderData) string {
+	if p.ExecPath != "" {
+		return p.ExecPath
+	}
+	return p.APIBase
+}
+
+// registerClaudeCLIFromConfig registers the Claude CLI provider declared in the
+// config file (claude_cli wire API, cli-delegated auth).
+func registerClaudeCLIFromConfig(registry *providers.Registry, cfg *config.Config) {
+	if cfg == nil || cfg.Providers.ClaudeCLI.CLIPath == "" {
+		return
+	}
+	gatewayAddr := loopbackAddr(cfg.Gateway.Host, cfg.Gateway.Port)
+	cli := &wire.CLISettings{
+		Path:          cfg.Providers.ClaudeCLI.CLIPath,
+		Model:         cfg.Providers.ClaudeCLI.Model,
+		WorkDir:       cfg.Providers.ClaudeCLI.BaseWorkDir,
+		PermMode:      cfg.Providers.ClaudeCLI.PermMode,
+		SecurityHooks: true,
+		DenyPatterns:  configuredShellDenyPatterns(cfg),
+		MCP:           providers.BuildCLIMCPConfigData(cfg.Tools.McpServers, gatewayAddr, cfg.Gateway.Token),
+	}
+	registerConfigProvider(registry, wire.Config{
+		API:          wire.CLIDelegated,
+		Source:       wire.SourceConfig,
+		Name:         "claude-cli",
+		ProviderType: store.ProviderClaudeCLI,
+		CLI:          cli,
+	})
+}
+
+// registerClaudeCLIFromDB registers a Claude CLI provider from a DB provider row.
+func registerClaudeCLIFromDB(registry *providers.Registry, p store.LLMProviderData, gatewayAddr, gatewayToken string, mcpStore store.MCPServerStore, cfg *config.Config) bool {
+	cli, ok := claudeCLISettingsFromRow(p, gatewayAddr, gatewayToken, mcpStore, cfg)
+	if !ok {
+		return false
+	}
+	prov, err := wire.Build(wire.Config{
+		API:          wire.CLIDelegated,
+		Source:       wire.SourceDB,
+		Name:         p.Name,
+		ProviderType: p.ProviderType,
+		CLI:          cli,
+	})
+	if err != nil {
+		slog.Error("provider.register.failed", "provider", p.Name, "wire_api", store.WireAPICLIDelegated, "error", err)
+		return false
+	}
+	registry.RegisterForTenant(p.TenantID, prov)
 	slog.Info("registered provider from DB", "name", p.Name)
 	return true
 }
@@ -564,62 +655,72 @@ func registerACPFromConfig(registry *providers.Registry, cfg config.ACPConfig, s
 	if workDir == "" {
 		workDir = defaultACPWorkDir()
 	}
-	var opts []providers.ACPOption
-	if cfg.Model != "" {
-		opts = append(opts, providers.WithACPModel(cfg.Model))
-	}
-	if cfg.PermMode != "" {
-		opts = append(opts, providers.WithACPPermMode(cfg.PermMode))
-	}
-	registry.Register(providers.NewACPProvider(
-		cfg.Binary, cfg.Args, workDir, idleTTL, tools.ResolveDenyPatterns(shellDenyGroups), opts...,
-	))
-	slog.Info("registered provider", "name", "acp", "binary", cfg.Binary)
+	registerConfigProvider(registry, wire.Config{
+		API:          wire.CLIDelegated,
+		Source:       wire.SourceConfig,
+		Name:         "acp",
+		ProviderType: store.ProviderACP,
+		CLI: &wire.CLISettings{
+			Path:         cfg.Binary,
+			Model:        cfg.Model,
+			Args:         cfg.Args,
+			WorkDir:      workDir,
+			IdleTTL:      idleTTL,
+			PermMode:     cfg.PermMode,
+			DenyPatterns: tools.ResolveDenyPatterns(shellDenyGroups),
+		},
+	})
 }
 
 // registerACPFromDB registers an ACP provider from a DB provider row.
 func registerACPFromDB(registry *providers.Registry, p store.LLMProviderData, shellDenyGroups map[string]bool) {
-	binary := p.APIBase // repurpose api_base as binary path
-	if binary == "" {
-		slog.Warn("acp: no binary specified in DB provider", "name", p.Name)
+	cli, ok := acpCLISettings(p, tools.ResolveDenyPatterns(shellDenyGroups))
+	if !ok {
 		return
 	}
-	if binary != "claude" && binary != "codex" && binary != "gemini" && !filepath.IsAbs(binary) {
-		slog.Warn("security.acp: invalid binary path from DB", "path", binary)
+	prov, err := wire.Build(wire.Config{
+		API:          wire.CLIDelegated,
+		Source:       wire.SourceDB,
+		Name:         p.Name,
+		ProviderType: p.ProviderType,
+		CLI:          cli,
+	})
+	if err != nil {
+		slog.Error("provider.register.failed", "provider", p.Name, "wire_api", store.WireAPICLIDelegated, "error", err)
 		return
 	}
-	if _, err := exec.LookPath(binary); err != nil {
-		slog.Warn("acp: binary not found, skipping", "binary", binary, "error", err)
-		return
+	registry.RegisterForTenant(p.TenantID, prov)
+	slog.Info("registered provider from DB", "name", p.Name, "type", "acp")
+}
+
+// acpRowSettings is the ACP-specific part of a provider row's settings JSONB.
+type acpRowSettings struct {
+	Args     []string `json:"args"`
+	IdleTTL  string   `json:"idle_ttl"`
+	PermMode string   `json:"perm_mode"`
+	WorkDir  string   `json:"work_dir"`
+}
+
+// idleTTL parses the configured idle TTL, defaulting to five minutes.
+func (s acpRowSettings) idleTTL() time.Duration {
+	if s.IdleTTL != "" {
+		if d, err := time.ParseDuration(s.IdleTTL); err == nil {
+			return d
+		}
 	}
-	// Parse settings JSONB for extra config
-	var settings struct {
-		Args     []string `json:"args"`
-		IdleTTL  string   `json:"idle_ttl"`
-		PermMode string   `json:"perm_mode"`
-		WorkDir  string   `json:"work_dir"`
-	}
+	return 5 * time.Minute
+}
+
+// parsedACPSettings decodes the ACP settings of a row, logging and defaulting on
+// malformed JSON.
+func parsedACPSettings(p store.LLMProviderData) acpRowSettings {
+	var settings acpRowSettings
 	if p.Settings != nil {
 		if err := json.Unmarshal(p.Settings, &settings); err != nil {
 			slog.Warn("acp: invalid settings JSON, using defaults", "name", p.Name, "error", err)
 		}
 	}
-	idleTTL := 5 * time.Minute
-	if settings.IdleTTL != "" {
-		if d, err := time.ParseDuration(settings.IdleTTL); err == nil {
-			idleTTL = d
-		}
-	}
-	workDir := settings.WorkDir
-	if workDir == "" {
-		workDir = defaultACPWorkDir()
-	}
-	registry.RegisterForTenant(p.TenantID, providers.NewACPProvider(
-		binary, settings.Args, workDir, idleTTL, tools.ResolveDenyPatterns(shellDenyGroups),
-		providers.WithACPName(p.Name),
-		providers.WithACPModel(p.Name),
-	))
-	slog.Info("registered provider from DB", "name", p.Name, "type", "acp")
+	return settings
 }
 
 func configuredShellDenyGroups(cfg *config.Config) map[string]bool {

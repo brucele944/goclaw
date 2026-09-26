@@ -74,6 +74,18 @@ func init() {
 		// Provider
 		MsgProviderReqFailed: "%s: 요청에 실패했습니다: %s",
 
+		// Provider declaration (provider rework, phase 1)
+		MsgProviderInvalidWireAPI:         "지원하지 않는 wire_api %q입니다. 다음 중 하나여야 합니다: %s",
+		MsgProviderUnsupportedType:        "지원하지 않는 provider_type %q입니다. 다음 중 하나여야 합니다: %s",
+		MsgProviderInvalidAuthKind:        "지원하지 않는 auth_kind %q입니다. 다음 중 하나여야 합니다: %s",
+		MsgProviderInvalidSettingsVersion: "지원하지 않는 settings_version %d입니다. 이 빌드는 최대 버전 %d까지 지원합니다",
+		MsgProviderNotFound:               "provider를 찾을 수 없습니다: %s",
+		MsgProviderModelNotFound:          "provider %s에서 모델 %q을(를) 찾을 수 없습니다",
+		MsgProviderModelsFailed:           "공급자 %s의 모델 목록을 가져오지 못했습니다",
+		MsgProviderDiscoveryFailed:        "공급자 %s의 모델 검색에 실패했습니다: %s",
+		MsgProviderHealthFailed:           "공급자 %s의 상태를 읽지 못했습니다",
+		MsgProviderHealthResetFailed:      "공급자 %s의 상태를 초기화하지 못했습니다: %s",
+
 		// Unknown method
 		MsgUnknownMethod: "알 수 없는 메서드: %s",
 
@@ -81,12 +93,12 @@ func init() {
 		MsgNotImplemented: "%s은(는) 아직 구현되지 않았습니다",
 
 		// Agent links
-		MsgLinksNotConfigured:   "에이전트 링크가 설정되지 않았습니다",
-		MsgInvalidDirection:     "방향은 outbound, inbound, 또는 bidirectional이어야 합니다",
-		MsgSourceTargetSame:     "소스와 대상은 서로 다른 에이전트여야 합니다",
-		MsgCannotDelegateOpen:   "오픈 에이전트에게는 위임할 수 없습니다 — 사전 정의된 에이전트만 위임 대상이 될 수 있습니다",
-		MsgNoUpdatesProvided:    "업데이트가 제공되지 않았습니다",
-		MsgInvalidLinkStatus:    "상태는 active 또는 disabled여야 합니다",
+		MsgLinksNotConfigured: "에이전트 링크가 설정되지 않았습니다",
+		MsgInvalidDirection:   "방향은 outbound, inbound, 또는 bidirectional이어야 합니다",
+		MsgSourceTargetSame:   "소스와 대상은 서로 다른 에이전트여야 합니다",
+		MsgCannotDelegateOpen: "오픈 에이전트에게는 위임할 수 없습니다 — 사전 정의된 에이전트만 위임 대상이 될 수 있습니다",
+		MsgNoUpdatesProvided:  "업데이트가 제공되지 않았습니다",
+		MsgInvalidLinkStatus:  "상태는 active 또는 disabled여야 합니다",
 
 		// Teams
 		MsgTeamsNotConfigured:   "팀이 설정되지 않았습니다",
@@ -172,9 +184,10 @@ func init() {
 		MsgToolPublishSkill:    "스킬 디렉토리를 시스템 데이터베이스에 등록하여 검색 가능하게 만듭니다",
 		MsgToolTeamTasks:       "팀 작업 보드에서 작업을 보고, 생성하고, 업데이트하고, 완료합니다",
 
-		MsgSkillNudgePostscript: "이 작업은 여러 단계를 포함했습니다. 이 과정을 재사용 가능한 스킬로 저장할까요? **\"스킬로 저장\"** 또는 **\"건너뛰기\"**로 답장하세요.",
-		MsgSkillNudge70Pct:      "[System] 반복 예산의 70%에 도달했습니다. 이 세션의 패턴 중 좋은 스킬이 될 수 있는 것이 있는지 고려해보세요.",
-		MsgSkillNudge90Pct:      "[System] 반복 예산의 90%에 도달했습니다. 이 세션에 재사용 가능한 패턴이 포함되어 있다면 완료하기 전에 스킬로 저장하는 것을 고려해보세요.",
+		MsgSkillNudgePostscript:     "이 작업은 여러 단계를 포함했습니다. 이 과정을 재사용 가능한 스킬로 저장할까요? **\"스킬로 저장\"** 또는 **\"건너뛰기\"**로 답장하세요.",
+		MsgSkillNudge70Pct:          "[System] 반복 예산의 70%에 도달했습니다. 이 세션의 패턴 중 좋은 스킬이 될 수 있는 것이 있는지 고려해보세요.",
+		MsgSkillNudge90Pct:          "[System] 반복 예산의 90%에 도달했습니다. 이 세션에 재사용 가능한 패턴이 포함되어 있다면 완료하기 전에 스킬로 저장하는 것을 고려해보세요.",
+		MsgModelWithoutVisionNotice: "⚠️ 선택한 모델은 이미지를 지원하지 않으므로 메시지의 이미지가 전송되지 않았습니다. 이미지를 보내려면 비전 지원 모델로 전환하세요.",
 
 		MsgInvalidRole: "잘못된 역할: 허용되는 값은 owner, admin, operator, member, viewer입니다",
 

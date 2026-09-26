@@ -103,6 +103,18 @@ func init() {
 		// Provider
 		MsgProviderReqFailed: "%s: request failed: %s",
 
+		// Provider declaration (provider rework, phase 1)
+		MsgProviderInvalidWireAPI:         "unsupported wire_api %q; expected one of: %s",
+		MsgProviderUnsupportedType:        "unsupported provider_type %q; expected one of: %s",
+		MsgProviderInvalidAuthKind:        "unsupported auth_kind %q; expected one of: %s",
+		MsgProviderInvalidSettingsVersion: "unsupported settings_version %d; this build supports up to version %d",
+		MsgProviderNotFound:               "provider not found: %s",
+		MsgProviderModelNotFound:          "model %q not found for provider %s",
+		MsgProviderModelsFailed:           "failed to list models for provider %s",
+		MsgProviderDiscoveryFailed:        "model discovery failed for provider %s: %s",
+		MsgProviderHealthFailed:           "failed to read provider health for %s",
+		MsgProviderHealthResetFailed:      "failed to reset provider health for %s: %s",
+
 		// Usage caps / pricing
 		MsgUsageCapsListPoliciesFailed:          "failed to list usage cap policies",
 		MsgUsageCapPolicyValidationFailed:       "usage cap policy validation failed",
@@ -230,10 +242,11 @@ func init() {
 		MsgToolAnnouncementSingle: "I'll use %s to handle the next step.",
 		MsgToolAnnouncementMulti:  "I'll use %s to handle the next step.",
 
-		MsgSkillNudgePostscript: "This task involved several steps. Want me to save the process as a reusable skill? Reply **\"save as skill\"** or **\"skip\"**.",
-		MsgSkillNudge70Pct:      "[System] You are at 70% of your iteration budget. Consider whether any patterns from this session would make a good skill.",
-		MsgSkillNudge90Pct:      "[System] You are at 90% of your iteration budget. If this session involved reusable patterns, consider saving them as a skill before completing.",
-		MsgEmptyReplyFallback:   "⚠️ Agent couldn't generate a response. Note: some tool actions may have already been executed — please verify before retrying",
+		MsgSkillNudgePostscript:     "This task involved several steps. Want me to save the process as a reusable skill? Reply **\"save as skill\"** or **\"skip\"**.",
+		MsgSkillNudge70Pct:          "[System] You are at 70% of your iteration budget. Consider whether any patterns from this session would make a good skill.",
+		MsgSkillNudge90Pct:          "[System] You are at 90% of your iteration budget. If this session involved reusable patterns, consider saving them as a skill before completing.",
+		MsgEmptyReplyFallback:       "⚠️ Agent couldn't generate a response. Note: some tool actions may have already been executed — please verify before retrying",
+		MsgModelWithoutVisionNotice: "⚠️ The selected model cannot accept images, so the image(s) in your message were not sent. Switch to a vision-capable model to include them.",
 
 		MsgInvalidRole: "invalid role: allowed values are owner, admin, operator, member, viewer",
 

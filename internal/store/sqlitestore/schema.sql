@@ -84,6 +84,10 @@ CREATE TABLE IF NOT EXISTS llm_providers (
     api_key       TEXT,
     enabled       BOOLEAN NOT NULL DEFAULT 1,
     settings      TEXT NOT NULL DEFAULT '{}',
+    wire_api         VARCHAR(40) NOT NULL DEFAULT 'openai-completions',
+    auth_kind        VARCHAR(30) NOT NULL DEFAULT 'api_key',
+    exec_path        TEXT,
+    settings_version INTEGER NOT NULL DEFAULT 1,
     tenant_id     TEXT NOT NULL REFERENCES tenants(id),
     created_at    TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at    TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
@@ -127,6 +131,7 @@ CREATE TABLE IF NOT EXISTS agents (
     workspace_sharing     TEXT NOT NULL DEFAULT '{}',
     chatgpt_oauth_routing TEXT NOT NULL DEFAULT '{}',
     model_fallback        TEXT NOT NULL DEFAULT '{}',
+    model_roles           TEXT NOT NULL DEFAULT '{}',
     shell_deny_groups     TEXT NOT NULL DEFAULT '{}',
     kg_dedup_config       TEXT NOT NULL DEFAULT '{}',
     is_default            BOOLEAN NOT NULL DEFAULT 0,
@@ -2393,3 +2398,91 @@ CREATE UNIQUE INDEX IF NOT EXISTS mcp_oauth_tokens_global_uq
 CREATE UNIQUE INDEX IF NOT EXISTS mcp_oauth_tokens_user_uq
     ON mcp_oauth_tokens (server_id, tenant_id, user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_mcp_oauth_tokens_server_tenant ON mcp_oauth_tokens (server_id, tenant_id);
+
+-- ============================================================
+-- Table: llm_models (migration 000098)
+-- Per-provider model declarations (wire/api/cost/capability metadata).
+-- Scope is inherited through provider_id — there is no tenant column, so a
+-- model row is visible exactly where its provider is visible.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS llm_models (
+    id                 TEXT NOT NULL PRIMARY KEY,
+    provider_id        TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+    model_id           TEXT NOT NULL,
+    display_name       TEXT,
+    wire_api           VARCHAR(40),
+    context_window     INTEGER,
+    max_tokens         INTEGER,
+    max_context_window INTEGER,
+    cost_input         NUMERIC(12,6),
+    cost_output        NUMERIC(12,6),
+    cost_cache_read    NUMERIC(12,6),
+    cost_cache_write   NUMERIC(12,6),
+    modalities         TEXT NOT NULL DEFAULT '["text"]',
+    capabilities       TEXT NOT NULL DEFAULT '{}',
+    reasoning          TEXT NOT NULL DEFAULT '{}',
+    tokenizer          TEXT,
+    compat             TEXT NOT NULL DEFAULT '{}',
+    source             TEXT NOT NULL DEFAULT 'bundled',
+    authoritative      BOOLEAN NOT NULL DEFAULT 0,
+    fetched_at         TEXT,
+    static_fingerprint TEXT,
+    enabled            BOOLEAN NOT NULL DEFAULT 1,
+    created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    CONSTRAINT llm_models_provider_model_key UNIQUE (provider_id, model_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_llm_models_provider ON llm_models (provider_id);
+CREATE INDEX IF NOT EXISTS idx_llm_models_provider_enabled ON llm_models (provider_id) WHERE enabled;
+
+-- ============================================================
+-- Table: provider_quirks (migration 000098)
+-- Declared compatibility rules. NULL tenant_id = bundled/global row
+-- shipped with the binary; a tenant row overrides it.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS provider_quirks (
+    id              TEXT NOT NULL PRIMARY KEY,
+    tenant_id       TEXT REFERENCES tenants(id),
+    wire_api        VARCHAR(40) NOT NULL,
+    endpoint_family TEXT,
+    model_pattern   TEXT,
+    compat          TEXT NOT NULL DEFAULT '{}',
+    note            TEXT,
+    source          TEXT NOT NULL DEFAULT 'bundled',
+    enabled         BOOLEAN NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_provider_quirks_lookup
+    ON provider_quirks (wire_api, endpoint_family, model_pattern)
+    WHERE enabled;
+CREATE INDEX IF NOT EXISTS idx_provider_quirks_tenant ON provider_quirks (tenant_id) WHERE tenant_id IS NOT NULL;
+
+-- ============================================================
+-- Table: provider_health / provider_error_counts (migration 000100)
+-- Durable provider cooldown state (provider rework, phase 5). Scope is
+-- inherited through provider_id — no tenant column, a health row is visible
+-- exactly where its provider is visible. provider_health holds at most one row
+-- per *failed* provider (no row = never failed); provider_error_counts is the
+-- error-class histogram.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS provider_health (
+    provider_id          TEXT NOT NULL PRIMARY KEY REFERENCES llm_providers(id) ON DELETE CASCADE,
+    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+    cooldown_until       TEXT,
+    last_error_class     TEXT NOT NULL DEFAULT '',
+    last_probe_at        TEXT,
+    updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE TABLE IF NOT EXISTS provider_error_counts (
+    provider_id TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+    error_class TEXT NOT NULL,
+    count       INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (provider_id, error_class)
+);

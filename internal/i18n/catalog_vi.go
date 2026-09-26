@@ -103,6 +103,18 @@ func init() {
 		// Provider
 		MsgProviderReqFailed: "%s: yêu cầu thất bại: %s",
 
+		// Provider declaration (provider rework, phase 1)
+		MsgProviderInvalidWireAPI:         "wire_api %q không được hỗ trợ; phải là một trong: %s",
+		MsgProviderUnsupportedType:        "provider_type %q không được hỗ trợ; phải là một trong: %s",
+		MsgProviderInvalidAuthKind:        "auth_kind %q không được hỗ trợ; phải là một trong: %s",
+		MsgProviderInvalidSettingsVersion: "settings_version %d không được hỗ trợ; bản dựng này hỗ trợ tối đa phiên bản %d",
+		MsgProviderNotFound:               "không tìm thấy provider: %s",
+		MsgProviderModelNotFound:          "không tìm thấy model %q cho provider %s",
+		MsgProviderModelsFailed:           "không thể liệt kê mô hình cho nhà cung cấp %s",
+		MsgProviderDiscoveryFailed:        "khám phá mô hình thất bại cho nhà cung cấp %s: %s",
+		MsgProviderHealthFailed:           "không đọc được trạng thái sức khỏe của nhà cung cấp %s",
+		MsgProviderHealthResetFailed:      "không thể đặt lại trạng thái sức khỏe của nhà cung cấp %s: %s",
+
 		// Usage caps / pricing
 		MsgUsageCapsListPoliciesFailed:          "không thể liệt kê chính sách usage cap",
 		MsgUsageCapPolicyValidationFailed:       "xác thực chính sách usage cap thất bại",
@@ -230,10 +242,11 @@ func init() {
 		MsgToolAnnouncementSingle: "Tôi sẽ dùng %s để xử lý bước tiếp theo.",
 		MsgToolAnnouncementMulti:  "Tôi sẽ dùng %s để xử lý bước tiếp theo.",
 
-		MsgSkillNudgePostscript: "Tác vụ này cần nhiều bước. Bạn muốn tôi lưu quy trình này thành kỹ năng tái sử dụng không? Trả lời **\"lưu kỹ năng\"** hoặc **\"bỏ qua\"**.",
-		MsgSkillNudge70Pct:      "[System] Bạn đã dùng 70% ngân sách vòng lặp. Cân nhắc xem các mẫu trong phiên này có nên lưu thành kỹ năng không.",
-		MsgSkillNudge90Pct:      "[System] Bạn đã dùng 90% ngân sách vòng lặp. Nếu phiên này có quy trình tái sử dụng, hãy cân nhắc lưu thành kỹ năng trước khi hoàn thành.",
-		MsgEmptyReplyFallback:   "⚠️ Agent không thể tạo phản hồi. Lưu ý: một số thao tác công cụ có thể đã được thực hiện — vui lòng kiểm tra trước khi thử lại",
+		MsgSkillNudgePostscript:     "Tác vụ này cần nhiều bước. Bạn muốn tôi lưu quy trình này thành kỹ năng tái sử dụng không? Trả lời **\"lưu kỹ năng\"** hoặc **\"bỏ qua\"**.",
+		MsgSkillNudge70Pct:          "[System] Bạn đã dùng 70% ngân sách vòng lặp. Cân nhắc xem các mẫu trong phiên này có nên lưu thành kỹ năng không.",
+		MsgSkillNudge90Pct:          "[System] Bạn đã dùng 90% ngân sách vòng lặp. Nếu phiên này có quy trình tái sử dụng, hãy cân nhắc lưu thành kỹ năng trước khi hoàn thành.",
+		MsgEmptyReplyFallback:       "⚠️ Agent không thể tạo phản hồi. Lưu ý: một số thao tác công cụ có thể đã được thực hiện — vui lòng kiểm tra trước khi thử lại",
+		MsgModelWithoutVisionNotice: "⚠️ Model đang chọn không nhận hình ảnh, nên (các) hình trong tin nhắn của bạn đã không được gửi. Chuyển sang model có hỗ trợ hình ảnh nếu bạn muốn gửi kèm.",
 
 		MsgInvalidRole: "vai trò không hợp lệ: giá trị cho phép là owner, admin, operator, member, viewer",
 

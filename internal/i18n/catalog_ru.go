@@ -103,6 +103,18 @@ func init() {
 		// Provider
 		MsgProviderReqFailed: "%s: запрос не выполнен: %s",
 
+		// Provider declaration (provider rework, phase 1)
+		MsgProviderInvalidWireAPI:         "неподдерживаемый wire_api %q; ожидается одно из: %s",
+		MsgProviderUnsupportedType:        "неподдерживаемый provider_type %q; ожидается одно из: %s",
+		MsgProviderInvalidAuthKind:        "неподдерживаемый auth_kind %q; ожидается одно из: %s",
+		MsgProviderInvalidSettingsVersion: "неподдерживаемый settings_version %d; эта сборка поддерживает версию не выше %d",
+		MsgProviderNotFound:               "provider не найден: %s",
+		MsgProviderModelNotFound:          "модель %q не найдена для provider %s",
+		MsgProviderModelsFailed:           "не удалось получить список моделей для провайдера %s",
+		MsgProviderDiscoveryFailed:        "не удалось обнаружить модели провайдера %s: %s",
+		MsgProviderHealthFailed:           "не удалось прочитать состояние провайдера %s",
+		MsgProviderHealthResetFailed:      "не удалось сбросить состояние провайдера %s: %s",
+
 		// Usage caps / pricing
 		MsgUsageCapsListPoliciesFailed:          "не удалось получить список политик лимитов использования",
 		MsgUsageCapPolicyValidationFailed:       "не пройдена проверка политики лимитов использования",
@@ -230,9 +242,10 @@ func init() {
 		MsgToolAnnouncementSingle: "Я использую %s для следующего шага.",
 		MsgToolAnnouncementMulti:  "Я использую %s для следующего шага.",
 
-		MsgSkillNudgePostscript: "Эта задача включала несколько шагов. Хотите, чтобы я сохранил процесс как повторно используемый навык? Ответьте **\"сохранить как навык\"** или **\"пропустить\"**.",
-		MsgSkillNudge70Pct:      "[Система] Вы использовали 70% бюджета итераций. Подумайте, могут ли какие-либо шаблоны из этой сессии стать хорошим навыком.",
-		MsgSkillNudge90Pct:      "[Система] Вы использовали 90% бюджета итераций. Если эта сессия включала повторно используемые шаблоны, подумайте о сохранении их как навыка до завершения.",
+		MsgSkillNudgePostscript:     "Эта задача включала несколько шагов. Хотите, чтобы я сохранил процесс как повторно используемый навык? Ответьте **\"сохранить как навык\"** или **\"пропустить\"**.",
+		MsgSkillNudge70Pct:          "[Система] Вы использовали 70% бюджета итераций. Подумайте, могут ли какие-либо шаблоны из этой сессии стать хорошим навыком.",
+		MsgSkillNudge90Pct:          "[Система] Вы использовали 90% бюджета итераций. Если эта сессия включала повторно используемые шаблоны, подумайте о сохранении их как навыка до завершения.",
+		MsgModelWithoutVisionNotice: "⚠️ Выбранная модель не принимает изображения, поэтому изображения из вашего сообщения не были отправлены. Чтобы отправить их, переключитесь на модель с поддержкой изображений.",
 
 		MsgInvalidRole: "неверная роль: допустимые значения — owner, admin, operator, member, viewer",
 

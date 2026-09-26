@@ -38,6 +38,8 @@ func registerProvidersCRUDTools(srv *mcpserver.MCPServer, providers store.Provid
 		mcpgo.WithString("display_name", mcpgo.Description("Human-readable display name; defaults to name.")),
 		mcpgo.WithString("api_base", mcpgo.Description("API base URL override.")),
 		mcpgo.WithString("api_key", mcpgo.Description("API key; stored encrypted.")),
+		mcpgo.WithString("wire_api", mcpgo.Description("Wire protocol family, e.g. \"openai-completions\", \"anthropic-messages\", \"google-vertex\", \"cli-delegated\". Defaults to the one the provider_type's brand declares.")),
+		mcpgo.WithString("auth_kind", mcpgo.Description("Credential source, e.g. \"api_key\", \"oauth_browser\", \"service_account\", \"cli_delegated\", \"none\". Defaults to the one the wire protocol implies.")),
 		mcpgo.WithBoolean("enabled", mcpgo.Description("Enabled state; defaults to true.")),
 	), handleProvidersCreate(providers))
 
@@ -45,8 +47,11 @@ func registerProvidersCRUDTools(srv *mcpserver.MCPServer, providers store.Provid
 		mcpgo.WithDescription("Apply a partial update to an existing LLM provider."),
 		mcpgo.WithString("id", mcpgo.Required(), mcpgo.Description("Provider UUID.")),
 		mcpgo.WithString("display_name", mcpgo.Description("New display name.")),
+		mcpgo.WithString("provider_type", mcpgo.Description("New provider type. The declaration follows it unless wire_api/auth_kind are given too.")),
 		mcpgo.WithString("api_base", mcpgo.Description("New API base URL.")),
 		mcpgo.WithString("api_key", mcpgo.Description("New API key; stored encrypted.")),
+		mcpgo.WithString("wire_api", mcpgo.Description("New wire protocol family. Defaults to the provider type's brand when provider_type changes.")),
+		mcpgo.WithString("auth_kind", mcpgo.Description("New credential source. Defaults to the one the wire protocol implies.")),
 		mcpgo.WithBoolean("enabled", mcpgo.Description("New enabled state.")),
 	), handleProvidersUpdate(providers))
 
@@ -124,6 +129,8 @@ func handleProvidersCreate(providers store.ProviderStore) mcpserver.ToolHandlerF
 			Name:         name,
 			DisplayName:  req.GetString("display_name", name),
 			ProviderType: providerType,
+			WireAPI:      req.GetString("wire_api", ""),
+			AuthKind:     req.GetString("auth_kind", ""),
 			APIBase:      req.GetString("api_base", ""),
 			APIKey:       req.GetString("api_key", ""),
 			Enabled:      req.GetBool("enabled", true),
@@ -151,6 +158,15 @@ func handleProvidersUpdate(providers store.ProviderStore) mcpserver.ToolHandlerF
 		args := req.GetArguments()
 		if v, ok := args["display_name"]; ok {
 			updates["display_name"] = v
+		}
+		if v, ok := args["provider_type"]; ok {
+			updates["provider_type"] = v
+		}
+		if v, ok := args["wire_api"]; ok {
+			updates["wire_api"] = v
+		}
+		if v, ok := args["auth_kind"]; ok {
+			updates["auth_kind"] = v
 		}
 		if v, ok := args["api_base"]; ok {
 			updates["api_base"] = v

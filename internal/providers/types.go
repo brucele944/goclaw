@@ -25,6 +25,10 @@ const (
 	OptFastMode             = "fast_mode"
 	OptPromptCacheKey       = "prompt_cache_key"
 	OptPromptCacheRetention = "prompt_cache_retention"
+
+	// OptStore (bool) asks the endpoint to persist the response server-side.
+	// Forwarded only when the resolved compat object declares store support.
+	OptStore = "store"
 )
 
 // TokenSource provides an OAuth access token (with auto-refresh).

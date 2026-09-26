@@ -104,6 +104,22 @@ const (
 	// --- Provider ---
 	MsgProviderReqFailed = "error.provider_request_failed" // "%s: request failed: %s"
 
+	// --- Provider declaration (provider rework, phase 1) ---
+	MsgProviderInvalidWireAPI         = "error.invalid_wire_api"          // "unsupported wire_api %q; expected one of: %s"
+	MsgProviderUnsupportedType        = "error.unsupported_provider_type" // "unsupported provider_type %q; expected one of: %s"
+	MsgProviderInvalidAuthKind        = "error.invalid_auth_kind"         // "unsupported auth_kind %q; expected one of: %s"
+	MsgProviderInvalidSettingsVersion = "error.invalid_settings_version"  // "unsupported settings_version %d; this build supports up to version %d"
+	MsgProviderNotFound               = "error.provider_not_found"        // "provider not found: %s"
+	MsgProviderModelNotFound          = "error.provider_model_not_found"  // "model %q not found for provider %s"
+
+	// --- Provider model catalogue / discovery (provider rework, phase 3) ---
+	MsgProviderModelsFailed    = "error.provider_models_failed"    // "failed to list models for provider %s"
+	MsgProviderDiscoveryFailed = "error.provider_discovery_failed" // "model discovery failed for provider %s: %s"
+
+	// --- Provider health / cooldown (provider rework, phase 5) ---
+	MsgProviderHealthFailed      = "error.provider_health_failed"       // "failed to read provider health for %s"
+	MsgProviderHealthResetFailed = "error.provider_health_reset_failed" // "failed to reset provider health for %s: %s"
+
 	// --- Usage caps / pricing ---
 	MsgUsageCapsListPoliciesFailed          = "usage_caps.list_policies_failed"
 	MsgUsageCapPolicyValidationFailed       = "usage_caps.policy_validation_failed"
@@ -274,6 +290,11 @@ const (
 	// Empty reply fallback (user-facing) — shown when a run finishes with no text
 	// output and no deliverable media, replacing the old meaningless "...".
 	MsgEmptyReplyFallback = "chat.empty_reply_fallback"
+
+	// Model capability notices (user-facing) — the selected model's catalogue row
+	// declares it cannot accept image input, so the images in the message were
+	// not sent to it.
+	MsgModelWithoutVisionNotice = "chat.model_without_vision_notice"
 
 	// Tool progress announcements (user-facing)
 	MsgToolAnnouncementSingle = "progress.tool_announcement.single" // "I'll use %s to handle the next step."

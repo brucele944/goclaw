@@ -16,7 +16,7 @@ var schemaSQL string
 
 // SchemaVersion is the current SQLite schema version.
 // Bump this when adding new migration steps below.
-const SchemaVersion = 60
+const SchemaVersion = 63
 
 // migrations maps version → SQL to apply when upgrading FROM that version.
 // schema.sql always represents the LATEST full schema (for fresh DBs).
@@ -94,7 +94,131 @@ BEGIN
     SELECT RAISE(ABORT, 'subagent root agent belongs to another tenant');
 END;`
 
+// sqliteProviderDeclarationColumns adds the declared provider facts
+// (wire_api/auth_kind/exec_path/settings_version) introduced by PG migration
+// 000098. Split out from the rest of the patch because SQLite has no
+// ADD COLUMN IF NOT EXISTS: the runtime patch function skips any column that
+// already exists (see sqliteProviderDeclarationMigrationPatch).
+const sqliteProviderDeclarationColumns = `ALTER TABLE llm_providers ADD COLUMN wire_api VARCHAR(40) NOT NULL DEFAULT 'openai-completions';
+ALTER TABLE llm_providers ADD COLUMN auth_kind VARCHAR(30) NOT NULL DEFAULT 'api_key';
+ALTER TABLE llm_providers ADD COLUMN exec_path TEXT;
+ALTER TABLE llm_providers ADD COLUMN settings_version INTEGER NOT NULL DEFAULT 1;
+`
+
+// sqliteProviderDeclarationTables creates the per-model catalog and the declared
+// compatibility rules. Additive and safe to re-run (IF NOT EXISTS).
+const sqliteProviderDeclarationTables = `CREATE TABLE IF NOT EXISTS llm_models (
+    id                 TEXT NOT NULL PRIMARY KEY,
+    provider_id        TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+    model_id           TEXT NOT NULL,
+    display_name       TEXT,
+    wire_api           VARCHAR(40),
+    context_window     INTEGER,
+    max_tokens         INTEGER,
+    max_context_window INTEGER,
+    cost_input         NUMERIC(12,6),
+    cost_output        NUMERIC(12,6),
+    cost_cache_read    NUMERIC(12,6),
+    cost_cache_write   NUMERIC(12,6),
+    modalities         TEXT NOT NULL DEFAULT '["text"]',
+    capabilities       TEXT NOT NULL DEFAULT '{}',
+    reasoning          TEXT NOT NULL DEFAULT '{}',
+    tokenizer          TEXT,
+    compat             TEXT NOT NULL DEFAULT '{}',
+    source             TEXT NOT NULL DEFAULT 'bundled',
+    authoritative      BOOLEAN NOT NULL DEFAULT 0,
+    fetched_at         TEXT,
+    static_fingerprint TEXT,
+    enabled            BOOLEAN NOT NULL DEFAULT 1,
+    created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    CONSTRAINT llm_models_provider_model_key UNIQUE (provider_id, model_id)
+);
+CREATE INDEX IF NOT EXISTS idx_llm_models_provider ON llm_models (provider_id);
+CREATE INDEX IF NOT EXISTS idx_llm_models_provider_enabled ON llm_models (provider_id) WHERE enabled;
+CREATE TABLE IF NOT EXISTS provider_quirks (
+    id              TEXT NOT NULL PRIMARY KEY,
+    tenant_id       TEXT REFERENCES tenants(id),
+    wire_api        VARCHAR(40) NOT NULL,
+    endpoint_family TEXT,
+    model_pattern   TEXT,
+    compat          TEXT NOT NULL DEFAULT '{}',
+    note            TEXT,
+    source          TEXT NOT NULL DEFAULT 'bundled',
+    enabled         BOOLEAN NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_provider_quirks_lookup
+    ON provider_quirks (wire_api, endpoint_family, model_pattern)
+    WHERE enabled;
+CREATE INDEX IF NOT EXISTS idx_provider_quirks_tenant ON provider_quirks (tenant_id) WHERE tenant_id IS NOT NULL;
+`
+
+// sqliteProviderDeclarationBackfill mirrors the backfills in PG migration
+// 000098: provider_type → wire_api / auth_kind via an explicit CASE, and
+// api_base → exec_path for CLI-delegated rows (api_base stays authoritative for
+// one release, dual-read). Deterministic, so re-running is a no-op.
+const sqliteProviderDeclarationBackfill = `UPDATE llm_providers SET wire_api = CASE provider_type
+    WHEN 'anthropic_native' THEN 'anthropic-messages'
+    WHEN 'gemini_native'    THEN 'google-generative-ai'
+    WHEN 'chatgpt_oauth'    THEN 'openai-codex-responses'
+    WHEN 'vertex'           THEN 'google-vertex'
+    WHEN 'claude_cli'       THEN 'cli-delegated'
+    WHEN 'acp'              THEN 'cli-delegated'
+    WHEN 'ollama'           THEN 'ollama-native'
+    WHEN 'ollama_cloud'     THEN 'ollama-native'
+    ELSE 'openai-completions'
+END;
+UPDATE llm_providers SET auth_kind = CASE provider_type
+    WHEN 'chatgpt_oauth' THEN 'oauth_browser'
+    WHEN 'claude_cli'    THEN 'cli_delegated'
+    WHEN 'acp'           THEN 'cli_delegated'
+    WHEN 'vertex'        THEN 'service_account'
+    WHEN 'ollama'        THEN 'none'
+    WHEN 'ollama_cloud'  THEN 'none'
+    ELSE 'api_key'
+END;
+UPDATE llm_providers SET exec_path = api_base
+WHERE provider_type IN ('claude_cli', 'acp')
+  AND api_base IS NOT NULL
+  AND api_base <> '';
+`
+
+// sqliteProviderHealthTables creates the durable provider cooldown state
+// introduced by PG migration 000100. Additive and safe to re-run
+// (IF NOT EXISTS): provider_health holds at most one row per *failed* provider,
+// provider_error_counts is the error-class histogram.
+const sqliteProviderHealthTables = `CREATE TABLE IF NOT EXISTS provider_health (
+    provider_id          TEXT NOT NULL PRIMARY KEY REFERENCES llm_providers(id) ON DELETE CASCADE,
+    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+    cooldown_until       TEXT,
+    last_error_class     TEXT NOT NULL DEFAULT '',
+    last_probe_at        TEXT,
+    updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE TABLE IF NOT EXISTS provider_error_counts (
+    provider_id TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+    error_class TEXT NOT NULL,
+    count       INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (provider_id, error_class)
+);
+`
+
 var migrations = map[int]string{
+	// Version 61 → 62: per-agent model roles (role → "provider/model").
+	// Mirrors PG migration 000099_agent_model_roles.up.sql. schema.sql already
+	// carries model_roles for fresh databases, so this patch only runs for
+	// databases created before v62; sqliteAgentModelRolesMigrationPatch still
+	// probes for the column before adding it.
+	61: sqliteAgentModelRolesColumn,
+	// Version 62 → 63: durable provider health / cooldown state. Mirrors PG
+	// migration 000100. Only new tables, so no column-existence probe is needed.
+	62: sqliteProviderHealthTables,
+	// Version 60 → 61: declare provider wire protocol / auth shape / settings
+	// version, add the per-model catalog and declared quirks. Mirrors PG
+	// migration 000098. Idempotent-guarded via sqliteProviderDeclarationMigrationPatch(60).
+	60: sqliteProviderDeclarationColumns + sqliteProviderDeclarationTables + sqliteProviderDeclarationBackfill,
 	// Version 59 → 60: keep an append-only copy of group capture. Pending rows are
 	// deleted when the buffer is handed to the agent and when compaction replaces
 	// them with a summary; before this table those deletes destroyed the only copy.
@@ -1619,6 +1743,18 @@ func EnsureSchema(db *sql.DB) error {
 					return fmt.Errorf("inspect subagent task root-agent column: %w", err)
 				}
 			}
+			if v == 60 {
+				patch, err = sqliteProviderDeclarationMigrationPatch(db)
+				if err != nil {
+					return fmt.Errorf("inspect provider declaration columns: %w", err)
+				}
+			}
+			if v == 61 {
+				patch, err = sqliteAgentModelRolesMigrationPatch(db)
+				if err != nil {
+					return fmt.Errorf("inspect agent model_roles column: %w", err)
+				}
+			}
 			// Migrations that rebuild a table referenced by another table's FK
 			// require foreign_keys=OFF per SQLite altertable §7. The pragma is
 			// a no-op inside a transaction, so toggle it around BEGIN/COMMIT.
@@ -1789,6 +1925,57 @@ func sqliteSubagentRootAgentMigrationPatch(db *sql.DB) (string, error) {
 		patch += "ALTER TABLE subagent_tasks ADD COLUMN root_agent_id TEXT REFERENCES agents(id) ON DELETE SET NULL;\n"
 	}
 	patch += sqliteSubagentRootAgentScopeMigrationBody
+	return patch, nil
+}
+
+// sqliteAgentModelRolesColumn adds the per-agent model_roles column introduced
+// by PG migration 000099 (v61 → v62).
+const sqliteAgentModelRolesColumn = `ALTER TABLE agents ADD COLUMN model_roles TEXT NOT NULL DEFAULT '{}';
+`
+
+// sqliteAgentModelRolesMigrationPatch builds the v61 → v62 patch. SQLite has no
+// ADD COLUMN IF NOT EXISTS, so the column is only added when missing — the same
+// guard the provider-declaration patch uses, which keeps this patch safe for
+// databases whose schema.sql was rebuilt from a newer version before the
+// recorded version was reset (see schema_migration_test.go).
+func sqliteAgentModelRolesMigrationPatch(db *sql.DB) (string, error) {
+	hasColumn, err := sqliteColumnExists(db, "agents", "model_roles")
+	if err != nil {
+		return "", err
+	}
+	if hasColumn {
+		return `SELECT 1;`, nil
+	}
+	return sqliteAgentModelRolesColumn, nil
+}
+
+// sqliteProviderDeclarationMigrationPatch builds the v60 → v61 patch. SQLite has
+// no ADD COLUMN IF NOT EXISTS, so each declaration column is only added when
+// missing; the tables/backfill are already idempotent. Mirrors PG migration
+// 000098_provider_declaration.up.sql.
+func sqliteProviderDeclarationMigrationPatch(db *sql.DB) (string, error) {
+	columns := []struct {
+		name string
+		ddl  string
+	}{
+		{"wire_api", "ALTER TABLE llm_providers ADD COLUMN wire_api VARCHAR(40) NOT NULL DEFAULT 'openai-completions';\n"},
+		{"auth_kind", "ALTER TABLE llm_providers ADD COLUMN auth_kind VARCHAR(30) NOT NULL DEFAULT 'api_key';\n"},
+		{"exec_path", "ALTER TABLE llm_providers ADD COLUMN exec_path TEXT;\n"},
+		{"settings_version", "ALTER TABLE llm_providers ADD COLUMN settings_version INTEGER NOT NULL DEFAULT 1;\n"},
+	}
+
+	patch := ""
+	for _, col := range columns {
+		hasColumn, err := sqliteColumnExists(db, "llm_providers", col.name)
+		if err != nil {
+			return "", err
+		}
+		if !hasColumn {
+			patch += col.ddl
+		}
+	}
+	patch += sqliteProviderDeclarationTables
+	patch += sqliteProviderDeclarationBackfill
 	return patch, nil
 }
 

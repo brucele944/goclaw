@@ -103,6 +103,18 @@ func init() {
 		// Provider
 		MsgProviderReqFailed: "%s：请求失败：%s",
 
+		// Provider declaration (provider rework, phase 1)
+		MsgProviderInvalidWireAPI:         "不支持的 wire_api %q；必须是以下之一：%s",
+		MsgProviderUnsupportedType:        "不支持的 provider_type %q；必须是以下之一：%s",
+		MsgProviderInvalidAuthKind:        "不支持的 auth_kind %q；必须是以下之一：%s",
+		MsgProviderInvalidSettingsVersion: "不支持的 settings_version %d；此版本最多支持 %d",
+		MsgProviderNotFound:               "未找到 provider：%s",
+		MsgProviderModelNotFound:          "未找到 provider %s 的模型 %q",
+		MsgProviderModelsFailed:           "无法列出提供商 %s 的模型",
+		MsgProviderDiscoveryFailed:        "提供商 %s 的模型发现失败：%s",
+		MsgProviderHealthFailed:           "读取提供商 %s 的健康状态失败",
+		MsgProviderHealthResetFailed:      "重置提供商 %s 的健康状态失败：%s",
+
 		// Usage caps / pricing
 		MsgUsageCapsListPoliciesFailed:          "无法列出 usage cap 策略",
 		MsgUsageCapPolicyValidationFailed:       "usage cap 策略验证失败",
@@ -230,10 +242,11 @@ func init() {
 		MsgToolAnnouncementSingle: "我将使用 %s 处理下一步。",
 		MsgToolAnnouncementMulti:  "我将使用 %s 处理下一步。",
 
-		MsgSkillNudgePostscript: "此任务涉及多个步骤。要我将此过程保存为可重用技能吗？回复 **\"保存技能\"** 或 **\"跳过\"**。",
-		MsgSkillNudge70Pct:      "[System] 您已使用 70% 的迭代预算。请考虑本次会话中的模式是否值得保存为技能。",
-		MsgSkillNudge90Pct:      "[System] 您已使用 90% 的迭代预算。如果本次会话涉及可重用的模式，请考虑在完成前将其保存为技能。",
-		MsgEmptyReplyFallback:   "⚠️ 代理无法生成响应。注意：部分工具操作可能已经执行 — 请先确认后再重试",
+		MsgSkillNudgePostscript:     "此任务涉及多个步骤。要我将此过程保存为可重用技能吗？回复 **\"保存技能\"** 或 **\"跳过\"**。",
+		MsgSkillNudge70Pct:          "[System] 您已使用 70% 的迭代预算。请考虑本次会话中的模式是否值得保存为技能。",
+		MsgSkillNudge90Pct:          "[System] 您已使用 90% 的迭代预算。如果本次会话涉及可重用的模式，请考虑在完成前将其保存为技能。",
+		MsgEmptyReplyFallback:       "⚠️ 代理无法生成响应。注意：部分工具操作可能已经执行 — 请先确认后再重试",
+		MsgModelWithoutVisionNotice: "⚠️ 所选模型不接受图片，因此你消息中的图片未发送。如需发送图片，请切换到支持视觉的模型。",
 
 		MsgInvalidRole: "无效角色：允许的值为 owner、admin、operator、member、viewer",
 

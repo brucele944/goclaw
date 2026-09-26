@@ -1,0 +1,47 @@
+{
+  "messages": [
+    {
+      "content": [
+        {
+          "cache_control": {
+            "type": "ephemeral"
+          },
+          "text": "You are a fixture assistant.",
+          "type": "text"
+        }
+      ],
+      "role": "system"
+    },
+    {
+      "content": "hello fixture",
+      "role": "user"
+    }
+  ],
+  "model": "qwen3-max",
+  "stream": false,
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "cache_control": {
+        "type": "ephemeral"
+      },
+      "function": {
+        "description": "Look up a record by id",
+        "name": "lookup",
+        "parameters": {
+          "properties": {
+            "id": {
+              "description": "record id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "type": "object"
+        }
+      },
+      "type": "function"
+    }
+  ]
+}

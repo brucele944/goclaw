@@ -1,0 +1,14 @@
+{
+  "authorization": "Bearer stub-vertex-token",
+  "body": {
+    "messages": [
+      {
+        "content": "hello vertex",
+        "role": "user"
+      }
+    ],
+    "model": "google/gemini-2.0-flash-001",
+    "stream": false
+  },
+  "url": "https://us-central1-aiplatform.googleapis.com/v1/projects/my-proj/locations/us-central1/endpoints/openapi/chat/completions"
+}

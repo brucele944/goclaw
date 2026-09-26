@@ -1,0 +1,16 @@
+[
+  "-p",
+  "--output-format",
+  "json",
+  "--model",
+  "sonnet",
+  "--permission-mode",
+  "bypassPermissions",
+  "--verbose",
+  "--resume",
+  "9edb0f8e-2f47-55fa-8a2c-4f3065fc0d1d",
+  "--disallowedTools",
+  "Edit,Glob,Grep,NotebookEdit,Read,TodoWrite,WebFetch,WebSearch,Write",
+  "--",
+  "hello-fixture"
+]

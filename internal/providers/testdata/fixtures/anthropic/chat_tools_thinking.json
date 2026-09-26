@@ -1,0 +1,48 @@
+{
+  "max_tokens": 40192,
+  "messages": [
+    {
+      "content": "hello fixture",
+      "role": "user"
+    }
+  ],
+  "model": "claude-sonnet-4-5",
+  "system": [
+    {
+      "cache_control": {
+        "type": "ephemeral"
+      },
+      "text": "stable fixture prefix",
+      "type": "text"
+    },
+    {
+      "text": "dynamic fixture suffix",
+      "type": "text"
+    }
+  ],
+  "thinking": {
+    "budget_tokens": 32000,
+    "type": "enabled"
+  },
+  "tools": [
+    {
+      "cache_control": {
+        "type": "ephemeral"
+      },
+      "description": "Look up a record by id",
+      "input_schema": {
+        "properties": {
+          "id": {
+            "description": "record id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "lookup"
+    }
+  ]
+}

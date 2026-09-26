@@ -1,0 +1,14 @@
+{
+  "id": 3,
+  "jsonrpc": "2.0",
+  "method": "session/prompt",
+  "params": {
+    "prompt": [
+      {
+        "text": "fixture system\n\nhello fixture",
+        "type": "text"
+      }
+    ],
+    "sessionId": "acp-fixture-session"
+  }
+}

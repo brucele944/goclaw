@@ -1,0 +1,45 @@
+{
+  "messages": [
+    {
+      "content": "You are a fixture assistant.",
+      "role": "system"
+    },
+    {
+      "content": "hello fixture",
+      "role": "user"
+    }
+  ],
+  "model": "gemini-2.5-flash",
+  "stream": false,
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "function": {
+        "description": "Look up a record by id",
+        "name": "lookup",
+        "parameters": {
+          "properties": {
+            "filter": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "exact"
+                  ]
+                }
+              },
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "type": "object"
+        }
+      },
+      "type": "function"
+    }
+  ]
+}

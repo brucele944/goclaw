@@ -1,0 +1,42 @@
+{
+  "max_completion_tokens": 2048,
+  "messages": [
+    {
+      "content": "You are a fixture assistant.",
+      "role": "developer"
+    },
+    {
+      "content": "hello fixture",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-5.4",
+  "prompt_cache_key": "fixture-cache-key",
+  "prompt_cache_retention": "24h",
+  "reasoning_effort": "high",
+  "stream": false,
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "function": {
+        "description": "Look up a record by id",
+        "name": "lookup",
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "record id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "type": "object"
+        },
+        "strict": true
+      },
+      "type": "function"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "input": [
+    {
+      "content": "hello fixture",
+      "role": "user"
+    },
+    {
+      "arguments": "{\"id\":\"42\"}",
+      "call_id": "fc_abc",
+      "id": "fc_abc",
+      "name": "lookup",
+      "type": "function_call"
+    },
+    {
+      "call_id": "fc_abc",
+      "output": "{\"found\":true}",
+      "type": "function_call_output"
+    }
+  ],
+  "instructions": "You are a fixture assistant.",
+  "model": "gpt-5.3-codex",
+  "reasoning": {
+    "effort": "high"
+  },
+  "store": false,
+  "stream": true,
+  "tools": [
+    {
+      "description": "Look up a record by id",
+      "name": "lookup",
+      "parameters": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "record id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "type": "function"
+    }
+  ]
+}

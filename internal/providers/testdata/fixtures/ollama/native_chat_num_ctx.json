@@ -1,0 +1,18 @@
+{
+  "model": "qwen3:8b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a fixture assistant."
+    },
+    {
+      "role": "user",
+      "content": "hello fixture"
+    }
+  ],
+  "stream": false,
+  "options": {
+    "num_ctx": 32768
+  },
+  "think": false
+}

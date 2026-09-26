@@ -49,6 +49,48 @@ func DefaultRetryConfig() RetryConfig {
 	}
 }
 
+// ReplaySafety classifies whether a partial stream is safe to retry or replay.
+// Rule (OMP non-compaction-retry-policy): once visible text, an image, or a tool
+// call has escaped to the user, retrying could duplicate emitted output.
+// Thinking-only or whitespace-only partials carry no user-visible state and are
+// safe to discard and retry.
+type ReplaySafety struct {
+	VisibleText bool
+	Images      bool
+	ToolCalls   bool
+}
+
+// Emitted reports whether any user-visible output has been emitted.
+func (s ReplaySafety) Emitted() bool {
+	return s.VisibleText || s.Images || s.ToolCalls
+}
+
+// ObserveChunk updates safety state from a stream chunk.
+func (s *ReplaySafety) ObserveChunk(chunk StreamChunk) {
+	if strings.TrimSpace(chunk.Content) != "" {
+		s.VisibleText = true
+	}
+	if len(chunk.Images) > 0 {
+		s.Images = true
+	}
+}
+
+// ChunkHasVisibleOutput returns true if the chunk contains user-visible output
+// (non-whitespace text or images; thinking-only and whitespace-only chunks are
+// excluded).
+func ChunkHasVisibleOutput(chunk StreamChunk) bool {
+	return strings.TrimSpace(chunk.Content) != "" || len(chunk.Images) > 0
+}
+
+// ResponseHasVisibleOutput returns true if the response contains visible output
+// or tool calls (thinking-only responses are excluded).
+func ResponseHasVisibleOutput(resp *ChatResponse) bool {
+	if resp == nil {
+		return false
+	}
+	return strings.TrimSpace(resp.Content) != "" || len(resp.Images) > 0 || len(resp.ToolCalls) > 0
+}
+
 // HTTPError represents an HTTP error with status code and optional Retry-After.
 type HTTPError struct {
 	Status     int

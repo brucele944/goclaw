@@ -312,16 +312,60 @@ func TestBuildRequestBody_TogetherDetectedByProviderType(t *testing.T) {
 	}
 }
 
-func TestBuildRequestBody_TogetherDetectedByName(t *testing.T) {
-	// Together detected by provider name.
-	p := NewOpenAIProvider("together-prod", "key", "https://proxy.internal/v1", "")
+func TestBuildRequestBody_ProviderNameDoesNotShapeRequest(t *testing.T) {
+	// Regression (provider-rework phase 4): a provider *name* must never change
+	// request semantics. These two providers are declared openai-completions with
+	// a base URL that names no endpoint family, so neither may receive
+	// family-specific shaping just because of what the operator called them.
+	t.Run("together-prod is not shaped as Together", func(t *testing.T) {
+		p := NewOpenAIProvider("together-prod", "key", "https://proxy.internal/v1", "")
+		body := p.buildRequestBody("Qwen/Qwen3.5-397B-A17B", ChatRequest{
+			Messages: []Message{{Role: "user", Content: "hi"}},
+		}, true)
+		if _, ok := body["stream_options"]; !ok {
+			t.Fatal("name alone must not select the Together family (stream_options must be sent)")
+		}
+	})
 
-	body := p.buildRequestBody("Qwen/Qwen3.5-397B-A17B", ChatRequest{
-		Messages: []Message{{Role: "user", Content: "hi"}},
-	}, true)
-	if _, ok := body["stream_options"]; ok {
-		t.Fatal("Together (via name) must omit stream_options")
-	}
+	t.Run("ollama-proxy is not shaped as Ollama", func(t *testing.T) {
+		p := NewOpenAIProvider("ollama-proxy", "key", "https://llm-gateway.example.com/v1", "").
+			WithProviderType("openai")
+
+		if p.Compat().Family == "ollama" {
+			t.Fatalf("family = %q, want no Ollama family from the provider name", p.Compat().Family)
+		}
+		if p.Compat().NativeChatPath != "" {
+			t.Fatalf("native chat path = %q, want none (must not route to /api/chat)", p.Compat().NativeChatPath)
+		}
+		if !p.SupportsThinking() {
+			t.Fatal("SupportsThinking() = false; a name alone must not suppress thinking")
+		}
+
+		body := p.buildRequestBody("qwen3:8b", ChatRequest{
+			Messages: []Message{{Role: "user", Content: "hi"}},
+		}, false)
+		if _, ok := body["options"]; ok {
+			t.Fatal("Ollama options.num_ctx injected for a non-Ollama endpoint")
+		}
+		if _, ok := body["think"]; ok {
+			t.Fatal("Ollama think flag injected for a non-Ollama endpoint")
+		}
+	})
+
+	t.Run("declared family still shapes", func(t *testing.T) {
+		// Over-deletion guard: the family rules must still fire on declared data.
+		p := NewOpenAIProvider("whatever", "key", "http://127.0.0.1:11434/v1", "").
+			WithEndpointFamily("ollama")
+		body := p.buildRequestBody("qwen3:8b", ChatRequest{
+			Messages: []Message{{Role: "user", Content: "hi"}},
+		}, false)
+		if _, ok := body["options"]; !ok {
+			t.Fatal("declared ollama family must inject options.num_ctx")
+		}
+		if got, _ := body["think"].(bool); got != false {
+			t.Fatalf("think = %v, want false (Ollama thinking suppressed by default)", body["think"])
+		}
+	})
 }
 
 func TestBuildRequestBody_MultimodalImagesOnlyNoEmptyTextPart(t *testing.T) {

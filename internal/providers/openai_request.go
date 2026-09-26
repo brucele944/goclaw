@@ -5,9 +5,21 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+
+	"github.com/nextlevelbuilder/goclaw/internal/providers/compat"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/dialect"
 )
 
 func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream bool) map[string]any {
+	// Compatibility is read, never rebuilt: resolvedFor returns the object
+	// pre-resolved for this model, or the pre-resolved thinking alternate when
+	// the request asks for reasoning.
+	thinkingOn := false
+	if level, _ := req.Options[OptThinkingLevel].(string); level != "" && level != "off" {
+		thinkingOn = true
+	}
+	rc := p.resolvedFor(model, thinkingOn)
+
 	// Gemini 2.5+: collapse tool_call cycles missing thought_signature.
 	// Gemini requires thought_signature echoed back on every tool_call; models that
 	// don't return it (e.g. gemini-3-flash) will cause HTTP 400 if sent as-is.
@@ -26,6 +38,11 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	if supportsThoughtSignature {
 		inputMessages = collapseToolCallsWithoutSig(inputMessages)
 	}
+	// In-band dialect: inject tool descriptions into the system prompt when active.
+	if conv := dialect.Select(p.wireAPI, rc.ToolDialect); conv != nil && len(req.Tools) > 0 {
+		inputMessages = injectDialectTools(conv, inputMessages, req.Tools)
+	}
+
 
 	// Build raw-ID → tool-name index for role="tool" serialization.
 	// Google Gemini's OpenAI-compat shim maps role=tool messages to native
@@ -34,11 +51,10 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	// any wire-truncation. Trace: 019d8f33-2de1-7ab2-9a32-9df92cd610dd.
 	toolNameByID := buildToolNameIndex(inputMessages)
 
-	// Detect native OpenAI endpoint to enable developer role.
-	// GPT-4o+ models prioritize "developer" messages over "system" for instruction
-	// adherence. Non-OpenAI backends (proxies, Qwen, DeepSeek, etc.) reject "developer".
+	// Developer role is enabled by the resolved compat object (native OpenAI
+	// endpoints accept it; proxies, Qwen, DeepSeek and other backends reject it).
 	// Matching OpenClaw TS: model-compat.ts → isOpenAINativeEndpoint().
-	useDevRole := isOpenAINativeEndpoint(p.apiBase)
+	useDevRole := rc.SupportsDeveloperRole
 
 	// A conversation where some assistant turn captured reasoning is running in
 	// thinking mode, so every replayed assistant message must carry the field —
@@ -188,12 +204,18 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 		msgs = append(msgs, msg)
 	}
 
+	// Text-protocol models have no system role: fold the system prompt into the
+	// first user message (declared by the model/provider compat fragment).
+	if rc.SystemAsContent {
+		msgs = foldSystemIntoUser(msgs)
+	}
+
 	// Apply DashScope cache_control wrapping (verified live 2026-05-08).
-	// Uses 3-source detection from p.isDashScope() (URL + providerType + name)
-	// to handle reverse-proxied endpoints. No-op for non-DashScope endpoints
-	// or when env disabled. For native OpenAI, role mapping above renames
-	// "system"→"developer" so wrap is a no-op (role guard).
-	if p.isDashScope() && !dashScopeCacheDisabled() && len(msgs) > 0 {
+	// The resolved compat object decides (base URL + provider_type, never the
+	// provider name). No-op for other endpoints or when env disabled. For native
+	// OpenAI, role mapping above renames "system"→"developer" so wrap is a no-op
+	// (role guard).
+	if rc.SystemCacheControl && !dashScopeCacheDisabled() && len(msgs) > 0 {
 		msgs[0] = wrapSystemForDashScopeCache(msgs[0])
 	}
 
@@ -215,7 +237,12 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	}
 
 	if len(req.Tools) > 0 {
-		body["tools"] = buildToolsPayload(p.schemaProviderName(), req.Tools)
+		strictDisabled := rc.StrictToolsDisabled || DefaultStrictTools().Disabled(StrictScopeKey{
+			Provider: p.name,
+			BaseURL:  p.apiBase,
+			Model:    model,
+		})
+		body["tools"] = buildToolsPayloadWithProfile(rc.Schema, strictDisabled, req.Tools)
 		if tc, ok := req.Options[OptToolChoice]; ok && tc != nil {
 			body["tool_choice"] = tc
 		} else {
@@ -226,7 +253,7 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	// DashScope tool prefix cache: cache_control on last tool definition
 	// caches the entire tools array (descriptions + schemas, ~5-10K tokens).
 	// Combined with system block cache: 2/4 markers used, 99.5% hit rate verified.
-	if p.isDashScope() && !dashScopeCacheDisabled() {
+	if rc.ToolPrefixCache && !dashScopeCacheDisabled() {
 		if t, ok := body["tools"].([]map[string]any); ok && len(t) > 0 {
 			markersFromSystem := 0
 			if len(msgs) > 0 {
@@ -237,10 +264,22 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	}
 
 	// Together returns HTTP 400 on some requests when stream_options is present.
-	if stream && !p.isTogetherEndpoint() {
+	if stream && rc.StreamOptions {
 		body["stream_options"] = map[string]any{
 			"include_usage": true,
 		}
+	}
+
+	// Declared extra body fragments (gateway overlay / operator rows).
+	for k, v := range rc.ExtraBody {
+		if _, exists := body[k]; !exists {
+			body[k] = v
+		}
+	}
+
+	// A caller-supplied store flag is only forwarded where the endpoint accepts it.
+	if v, ok := req.Options[OptStore]; ok && rc.SupportsStore {
+		body["store"] = v
 	}
 
 	// Merge options
@@ -249,17 +288,14 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 		// Fireworks requires stream=true for max_tokens > 4096.
 		// Clamp proactively to avoid a 400 round-trip (their error format
 		// doesn't match the generic clampMaxTokensFromError regex).
-		if !stream && p.isFireworksEndpoint() {
-			if maxTokens, isInt := v.(int); isInt && maxTokens > 4096 {
-				v = 4096
-				slog.Debug("max_tokens clamped to 4096 for Fireworks non-streaming request", "provider", p.name, "model", model)
+		if !stream && rc.ClampMaxTokens > 0 {
+			if maxTokens, isInt := v.(int); isInt && maxTokens > rc.ClampMaxTokens {
+				v = rc.ClampMaxTokens
+				slog.Debug("max_tokens clamped for non-streaming request",
+					"provider", p.name, "model", model, "limit", rc.ClampMaxTokens)
 			}
 		}
-		if strings.HasPrefix(capabilityModel, "gpt-5") || strings.HasPrefix(capabilityModel, "o1") || strings.HasPrefix(capabilityModel, "o3") || strings.HasPrefix(capabilityModel, "o4") {
-			body["max_completion_tokens"] = v
-		} else {
-			body["max_tokens"] = v
-		}
+		body[rc.MaxTokensField] = v
 	}
 	if v, ok := req.Options[OptTemperature]; ok {
 		// Certain model families don't support custom temperature (locked to default).
@@ -304,7 +340,7 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 	// Priority: user-configured ollamaNumCtx > pre-queried /api/show value > 131072 default.
 	// Also disable thinking by default to prevent bloated chain-of-thought responses
 	// from models like qwq and deepseek-r1 which have thinking enabled by default.
-	if p.isOllamaEndpoint() {
+	if rc.OllamaOptions {
 		numCtx := OllamaDefaultNumCtx
 		numCtxSource := "default"
 		if p.ollamaNumCtx != nil {
@@ -327,22 +363,22 @@ func (p *OpenAIProvider) buildRequestBody(model string, req ChatRequest, stream 
 			}
 			slog.Debug("ollama.request: final request body (first 500 chars)", "provider", p.name, "model", model, "body_prefix", raw)
 		}
+	}
+	if rc.OllamaThink {
 		// Thinking visibility: provider-level override (settings.thinking_enabled)
-		// takes precedence; otherwise disable thinking by default (models like
-		// qwq/deepseek-r1 have thinking on by default) unless the caller
-		// explicitly requests a reasoning effort level.
+		// takes precedence; otherwise the resolved object decides. Its thinking
+		// alternate omits the flag entirely so a reasoning request leaves the
+		// endpoint's own default in place.
 		switch {
 		case p.thinkingEnabled != nil:
 			body["think"] = *p.thinkingEnabled
-		default:
-			if level, _ := req.Options[OptThinkingLevel].(string); level == "" || level == "off" {
-				body["think"] = false
-			}
+		case rc.Think != nil:
+			body["think"] = *rc.Think
 		}
 	}
 
 	// DashScope-specific passthrough keys — never send to other OpenAI-compat hosts.
-	if p.dashScopePassthroughKeys() {
+	if rc.DashScopePassthrough {
 		if level, ok := req.Options[OptThinkingLevel].(string); ok && level != "" && level != "off" && dashscopeThinkingModels[model] {
 			body[OptEnableThinking] = true
 			body[OptThinkingBudget] = dashscopeThinkingBudget(level)
@@ -408,11 +444,43 @@ func mapGeminiReasoningEffort(level string) (string, bool) {
 
 // modelFamily strips provider prefixes (for example "openai/o3-mini") so capability
 // gates apply to the actual model family rather than the transport-specific wrapper.
-func modelFamily(model string) string {
-	if idx := strings.LastIndex(model, "/"); idx >= 0 && idx < len(model)-1 {
-		return model[idx+1:]
+func modelFamily(model string) string { return compat.ModelFamily(model) }
+
+// foldSystemIntoUser folds a leading system/developer message into the first user
+// message, for text-protocol models that declare no system role. The system text
+// is prepended to the user content; the leading message is removed. A request with
+// no system message, or with no user message to fold into, is returned unchanged.
+func foldSystemIntoUser(msgs []map[string]any) []map[string]any {
+	if len(msgs) < 2 {
+		return msgs
 	}
-	return model
+	role, _ := msgs[0]["role"].(string)
+	if role != "system" && role != "developer" {
+		return msgs
+	}
+	system := msgs[0]["content"]
+	if system == nil {
+		return msgs
+	}
+	idx := -1
+	for i := 1; i < len(msgs); i++ {
+		if r, _ := msgs[i]["role"].(string); r == "user" {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return msgs
+	}
+	systemText, _ := system.(string)
+	userText, _ := msgs[idx]["content"].(string)
+	switch {
+	case systemText != "" && userText != "":
+		msgs[idx]["content"] = systemText + "\n\n" + userText
+	case systemText != "":
+		msgs[idx]["content"] = systemText
+	}
+	return msgs[1:]
 }
 
 // openAIModelSupportsReasoningEffort is true when the Chat Completions request may include
@@ -431,13 +499,22 @@ func openAIModelSupportsReasoningEffort(model string) bool {
 	return false
 }
 
-// buildToolsPayload serializes tools for the OpenAI-compat tools array.
+// buildToolsPayload serializes tools for the OpenAI-compat tools array using the
+// provider's resolved schema profile (kept for callers/tests that only have a
+// provider identifier).
 //   - function tools → {"type":"function","function":{cleaned schema}}
 //   - native tools (e.g. "image_generation") → {"type": t.Type} bare object
 //
 // Ordering is preserved.
 func buildToolsPayload(schemaProvider string, tools []ToolDefinition) []map[string]any {
-	cleaned := CleanToolSchemas(schemaProvider, tools)
+	return buildToolsPayloadWithProfile(profileForProvider(schemaProvider), false, tools)
+}
+
+// buildToolsPayloadWithProfile serializes tools against a pre-resolved compat
+// schema profile and strict-tools policy. This is the request-path entry point —
+// no profile resolution happens here.
+func buildToolsPayloadWithProfile(profile SchemaProfile, strictToolsDisabled bool, tools []ToolDefinition) []map[string]any {
+	cleaned := CleanToolSchemasWithProfile(profile, strictToolsDisabled, tools)
 	out := make([]map[string]any, 0, len(cleaned))
 	for _, t := range cleaned {
 		switch t.Type {
@@ -484,4 +561,33 @@ func openAIWireAssistantReasoningContent(model string) bool {
 		return true
 	}
 	return false
+}
+
+// injectDialectTools injects in-band tool definitions into the system prompt
+// for models using a text-based tool dialect.
+func injectDialectTools(conv dialect.Converter, msgs []Message, tools []ToolDefinition) []Message {
+	if conv == nil || len(tools) == 0 {
+		return msgs
+	}
+	dtools := make([]dialect.Tool, 0, len(tools))
+	for _, t := range tools {
+		if t.Function == nil {
+			continue
+		}
+		dtools = append(dtools, dialect.Tool{
+			Name:        t.Function.Name,
+			Description: t.Function.Description,
+			Parameters:  t.Function.Parameters,
+		})
+	}
+	out := append([]Message(nil), msgs...)
+	for i := range out {
+		if out[i].Role == "system" || out[i].Role == "developer" {
+			out[i].Content = conv.InjectPrompt(out[i].Content, dtools)
+			return out
+		}
+	}
+	// No system message: prepend one
+	sys := Message{Role: "system", Content: conv.InjectPrompt("", dtools)}
+	return append([]Message{sys}, out...)
 }

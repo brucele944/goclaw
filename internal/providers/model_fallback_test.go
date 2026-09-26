@@ -49,7 +49,7 @@ func TestModelFallbackProviderFallsBackOnClassifiedError(t *testing.T) {
 		Model:        "primary-model",
 	}, []FallbackCandidate{
 		{ProviderName: "backup", Provider: backup, Model: "backup-model"},
-	}, 2, false)
+	}, 2, false, nil)
 
 	resp, err := provider.Chat(context.Background(), ChatRequest{})
 	if err != nil {
@@ -77,7 +77,7 @@ func TestModelFallbackProviderDoesNotFallbackAfterStreamChunk(t *testing.T) {
 		Model:        "primary-model",
 	}, []FallbackCandidate{
 		{ProviderName: "backup", Provider: backup, Model: "backup-model"},
-	}, 2, false)
+	}, 2, false, nil)
 
 	var chunks int
 	_, err := provider.ChatStream(context.Background(), ChatRequest{}, func(StreamChunk) {
@@ -105,7 +105,7 @@ func TestModelFallbackProviderChatStreamWithHookReportsStreamedChunks(t *testing
 		ProviderName: "primary",
 		Provider:     primary,
 		Model:        "primary-model",
-	}, nil, 1, false)
+	}, nil, 1, false, nil)
 
 	var streamed bool
 	_, err := provider.ChatStreamWithHook(context.Background(), ChatRequest{}, func(StreamChunk) {}, func(context.Context, FallbackCandidate, ChatRequest) (FallbackAfterCall, error) {
@@ -134,7 +134,7 @@ func TestModelFallbackProviderFallsBackToSameModelOnDifferentProvider(t *testing
 		Model:        "shared-model",
 	}, []FallbackCandidate{
 		{ProviderName: "backup", Provider: backup, Model: "shared-model"},
-	}, 0, false)
+	}, 0, false, nil)
 
 	resp, err := provider.Chat(context.Background(), ChatRequest{})
 	if err != nil {
@@ -162,7 +162,7 @@ func TestModelFallbackProviderDoesNotFallbackOnUnknownError(t *testing.T) {
 		Model:        "primary-model",
 	}, []FallbackCandidate{
 		{ProviderName: "backup", Provider: backup, Model: "backup-model"},
-	}, 0, false)
+	}, 0, false, nil)
 
 	_, err := provider.Chat(context.Background(), ChatRequest{})
 	if !errors.Is(err, unknownErr) {
@@ -192,7 +192,7 @@ func TestModelFallbackProviderContinuesAfterContentPolicyFallback(t *testing.T) 
 	}, []FallbackCandidate{
 		{ProviderName: "blocked", Provider: blocked, Model: "blocked-model"},
 		{ProviderName: "backup", Provider: backup, Model: "backup-model"},
-	}, 0, false)
+	}, 0, false, nil)
 
 	resp, err := provider.Chat(context.Background(), ChatRequest{})
 	if err != nil {
@@ -219,7 +219,7 @@ func TestModelFallbackProviderFallsBackOnCodexSafetyRefusalString(t *testing.T) 
 		Model:        "gpt-5.5",
 	}, []FallbackCandidate{
 		{ProviderName: "anthropic", Provider: backup, Model: "claude-sonnet-4-5"},
-	}, 2, false)
+	}, 2, false, nil)
 
 	resp, err := provider.Chat(context.Background(), ChatRequest{})
 	if err != nil {
@@ -246,7 +246,7 @@ func TestModelFallbackProviderMaxAttemptsCapsTotalAttempts(t *testing.T) {
 		Model:        "primary-model",
 	}, []FallbackCandidate{
 		{ProviderName: "backup", Provider: backup, Model: "backup-model"},
-	}, 1, false)
+	}, 1, false, nil)
 
 	_, err := provider.Chat(context.Background(), ChatRequest{})
 	if err == nil {

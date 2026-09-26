@@ -23,7 +23,7 @@ func (p *OpenAIProvider) doRequest(ctx context.Context, body any) (io.ReadCloser
 	// Ollama: route to native /api/chat so options.num_ctx is honored.
 	// The OpenAI-compat shim at /v1/chat/completions silently ignores options.num_ctx.
 	url := p.apiBase + p.chatPath
-	if p.isOllamaEndpoint() {
+	if p.compat != nil && p.compat.NativeChatPath != "" {
 		url = p.ollamaNativeURL()
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(data))
@@ -55,6 +55,14 @@ func (p *OpenAIProvider) doRequest(ctx context.Context, body any) (io.ReadCloser
 	// Applied after the standard headers so providers can override them if needed.
 	for k, v := range p.extraHeaders {
 		httpReq.Header.Set(k, v)
+	}
+	// Declared compat headers (operator quirk rows / gateway overlay). Applied
+	// last so an explicit declaration wins over the brand defaults; Authorization
+	// and Host keys are rejected by compat.Validate before they get here.
+	if p.compat != nil {
+		for k, v := range p.compat.Headers {
+			httpReq.Header.Set(k, v)
+		}
 	}
 
 	resp, err := p.client.Do(httpReq)

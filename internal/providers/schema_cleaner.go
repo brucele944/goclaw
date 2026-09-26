@@ -1,13 +1,19 @@
 package providers
 
 // CleanToolSchemas normalizes tool schemas for a specific provider.
-// This is the batch entry point — called from OpenAI/DashScope providers.
-// Native tool types (anything other than "function") are passed through untouched.
+// This is the batch entry point. Native tool types (anything other than
+// "function") are passed through untouched.
 func CleanToolSchemas(providerName string, tools []ToolDefinition) []ToolDefinition {
+	return CleanToolSchemasWithProfile(profileForProvider(providerName), false, tools)
+}
+
+// CleanToolSchemasWithProfile normalizes tool schemas against a resolved profile.
+// strictToolsDisabled is the per-(provider, base_url, model) strict-tools
+// opt-out: a model that rejected strict mode must not receive it again.
+func CleanToolSchemasWithProfile(profile SchemaProfile, strictToolsDisabled bool, tools []ToolDefinition) []ToolDefinition {
 	if len(tools) == 0 {
 		return tools
 	}
-	profile := profileForProvider(providerName)
 	out := make([]ToolDefinition, 0, len(tools))
 	for _, t := range tools {
 		switch t.Type {
@@ -16,7 +22,7 @@ func CleanToolSchemas(providerName string, tools []ToolDefinition) []ToolDefinit
 				// Malformed function tool — skip rather than panic.
 				continue
 			}
-			fn := cleanFunctionSchema(profile, *t.Function)
+			fn := cleanFunctionSchema(profile, *t.Function, strictToolsDisabled)
 			out = append(out, ToolDefinition{
 				Type:     "function",
 				Function: &fn,
@@ -31,10 +37,10 @@ func CleanToolSchemas(providerName string, tools []ToolDefinition) []ToolDefinit
 
 // cleanFunctionSchema normalizes a single function tool schema against a provider profile.
 // Returns a new ToolFunctionSchema with cleaned parameters and strict mode applied.
-func cleanFunctionSchema(profile SchemaProfile, fn ToolFunctionSchema) ToolFunctionSchema {
+func cleanFunctionSchema(profile SchemaProfile, fn ToolFunctionSchema, strictToolsDisabled bool) ToolFunctionSchema {
 	// Exempt multi-action tools from strict mode — their many optional params become
 	// required under strict, forcing models to send empty values (~200-300 wasted tokens/call).
-	useStrict := profile.StrictToolMode && !IsMultiActionSchema(fn.Parameters)
+	useStrict := profile.StrictToolMode && !strictToolsDisabled && !IsMultiActionSchema(fn.Parameters)
 
 	var strictPtr *bool
 	if useStrict {

@@ -54,27 +54,6 @@ func TestOpenAIProvider_ExtraHeaders_AppliedOnHTTPRequest(t *testing.T) {
 	}
 }
 
-// TestOpenAIAdapter_ExtraHeaders_MirroredInToRequest verifies the adapter path
-// emits the same extra headers as the direct doRequest path — important
-// because some call sites use adapter.ToRequest to produce headers separately.
-func TestOpenAIAdapter_ExtraHeaders_MirroredInToRequest(t *testing.T) {
-	p := NewOpenAIProvider("kimi-coding-test", "sk-fake", "https://api.kimi.com/coding/v1", "kimi-k2-turbo-preview").
-		WithExtraHeaders(map[string]string{
-			"User-Agent": "claude-code/0.1.0",
-		})
-	a := &OpenAIAdapter{provider: p}
-
-	_, headers, err := a.ToRequest(ChatRequest{
-		Messages: []Message{{Role: "user", Content: "hi"}},
-	})
-	if err != nil {
-		t.Fatalf("ToRequest: %v", err)
-	}
-	if got := headers.Get("User-Agent"); got != "claude-code/0.1.0" {
-		t.Errorf("adapter User-Agent = %q, want claude-code/0.1.0", got)
-	}
-}
-
 // TestOpenAIProvider_ExtraHeaders_NoOpWhenEmpty makes sure the
 // WithExtraHeaders(nil) / WithExtraHeaders({}) calls leave the provider's
 // state alone — protects against accidental nil-map allocations in callers

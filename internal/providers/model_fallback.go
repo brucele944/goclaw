@@ -28,10 +28,12 @@ type FallbackCallInfo struct {
 type FallbackAfterCall func(*ChatResponse, error, FallbackCallInfo)
 type FallbackBeforeCall func(ctx context.Context, entry FallbackCandidate, req ChatRequest) (after FallbackAfterCall, err error)
 
-func NewModelFallbackProvider(primary FallbackCandidate, fallbacks []FallbackCandidate, maxAttempts int, cooldownEnabled bool) *ModelFallbackProvider {
+func NewModelFallbackProvider(primary FallbackCandidate, fallbacks []FallbackCandidate, maxAttempts int, cooldownEnabled bool, cooldowns CooldownStore) *ModelFallbackProvider {
 	var tracker *CooldownTracker
 	if cooldownEnabled {
-		tracker = NewCooldownTracker(0)
+		// cooldowns is the durable half of the state (provider_health); nil keeps
+		// the pre-phase-5 in-memory-only behaviour.
+		tracker = NewCooldownTracker(0, cooldowns)
 	}
 	return &ModelFallbackProvider{
 		primary:     primary,
@@ -91,14 +93,15 @@ func (p *ModelFallbackProvider) ChatStream(ctx context.Context, req ChatRequest,
 	return p.runOrdered(ctx, req, func(ctx context.Context, entry FallbackCandidate, req ChatRequest) (*ChatResponse, error) {
 		nextReq := req
 		nextReq.Model = entry.Model
-		streamed := false
+		var safety ReplaySafety
 		resp, err := entry.Provider.ChatStream(ctx, nextReq, func(chunk StreamChunk) {
-			if chunk.Content != "" || chunk.Thinking != "" || len(chunk.Images) > 0 {
-				streamed = true
-			}
+			safety.ObserveChunk(chunk)
 			onChunk(chunk)
 		})
-		if streamed && err != nil {
+		if !safety.Emitted() && resp != nil && ResponseHasVisibleOutput(resp) {
+			safety.VisibleText = true
+		}
+		if safety.Emitted() && err != nil {
 			return nil, noFallbackAfterStreamError{err: err}
 		}
 		return resp, err
@@ -113,17 +116,18 @@ func (p *ModelFallbackProvider) ChatStreamWithHook(ctx context.Context, req Chat
 		if err != nil {
 			return nil, err
 		}
-		streamed := false
+		var safety ReplaySafety
 		resp, err := entry.Provider.ChatStream(ctx, nextReq, func(chunk StreamChunk) {
-			if chunk.Content != "" || chunk.Thinking != "" || len(chunk.Images) > 0 {
-				streamed = true
-			}
+			safety.ObserveChunk(chunk)
 			onChunk(chunk)
 		})
-		if after != nil {
-			after(resp, err, FallbackCallInfo{Streamed: streamed})
+		if !safety.Emitted() && resp != nil && ResponseHasVisibleOutput(resp) {
+			safety.VisibleText = true
 		}
-		if streamed && err != nil {
+		if after != nil {
+			after(resp, err, FallbackCallInfo{Streamed: safety.Emitted()})
+		}
+		if safety.Emitted() && err != nil {
 			return nil, noFallbackAfterStreamError{err: err}
 		}
 		return resp, err
@@ -144,14 +148,16 @@ func (p *ModelFallbackProvider) runOrdered(
 		if p.maxAttempts > 0 && i >= p.maxAttempts {
 			break
 		}
-		key := CooldownKey(entry.ProviderName, entry.Model)
-		if p.tracker != nil && !p.tracker.IsAvailable(key) && !p.tracker.ShouldProbe(key) {
-			continue
+		if p.tracker != nil {
+			if !p.tracker.IsAvailable(ctx, entry.ProviderName, entry.Model) &&
+				!p.tracker.ShouldProbe(ctx, entry.ProviderName, entry.Model) {
+				continue
+			}
 		}
 		resp, err := call(ctx, entry, req)
 		if err == nil {
 			if p.tracker != nil {
-				p.tracker.RecordSuccess(key)
+				p.tracker.RecordSuccess(ctx, entry.ProviderName, entry.Model)
 			}
 			return resp, nil
 		}
@@ -165,7 +171,7 @@ func (p *ModelFallbackProvider) runOrdered(
 			Err:            err,
 		})
 		if p.tracker != nil && classification.Kind == "reason" {
-			p.tracker.RecordFailure(key, classification.Reason)
+			p.tracker.RecordFailure(ctx, entry.ProviderName, entry.Model, classification.Reason)
 		}
 		if classification.Kind == "context_overflow" || classification.Reason == FailoverUnknown {
 			return nil, err

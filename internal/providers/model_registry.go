@@ -1,6 +1,9 @@
 package providers
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 // ModelSpec describes a model's capabilities and cost.
 type ModelSpec struct {
@@ -21,6 +24,17 @@ type ModelCost struct {
 	CacheReadPer1M float64
 }
 
+// IsZero reports whether no rate is set.
+func (c ModelCost) IsZero() bool {
+	return c.InputPer1M == 0 && c.OutputPer1M == 0 && c.CacheReadPer1M == 0
+}
+
+// ModelCostResolver fills in a model's cost from the gateway's pricing catalog.
+// cmd installs one (backed by the OpenRouter-synced usage pricing catalog) so a
+// registered spec's Cost is only structurally zero when nothing knows the price
+// — the registry itself stays free of the pricing stack.
+type ModelCostResolver func(provider, modelID string) *ModelCost
+
 // ModelRegistry resolves model IDs to specs with forward-compatibility support.
 type ModelRegistry interface {
 	Resolve(provider, modelID string) *ModelSpec
@@ -37,6 +51,11 @@ type ForwardCompatResolver interface {
 type InMemoryRegistry struct {
 	models    sync.Map // key: "provider:modelID" → *ModelSpec
 	resolvers sync.Map // key: provider → ForwardCompatResolver
+	// cost resolves a spec's cost from the pricing catalog. See SetCostResolver.
+	cost atomic.Pointer[ModelCostResolver]
+	// costMiss memoizes "the pricing catalog does not know this model" so a
+	// Resolve call does not query the catalog on every agent run.
+	costMiss sync.Map // key: "provider:modelID" → struct{}
 }
 
 // NewInMemoryRegistry creates a registry and seeds it with known models.
@@ -60,11 +79,47 @@ func (r *InMemoryRegistry) RegisterResolver(provider string, resolver ForwardCom
 	r.resolvers.Store(provider, resolver)
 }
 
+// SetCostResolver installs the pricing-catalog hook that fills a spec's Cost
+// when the registered spec has none. A nil resolver is ignored (lite editions
+// have no pricing catalog), leaving ModelSpec.Cost as registered.
+func (r *InMemoryRegistry) SetCostResolver(resolve ModelCostResolver) {
+	if resolve == nil {
+		return
+	}
+	r.cost.Store(&resolve)
+}
+
+// withCost returns spec with the pricing catalog's cost applied when the spec
+// has none. The enriched spec is cached, and a catalog miss is memoized, so the
+// pricing store is consulted at most once per model.
+func (r *InMemoryRegistry) withCost(spec *ModelSpec) *ModelSpec {
+	if spec == nil || !spec.Cost.IsZero() {
+		return spec
+	}
+	resolve := r.cost.Load()
+	if resolve == nil {
+		return spec
+	}
+	key := registryKey(spec.Provider, spec.ID)
+	if _, missed := r.costMiss.Load(key); missed {
+		return spec
+	}
+	cost := (*resolve)(spec.Provider, spec.ID)
+	if cost == nil {
+		r.costMiss.Store(key, struct{}{})
+		return spec
+	}
+	next := *spec
+	next.Cost = *cost
+	r.Register(next)
+	return &next
+}
+
 // Resolve looks up a model: direct hit → forward-compat → nil.
 func (r *InMemoryRegistry) Resolve(provider, modelID string) *ModelSpec {
 	// Direct cache hit
 	if v, ok := r.models.Load(registryKey(provider, modelID)); ok {
-		return v.(*ModelSpec)
+		return r.withCost(v.(*ModelSpec))
 	}
 	// Forward-compat resolver
 	if v, ok := r.resolvers.Load(provider); ok {
@@ -72,7 +127,7 @@ func (r *InMemoryRegistry) Resolve(provider, modelID string) *ModelSpec {
 			if spec := resolver.ResolveForwardCompat(modelID, r); spec != nil {
 				// Cache for next lookup
 				r.Register(*spec)
-				return spec
+				return r.withCost(spec)
 			}
 		}
 	}

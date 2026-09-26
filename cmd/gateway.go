@@ -348,9 +348,16 @@ func runGateway() {
 	defer shutdownRedis(redisClient)
 
 	// Register providers from DB (overrides config providers).
+	// providerLanes is a dedicated LaneManager namespaced "provider:<name>",
+	// separate from the run-scheduler's lanes (main/subagent/team/cron)
+	// created below — it bounds per-provider concurrency
+	// (llm_providers.settings.max_in_flight), an orthogonal concern from
+	// per-channel run scheduling.
+	providerLanes := scheduler.NewLaneManager(nil)
+	defer providerLanes.StopAll()
 	if pgStores.Providers != nil {
 		dbGatewayAddr := loopbackAddr(cfg.Gateway.Host, cfg.Gateway.Port)
-		registerProvidersFromDB(providerRegistry, pgStores.Providers, pgStores.ConfigSecrets, dbGatewayAddr, cfg.Gateway.Token, pgStores.MCP, cfg, modelReg)
+		registerProvidersFromDB(providerRegistry, pgStores.Providers, pgStores.ConfigSecrets, dbGatewayAddr, cfg.Gateway.Token, pgStores.MCP, cfg, modelReg, providerLanes)
 	}
 	slog.Info("model registry initialized", "anthropic_models", len(modelReg.Catalog("anthropic")), "openai_models", len(modelReg.Catalog("openai")))
 
@@ -420,6 +427,11 @@ func runGateway() {
 
 	teamWorkEmbedder := setupMemoryEmbeddings(pgStores, providerRegistry)
 	usageCapSvc := usagecaps.NewService(pgStores.UsageCaps, pgStores.Providers)
+	// ModelSpec.Cost is otherwise structurally zero for the seeded models: price
+	// them from the same OpenRouter-synced catalog tracing and usage caps use.
+	// (Lite has no pricing catalog — CatalogCostResolver returns nil and the
+	// registry keeps the registered cost.)
+	modelReg.SetCostResolver(usagepricing.CatalogCostResolver(pgStores.UsageCaps))
 
 	// Resolve background provider for consolidation + vault enrichment.
 	// Fallback: background.provider → agent.default_provider → first registered provider.

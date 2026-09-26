@@ -269,6 +269,10 @@ func assertModelIDsInOrder(t *testing.T, models []ModelInfo, want []string) {
 
 func TestProvidersHandlerListProviderModelsOpenAICompatAnnotatesKnownModels(t *testing.T) {
 	token := setupProvidersAdminToken(t)
+	// The upstream is on loopback, which provider create/update only allows for
+	// an operator who opted in (GOCLAW_ALLOW_PRIVATE_PROVIDER_URLS); discovery
+	// enforces the same gate, so the test opts in the same way.
+	allowPrivateProviderURLs(t)
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/models" {
 			http.NotFound(w, r)
@@ -332,6 +336,8 @@ func TestProvidersHandlerListProviderModelsOpenAICompatAnnotatesKnownModels(t *t
 
 func TestProvidersHandlerListProviderModelsKimiCodingSendsRequiredUserAgent(t *testing.T) {
 	token := setupProvidersAdminToken(t)
+	// Loopback upstream: see the OpenAI-compat annotation test for the opt-in.
+	allowPrivateProviderURLs(t)
 	var capturedAuth, capturedUserAgent string
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedAuth = r.Header.Get("Authorization")
@@ -514,13 +520,16 @@ func TestProvidersHandlerListProviderModelsOllamaRichMetadata(t *testing.T) {
 func TestProvidersHandlerListProviderModelsOllamaStripsV1Suffix(t *testing.T) {
 	token := setupProvidersAdminToken(t)
 
+	// Only /api/tags is recorded: discovery also POSTs /api/show for the context
+	// window, and this test is about the /v1 suffix being stripped from the
+	// native endpoint.
 	var capturedPath string
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		capturedPath = r.URL.Path
 		if r.URL.Path != "/api/tags" {
 			http.NotFound(w, r)
 			return
 		}
+		capturedPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"models": [{"name": "phi4:latest", "details": {"family": "phi4", "parameter_size": "14B", "quantization_level": "Q4_K_M"}}]}`))
 	}))

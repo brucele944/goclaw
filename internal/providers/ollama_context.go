@@ -24,6 +24,18 @@ const (
 // Returns OllamaDefaultNumCtx on any error so callers never need to handle
 // the error path; the slog warning is emitted here for observability.
 func FetchOllamaModelContext(ctx context.Context, apiBase, model, apiKey string) int {
+	n, err := FetchOllamaModelContextOrError(ctx, apiBase, model, apiKey)
+	if err != nil {
+		return OllamaDefaultNumCtx
+	}
+	return n
+}
+
+// FetchOllamaModelContextOrError is FetchOllamaModelContext with the error
+// preserved, for callers that must distinguish "the endpoint answered 16384"
+// from "the endpoint could not be asked" and leave the value unset instead of
+// substituting the built-in default (model discovery writes NULL for unknown).
+func FetchOllamaModelContextOrError(ctx context.Context, apiBase, model, apiKey string) (int, error) {
 	base := strings.TrimRight(strings.TrimSuffix(strings.TrimRight(apiBase, "/"), "/v1"), "/")
 	url := base + "/api/show"
 
@@ -34,12 +46,12 @@ func FetchOllamaModelContext(ctx context.Context, apiBase, model, apiKey string)
 	payload, err := json.Marshal(map[string]string{"model": model})
 	if err != nil {
 		slog.Warn("ollama.context: encode request failed", "model", model, "error", err, "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
 		slog.Warn("ollama.context: build request failed", "model", model, "error", err, "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if apiKey != "" {
@@ -49,20 +61,20 @@ func FetchOllamaModelContext(ctx context.Context, apiBase, model, apiKey string)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		slog.Warn("ollama.context: request failed", "model", model, "error", err, "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		slog.Warn("ollama.context: non-200 response", "model", model, "status", resp.StatusCode, "body", string(body), "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, fmt.Errorf("ollama /api/show returned %d: %s", resp.StatusCode, string(body))
 	}
 
 	rawBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		slog.Warn("ollama.context: read body failed", "model", model, "error", err, "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, err
 	}
 	slog.Debug("ollama.context: /api/show raw response", "model", model, "response", string(rawBody))
 
@@ -71,7 +83,7 @@ func FetchOllamaModelContext(ctx context.Context, apiBase, model, apiKey string)
 	}
 	if err := json.Unmarshal(rawBody, &result); err != nil {
 		slog.Warn("ollama.context: decode failed", "model", model, "error", fmt.Sprintf("%v", err), "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, err
 	}
 
 	contextLength := extractContextLength(result.ModelInfo)
@@ -79,10 +91,10 @@ func FetchOllamaModelContext(ctx context.Context, apiBase, model, apiKey string)
 
 	if contextLength <= 0 {
 		slog.Debug("ollama.context: context_length not positive, using default", "model", model, "fallback", OllamaDefaultNumCtx)
-		return OllamaDefaultNumCtx
+		return 0, fmt.Errorf("ollama /api/show reported no context_length for %q", model)
 	}
 	slog.Info("ollama.context: resolved context window", "model", model, "num_ctx", contextLength)
-	return contextLength
+	return contextLength, nil
 }
 
 // extractContextLength pulls the context window out of an /api/show model_info map.

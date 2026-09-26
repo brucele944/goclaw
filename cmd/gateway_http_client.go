@@ -81,6 +81,13 @@ func gatewayHTTPDoRaw(method, path string, body any) ([]byte, int, error) {
 }
 
 func gatewayHTTPDoRawWithLimit(method, path string, body any, limit int64) ([]byte, int, error) {
+	return gatewayDoRaw(httpClient, method, path, body, limit)
+}
+
+// gatewayDoRaw is the shared raw request path with a caller-supplied client, for
+// endpoints whose server-side work can legitimately outlive the default client
+// timeout (an upstream model-discovery refresh).
+func gatewayDoRaw(client *http.Client, method, path string, body any, limit int64) ([]byte, int, error) {
 	base := resolveGatewayBaseURL()
 
 	var bodyReader io.Reader
@@ -102,7 +109,7 @@ func gatewayHTTPDoRawWithLimit(method, path string, body any, limit int64) ([]by
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("cannot reach gateway at %s: %w", base, err)
 	}

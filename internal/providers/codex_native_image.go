@@ -218,17 +218,3 @@ func parseNativeImageSSE(data []byte) (*NativeImageResult, error) {
 		Usage:    usage,
 	}, nil
 }
-
-// GenerateImage implements NativeImageProvider for CodexAdapter.
-// Delegates to a temporary CodexProvider using the adapter's credentials.
-func (a *CodexAdapter) GenerateImage(ctx context.Context, req NativeImageRequest) (*NativeImageResult, error) {
-	p := &CodexProvider{
-		name:         "codex",
-		apiBase:      a.apiBase,
-		defaultModel: a.defaultModel,
-		client:       NewDefaultHTTPClient(),
-		retryConfig:  DefaultRetryConfig(),
-		tokenSource:  a.tokenSource,
-	}
-	return p.GenerateImage(ctx, req)
-}

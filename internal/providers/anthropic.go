@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -51,6 +52,8 @@ type AnthropicProvider struct {
 	retryConfig  RetryConfig
 	middlewares  RequestMiddleware // composed middleware chain (nil = no-op)
 	registry     ModelRegistry    // model resolution registry (nil = skip)
+	requestTimeout  time.Duration    // per-provider deadline from settings.timeout_sec (0 = none)
+	concurrencyGate ConcurrencyGate  // per-provider max_in_flight gate (nil = unbounded)
 }
 
 // NewAnthropicProvider creates a new Anthropic provider.
@@ -133,6 +136,17 @@ func (p *AnthropicProvider) middlewareConfig(model string, req ChatRequest) Midd
 }
 
 func (p *AnthropicProvider) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatImpl(ctx, req)
+	})
+}
+
+func (p *AnthropicProvider) chatImpl(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	model := resolveAnthropicModel(req.Model, p.defaultModel, p.registry)
 
 	body := p.buildRequestBody(model, req, false)

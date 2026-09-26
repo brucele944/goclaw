@@ -78,6 +78,17 @@ type PipelineDeps struct {
 	GetCacheTouch    func(sessionKey string) time.Time     // per-session last prune-mutation timestamp
 	MarkCacheTouched func(sessionKey string)               // record mutation timestamp AFTER prune mutates
 
+	// ModelCapabilities supplies the capability resolution for the model THIS
+	// run will request: the provider's declared capabilities with the catalogue
+	// row's per-model override applied, plus that row's declared context window
+	// (Phase 05). Nil = no capability gating on the request path (isolated stage
+	// tests, Lite wiring without a provider declaration).
+	//
+	// ThinkStage consumes it twice: images are stripped from the outgoing
+	// request when the model declares Vision=false, and the request budget is
+	// clamped to ContextWindowClamp when the row declares a window.
+	ModelCapabilities func() providers.ModelCapabilityResolution
+
 	// Memory flush callbacks (MemoryFlushStage, invoked by PruneStage)
 	RunMemoryFlush func(ctx context.Context, state *RunState) error
 

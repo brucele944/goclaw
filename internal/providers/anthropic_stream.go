@@ -9,6 +9,17 @@ import (
 )
 
 func (p *AnthropicProvider) ChatStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatStreamImpl(ctx, req, onChunk)
+	})
+}
+
+func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	model := resolveAnthropicModel(req.Model, p.defaultModel, p.registry)
 	// stripThinking: when true, drop reasoning tokens from user-visible output.
 	// Billing counters (thinkingChars → Usage.ThinkingTokens) and tool-passback

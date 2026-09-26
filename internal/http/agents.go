@@ -519,6 +519,18 @@ func (h *AgentsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		validationAgent.ModelFallback = rawFallback
 		allowed["model_fallback"] = rawFallback
 	}
+	if roles, ok := allowed["model_roles"]; ok {
+		rawRoles, err := marshalJSONRaw(roles)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, protocol.ErrInvalidRequest, i18n.T(locale, i18n.MsgInvalidJSON))
+			return
+		}
+		if err := validateAgentModelRoles(rawRoles); err != nil {
+			writeError(w, http.StatusBadRequest, protocol.ErrInvalidRequest, i18n.T(locale, i18n.MsgInvalidRequest, err.Error()))
+			return
+		}
+		allowed["model_roles"] = rawRoles
+	}
 
 	if err := validateChatGPTOAuthAgentRouting(
 		r.Context(),
@@ -579,6 +591,32 @@ func validateAgentModelFallback(raw json.RawMessage) error {
 	for _, candidate := range normalized.Candidates {
 		if candidate.Provider == "" || candidate.Model == "" {
 			return fmt.Errorf("fallback candidates require provider and model")
+		}
+	}
+	return nil
+}
+
+// validateAgentModelRoles checks a model_roles payload: an object of
+// role → "provider/model". Invalid role names or values are rejected outright
+// (unlike the read path, which drops them) so an operator sees the typo at
+// write time instead of silently losing a role.
+func validateAgentModelRoles(raw json.RawMessage) error {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil
+	}
+	var roles map[string]string
+	if err := json.Unmarshal(raw, &roles); err != nil {
+		return fmt.Errorf("invalid model_roles")
+	}
+	if len(roles) > store.ModelRolesMaxEntries {
+		return fmt.Errorf("model_roles allows at most %d roles", store.ModelRolesMaxEntries)
+	}
+	for name, value := range roles {
+		if !store.ValidModelRoleName(name) {
+			return fmt.Errorf("invalid model role name %q", name)
+		}
+		if _, _, ok := store.ParseModelRoleTarget(value); !ok {
+			return fmt.Errorf("model role %q must be \"provider/model\"", name)
 		}
 	}
 	return nil

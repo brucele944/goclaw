@@ -38,6 +38,24 @@ func NewThinkStage(deps *PipelineDeps) *ThinkStage {
 func (s *ThinkStage) Name() string        { return "think" }
 func (s *ThinkStage) Result() StageResult { return s.result }
 
+// capabilityResolution returns the capability state for the model this run will
+// request. The zero value (ProviderDeclared=false) means the pipeline was built
+// without the callback — consumers then apply no capability gating, which is
+// "undeclared", not "unsupported".
+func (s *ThinkStage) capabilityResolution() providers.ModelCapabilityResolution {
+	if s.deps.ModelCapabilities == nil {
+		return providers.ModelCapabilityResolution{}
+	}
+	return s.deps.ModelCapabilities()
+}
+
+// visionDisabled reports whether the effective model declares that it cannot
+// accept image input.
+func (s *ThinkStage) visionDisabled() bool {
+	res := s.capabilityResolution()
+	return res.ProviderDeclared && !res.Capabilities.Vision
+}
+
 // Execute builds tools, calls LLM, handles truncation, sets flow control.
 func (s *ThinkStage) Execute(ctx context.Context, state *RunState) error {
 	s.result = Continue

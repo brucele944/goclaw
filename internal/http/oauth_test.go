@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -21,6 +22,11 @@ import (
 
 type mockProviderStore struct {
 	providers map[string]*store.LLMProviderData
+	// lastUpdates records the map UpdateProvider received, so a test can assert
+	// which keys survived the handler's allowlist.
+	lastUpdates map[string]any
+	// health is the in-memory provider_health table (provider rework, phase 5).
+	health map[uuid.UUID]*store.ProviderHealth
 }
 
 func newMockProviderStore() *mockProviderStore {
@@ -60,8 +66,18 @@ func (m *mockProviderStore) ListProviders(_ context.Context) ([]store.LLMProvide
 }
 
 func (m *mockProviderStore) UpdateProvider(_ context.Context, id uuid.UUID, updates map[string]any) error {
+	m.lastUpdates = map[string]any{}
+	for k, v := range updates {
+		m.lastUpdates[k] = v
+	}
 	for _, p := range m.providers {
 		if p.ID == id {
+			if v, ok := updates["wire_api"]; ok {
+				p.WireAPI = v.(string)
+			}
+			if v, ok := updates["auth_kind"]; ok {
+				p.AuthKind = v.(string)
+			}
 			if v, ok := updates["api_key"]; ok {
 				p.APIKey = v.(string)
 			}
@@ -91,6 +107,80 @@ func (m *mockProviderStore) DeleteProvider(_ context.Context, id uuid.UUID) erro
 		}
 	}
 	return fmt.Errorf("not found")
+}
+
+// Per-model catalog + quirks (provider rework, phase 1): the mock tracks
+// providers only, so it declares no models and no quirks.
+func (m *mockProviderStore) ListModels(_ context.Context, providerID uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+
+func (m *mockProviderStore) UpsertModels(_ context.Context, providerID uuid.UUID, models []store.LLMModel) error {
+	return nil
+}
+
+func (m *mockProviderStore) SetModelEnabled(_ context.Context, providerID uuid.UUID, modelID string, enabled bool) error {
+	return nil
+}
+
+func (m *mockProviderStore) ListQuirks(_ context.Context, wireAPI string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): the mock keeps the durable
+// cooldown/error state in memory so handler tests can drive the health surface.
+func (m *mockProviderStore) healthRow(providerID uuid.UUID) *store.ProviderHealth {
+	if m.health == nil {
+		m.health = map[uuid.UUID]*store.ProviderHealth{}
+	}
+	row, ok := m.health[providerID]
+	if !ok {
+		row = store.NewProviderHealth(providerID)
+		m.health[providerID] = row
+	}
+	return row
+}
+
+func (m *mockProviderStore) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	row, ok := m.health[providerID]
+	if !ok {
+		return store.NewProviderHealth(providerID), nil
+	}
+	out := *row
+	return &out, nil
+}
+
+func (m *mockProviderStore) RecordProviderFailure(_ context.Context, providerID uuid.UUID, errorClass string, cooldownUntil time.Time) error {
+	row := m.healthRow(providerID)
+	class := store.NormalizeErrorClass(errorClass)
+	until := cooldownUntil
+	row.ConsecutiveFailures++
+	row.CooldownUntil = &until
+	row.LastErrorClass = class
+	row.UpdatedAt = time.Now().UTC()
+	row.ErrorCounts[class]++
+	return nil
+}
+
+func (m *mockProviderStore) RecordProviderSuccess(_ context.Context, providerID uuid.UUID) error {
+	row := m.healthRow(providerID)
+	row.ConsecutiveFailures = 0
+	row.CooldownUntil = nil
+	row.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (m *mockProviderStore) MarkProviderProbe(_ context.Context, providerID uuid.UUID) error {
+	row := m.healthRow(providerID)
+	now := time.Now().UTC()
+	row.LastProbeAt = &now
+	row.UpdatedAt = now
+	return nil
+}
+
+func (m *mockProviderStore) ResetProviderHealth(_ context.Context, providerID uuid.UUID) error {
+	delete(m.health, providerID)
+	return nil
 }
 
 func (m *mockProviderStore) ListAllProviders(_ context.Context) ([]store.LLMProviderData, error) {

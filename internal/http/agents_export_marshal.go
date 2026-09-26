@@ -125,6 +125,7 @@ func marshalAgentConfig(ag *store.AgentData) ([]byte, error) {
 		WorkspaceSharing    json.RawMessage `json:"workspace_sharing,omitempty"`
 		ChatGPTOAuthRouting json.RawMessage `json:"chatgpt_oauth_routing,omitempty"`
 		ModelFallback       json.RawMessage `json:"model_fallback,omitempty"`
+		ModelRoles          json.RawMessage `json:"model_roles,omitempty"`
 		ShellDenyGroups     json.RawMessage `json:"shell_deny_groups,omitempty"`
 		KGDedupConfig       json.RawMessage `json:"kg_dedup_config,omitempty"`
 	}
@@ -156,6 +157,7 @@ func marshalAgentConfig(ag *store.AgentData) ([]byte, error) {
 		WorkspaceSharing:    ag.WorkspaceSharing,
 		ChatGPTOAuthRouting: canonicalizeChatGPTOAuthRoutingForResponse(ag.ChatGPTOAuthRouting),
 		ModelFallback:       ag.ModelFallback,
+		ModelRoles:          ag.ModelRoles,
 		ShellDenyGroups:     ag.ShellDenyGroups,
 		KGDedupConfig:       ag.KGDedupConfig,
 	}, "", "  ")

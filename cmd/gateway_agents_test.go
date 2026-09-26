@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -176,6 +177,36 @@ func (s *embeddingProviderStoreStub) UpdateProvider(context.Context, uuid.UUID, 
 	return nil
 }
 func (s *embeddingProviderStoreStub) DeleteProvider(context.Context, uuid.UUID) error { return nil }
+
+// Per-model catalog + quirks (provider rework, phase 1): the stub declares no models.
+func (s *embeddingProviderStoreStub) ListModels(context.Context, uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+func (s *embeddingProviderStoreStub) UpsertModels(context.Context, uuid.UUID, []store.LLMModel) error {
+	return nil
+}
+func (s *embeddingProviderStoreStub) SetModelEnabled(context.Context, uuid.UUID, string, bool) error {
+	return nil
+}
+func (s *embeddingProviderStoreStub) ListQuirks(context.Context, string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): embedding resolution never touches
+// cooldown state, so the stubs report a provider that never failed.
+func (s *embeddingProviderStoreStub) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (s *embeddingProviderStoreStub) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (s *embeddingProviderStoreStub) RecordProviderSuccess(context.Context, uuid.UUID) error {
+	return nil
+}
+func (s *embeddingProviderStoreStub) MarkProviderProbe(context.Context, uuid.UUID) error { return nil }
+func (s *embeddingProviderStoreStub) ResetProviderHealth(context.Context, uuid.UUID) error {
+	return nil
+}
 
 func TestResolveEmbeddingProviderAutoDetectUsesMasterTenantOnly(t *testing.T) {
 	embeddingSettings := json.RawMessage(`{"embedding":{"enabled":true}}`)

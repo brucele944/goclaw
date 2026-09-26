@@ -25,6 +25,8 @@ func registerAllMethods(server *gateway.Server, agents *agent.Router, sessStore 
 	chatMethods.SetAudioManager(audioMgr) // Wire TTS auto-apply for WS responses
 	chatMethods.SetUsageCapService(usageCapSvc)
 	chatMethods.SetTeamWorkClassification(agentStore, teamStore, agentLinkStore, teamWorkEmbedder)
+	// Resolve chat.send `provider` (per-request override) against the live registry.
+	chatMethods.SetProviderRegistry(providerReg)
 	chatMethods.Register(router)
 	methods.NewAgentsMethods(agents, cfg, cfgPath, workspace, agentStore, contextFileInterceptor, msgBus).Register(router)
 	methods.NewSessionsMethods(sessStore, msgBus, cfg).Register(router)

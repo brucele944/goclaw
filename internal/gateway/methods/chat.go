@@ -3,6 +3,7 @@ package methods
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -41,6 +42,9 @@ type ChatMethods struct {
 	teamStore        store.TeamStore
 	linkStore        store.AgentLinkStore
 	teamWorkEmbedder memory.EmbeddingProvider
+	// providerReg resolves a `provider` name in chat.send to a live provider for
+	// the per-request override (nil = provider pinning unavailable).
+	providerReg *providers.Registry
 }
 
 func NewChatMethods(agents *agent.Router, sess store.SessionStore, cfg *config.Config, rl *gateway.RateLimiter, eventBus bus.EventPublisher) *ChatMethods {
@@ -68,6 +72,14 @@ func (m *ChatMethods) SetTeamWorkClassification(agentStore store.AgentStore, tea
 // SetPostTurnProcessor sets the post-turn processor for team task dispatch.
 func (m *ChatMethods) SetPostTurnProcessor(pt tools.PostTurnProcessor) {
 	m.postTurn = pt
+}
+
+// SetProviderRegistry wires the provider registry used to resolve the optional
+// `provider` field of chat.send into a live provider for the per-request
+// override. Without it, chat.send can still override the model but cannot pin a
+// provider (the request is rejected as unknown).
+func (m *ChatMethods) SetProviderRegistry(reg *providers.Registry) {
+	m.providerReg = reg
 }
 
 // Register adds chat methods to the router.
@@ -129,6 +141,12 @@ type chatSendParams struct {
 	SessionKey string          `json:"sessionKey"`
 	Stream     bool            `json:"stream"`
 	Media      json.RawMessage `json:"media,omitempty"` // []string (legacy) or []chatMediaItem
+	// Per-request model/provider override. When Model is set the run uses that
+	// model instead of the agent's model; Provider (optional, a provider name)
+	// additionally pins the provider. Explicit overrides bypass the model
+	// fallback chain — same semantics as heartbeat/cron per-run overrides.
+	Model    string `json:"model,omitempty"`
+	Provider string `json:"provider,omitempty"`
 }
 
 // parseMedia handles both legacy string paths and new {path,filename} objects.
@@ -308,6 +326,30 @@ func (m *ChatMethods) applyTeamWorkGate(ctx context.Context, params chatSendPara
 	return out
 }
 
+// resolveChatProviderOverride resolves chat.send's optional `provider` name into
+// a live provider for the per-request override (same shape as heartbeat/cron
+// per-run overrides: RunRequest.ProviderOverride). Absent `provider` = no pin.
+//
+// A named provider that is not in the registry is an error: the caller asked for
+// a specific provider, and silently running on another one would misroute the
+// request. A missing registry (not wired) is only logged — the model override
+// still applies.
+func (m *ChatMethods) resolveChatProviderOverride(ctx context.Context, params chatSendParams) (providers.Provider, error) {
+	if params.Provider == "" {
+		return nil, nil
+	}
+	if m.providerReg == nil {
+		slog.Warn("chat.send provider override ignored: provider registry not wired",
+			"provider", params.Provider, "agent", params.AgentID)
+		return nil, nil
+	}
+	prov, err := m.providerReg.GetForTenant(store.TenantIDFromContext(ctx), params.Provider)
+	if err != nil {
+		return nil, errors.New(i18n.T(store.LocaleFromContext(ctx), i18n.MsgProviderNotFound, params.Provider))
+	}
+	return prov, nil
+}
+
 func (m *ChatMethods) dispatchChatSends(requests []chatSendRequest) {
 	if len(requests) == 0 {
 		return
@@ -318,6 +360,16 @@ func (m *ChatMethods) dispatchChatSends(requests []chatSendRequest) {
 	userID := primary.userID
 	loop := primary.loop
 	hasMedia := len(params.parseMedia()) > 0
+
+	// Per-request model/provider override (chat.send `model`/`provider`).
+	// Resolved before any run state is built so a bad provider name fails the
+	// request instead of starting a run on the wrong provider. An explicit
+	// override bypasses the fallback chain (heartbeat semantics).
+	providerOverride, err := m.resolveChatProviderOverride(primary.ctx, params)
+	if err != nil {
+		sendChatError(requests, protocol.ErrInvalidRequest, err.Error())
+		return
+	}
 
 	// Mid-run injection: debounce rapid follow-ups into a single injected message.
 	if !hasMedia && m.agents.IsSessionBusy(sessionKey) {
@@ -404,6 +456,10 @@ func (m *ChatMethods) dispatchChatSends(requests []chatSendRequest) {
 			Stream:            params.Stream,
 			TeamWorkDirective: gate.directive,
 			InjectCh:          injectCh,
+			// Per-request override (chat.send `model`/`provider`): explicit wins
+			// over agent role and agent primary, and bypasses the fallback chain.
+			ModelOverride:    params.Model,
+			ProviderOverride: providerOverride,
 			// Wire trace ID back to the active run so force-abort can mark the
 			// correct trace as cancelled if the goroutine does not exit within 3s.
 			OnTraceCreated: func(traceID uuid.UUID) {

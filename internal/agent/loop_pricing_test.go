@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nextlevelbuilder/goclaw/internal/config"
@@ -181,5 +182,37 @@ func (s *tracePricingProviderStore) UpdateProvider(context.Context, uuid.UUID, m
 	return nil
 }
 func (s *tracePricingProviderStore) DeleteProvider(context.Context, uuid.UUID) error {
+	return nil
+}
+
+// Per-model catalog + quirks (provider rework, phase 1). The fake declares no
+// models and no quirks, which is what "provider has no models" means in the real store.
+func (s *tracePricingProviderStore) ListModels(context.Context, uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+func (s *tracePricingProviderStore) UpsertModels(context.Context, uuid.UUID, []store.LLMModel) error {
+	return nil
+}
+func (s *tracePricingProviderStore) SetModelEnabled(context.Context, uuid.UUID, string, bool) error {
+	return nil
+}
+func (s *tracePricingProviderStore) ListQuirks(context.Context, string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): this fake feeds usage/pricing
+// traces, which never touch cooldown state, so the stubs report a provider that
+// never failed and accept writes as no-ops.
+func (s *tracePricingProviderStore) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (s *tracePricingProviderStore) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (s *tracePricingProviderStore) RecordProviderSuccess(context.Context, uuid.UUID) error {
+	return nil
+}
+func (s *tracePricingProviderStore) MarkProviderProbe(context.Context, uuid.UUID) error { return nil }
+func (s *tracePricingProviderStore) ResetProviderHealth(context.Context, uuid.UUID) error {
 	return nil
 }

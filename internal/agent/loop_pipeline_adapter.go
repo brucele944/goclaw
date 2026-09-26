@@ -23,18 +23,8 @@ func (l *Loop) runViaPipeline(ctx context.Context, req RunRequest) (*RunResult, 
 	// Resolve the effective model + provider BEFORE building deps so the pre-call
 	// budget estimate reserves reasoning output for the model that will actually
 	// run (a ModelOverride can change the reasoning capability, hence the bump).
-	model := l.model
-	if req.ModelOverride != "" {
-		model = req.ModelOverride
-	}
-	provider := l.provider
-	if req.ProviderOverride != nil {
-		provider = req.ProviderOverride
-	} else if req.ModelOverride != "" {
-		if fallback, ok := provider.(interface{ PrimaryProvider() providers.Provider }); ok {
-			provider = fallback.PrimaryProvider()
-		}
-	}
+	model := l.effectiveModel(&req)
+	provider := l.runProvider(&req)
 
 	deps := l.buildPipelineDeps(&req, bridgeRS)
 
@@ -139,6 +129,13 @@ func (l *Loop) buildPipelineDeps(req *RunRequest, bridgeRS *runState) pipeline.P
 		},
 		GetCacheTouch:    l.cacheTouchAt,
 		MarkCacheTouched: l.markCacheTouched,
+
+		// Per-model capability consumption (Phase 05). Resolved from the run's
+		// effective provider+model, so an override on a catalogue row reaches the
+		// outgoing request (tools, images, stream-with-tools, cache breakpoints).
+		ModelCapabilities: func() providers.ModelCapabilityResolution {
+			return l.resolveCapabilities(req)
+		},
 
 		// Memory flush
 		RunMemoryFlush: cb.runMemoryFlush,

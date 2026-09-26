@@ -82,6 +82,7 @@ type AgentData struct {
 	WorkspaceSharing    json.RawMessage `json:"workspace_sharing,omitempty" db:"workspace_sharing"`
 	ChatGPTOAuthRouting json.RawMessage `json:"chatgpt_oauth_routing,omitempty" db:"chatgpt_oauth_routing"`
 	ModelFallback       json.RawMessage `json:"model_fallback,omitempty" db:"model_fallback"`
+	ModelRoles          json.RawMessage `json:"model_roles,omitempty" db:"model_roles"`
 	ShellDenyGroups     json.RawMessage `json:"shell_deny_groups,omitempty" db:"shell_deny_groups"`
 	KGDedupConfig       json.RawMessage `json:"kg_dedup_config,omitempty" db:"kg_dedup_config"`
 }
@@ -572,6 +573,88 @@ func NormalizeModelFallbackConfig(cfg *ModelFallbackConfig) *ModelFallbackConfig
 	}
 	if out.MaxAttempts < 0 {
 		out.MaxAttempts = 0
+	}
+	return out
+}
+
+// ModelRolesKeyMaxLen bounds role names. Role names are operator-authored config,
+// not user input, but a bound keeps a typo from bloating every agent read.
+const ModelRolesKeyMaxLen = 32
+
+// ModelRolesMaxEntries bounds how many roles a single agent may declare.
+const ModelRolesMaxEntries = 32
+
+// ModelRole is the parsed value of one model_roles entry: the provider/model pair
+// that serves a role (e.g. {"summarizer":"anthropic/claude-haiku-4-5"}).
+type ModelRole struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+}
+
+// ParseModelRoleTarget splits a `provider/model` role value (the on-disk form).
+// The split is on the FIRST slash so model ids that themselves contain slashes
+// (e.g. "together/meta-llama/Llama-3-70b") keep their tail intact. Returns ok=false
+// when either half is empty.
+func ParseModelRoleTarget(value string) (provider, model string, ok bool) {
+	provider, model, found := strings.Cut(strings.TrimSpace(value), "/")
+	provider = strings.TrimSpace(provider)
+	model = strings.TrimSpace(model)
+	if !found || provider == "" || model == "" {
+		return "", "", false
+	}
+	return provider, model, true
+}
+
+// validModelRoleName reports whether a role name is safe to use verbatim.
+// Strict charset so role names can be used as log fields and map keys without
+// quoting surprises; unicode role names are intentionally rejected.
+func validModelRoleName(name string) bool {
+	if name == "" || len(name) > ModelRolesKeyMaxLen {
+		return false
+	}
+	for _, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+		case r == '_', r == '-', r == '.':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// ValidModelRoleName exposes validModelRoleName so write paths (HTTP update
+// validation) can reject a malformed role name instead of dropping it silently.
+func ValidModelRoleName(name string) bool { return validModelRoleName(name) }
+
+// ParseModelRoles returns the per-agent role→provider/model map, or nil when unset.
+// Malformed entries (unknown JSON shape, empty half, invalid or oversized role
+// name) are dropped rather than failing the whole map: a single bad role must not
+// take an agent offline.
+func (a *AgentData) ParseModelRoles() map[string]ModelRole {
+	if a == nil || len(a.ModelRoles) <= 2 {
+		return nil
+	}
+	var raw map[string]string
+	if json.Unmarshal(a.ModelRoles, &raw) != nil {
+		return nil
+	}
+	out := make(map[string]ModelRole, len(raw))
+	for name, value := range raw {
+		if len(out) >= ModelRolesMaxEntries {
+			break
+		}
+		if !validModelRoleName(name) {
+			continue
+		}
+		provider, model, ok := ParseModelRoleTarget(value)
+		if !ok {
+			continue
+		}
+		out[name] = ModelRole{Provider: provider, Model: model}
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

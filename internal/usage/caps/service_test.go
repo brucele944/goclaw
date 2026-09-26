@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
@@ -523,5 +524,32 @@ func (s *fakeProviderStore) UpdateProvider(context.Context, uuid.UUID, map[strin
 	return nil
 }
 func (s *fakeProviderStore) DeleteProvider(context.Context, uuid.UUID) error { return nil }
+
+// Per-model catalog + quirks (provider rework, phase 1): the fake declares no models.
+func (s *fakeProviderStore) ListModels(context.Context, uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+func (s *fakeProviderStore) UpsertModels(context.Context, uuid.UUID, []store.LLMModel) error {
+	return nil
+}
+func (s *fakeProviderStore) SetModelEnabled(context.Context, uuid.UUID, string, bool) error {
+	return nil
+}
+func (s *fakeProviderStore) ListQuirks(context.Context, string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): this fake feeds the usage-caps
+// reservation path, which does not touch cooldown state, so the stubs report a
+// provider that never failed and accept writes as no-ops.
+func (s *fakeProviderStore) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (s *fakeProviderStore) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (s *fakeProviderStore) RecordProviderSuccess(context.Context, uuid.UUID) error { return nil }
+func (s *fakeProviderStore) MarkProviderProbe(context.Context, uuid.UUID) error     { return nil }
+func (s *fakeProviderStore) ResetProviderHealth(context.Context, uuid.UUID) error   { return nil }
 
 func int64Ptr(v int64) *int64 { return &v }

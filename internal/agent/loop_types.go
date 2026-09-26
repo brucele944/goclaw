@@ -91,6 +91,10 @@ type Loop struct {
 	provider         providers.Provider
 	model            string
 	modelRegistry    providers.ModelRegistry // resolves per-model context window at run time (nil = use static contextWindow)
+	// modelRoles is the resolved agents.model_roles map (nil = no roles declared).
+	// A run that requests a role via ctx (WithModelRole) uses the role's provider
+	// and model instead of provider/model above — see Loop.Run.
+	modelRoles map[string]ModelRoleTarget
 	contextWindow    int
 	maxTokens        int // max output tokens per LLM call (0 = default 8192)
 	maxIterations    int
@@ -330,6 +334,12 @@ type LoopConfig struct {
 	// window lookup. Nil = fall back to static LoopConfig.ContextWindow.
 	ModelRegistry providers.ModelRegistry
 
+	// ModelRoles is the resolved agents.model_roles map (role → provider/model).
+	// A run that requests a role (agent.WithModelRole) uses the role's
+	// provider/model instead of Provider/Model above. Resolved by
+	// NewManagedResolver so provider names are already registry entries.
+	ModelRoles map[string]ModelRoleTarget
+
 	Bus             bus.EventPublisher
 	DomainBus       eventbus.DomainEventBus // V3 domain event bus for consolidation pipeline
 	HookDispatcher  hooks.Dispatcher        // lifecycle hook dispatcher (nil = noop)
@@ -530,6 +540,7 @@ func NewLoop(cfg LoopConfig) *Loop {
 		provider:               cfg.Provider,
 		model:                  cfg.Model,
 		modelRegistry:          cfg.ModelRegistry,
+		modelRoles:             cfg.ModelRoles,
 		contextWindow:          cfg.ContextWindow,
 		maxTokens:              cfg.MaxTokens,
 		maxIterations:          cfg.MaxIterations,

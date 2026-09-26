@@ -83,6 +83,36 @@ func (m *mockProviderStore) DeleteProvider(_ context.Context, id uuid.UUID) erro
 	return fmt.Errorf("not found")
 }
 
+// Per-model catalog + quirks (provider rework, phase 1): the mock tracks
+// providers only, so it declares no models and no quirks.
+func (m *mockProviderStore) ListModels(_ context.Context, providerID uuid.UUID) ([]store.LLMModel, error) {
+	return nil, nil
+}
+
+func (m *mockProviderStore) UpsertModels(_ context.Context, providerID uuid.UUID, models []store.LLMModel) error {
+	return nil
+}
+
+func (m *mockProviderStore) SetModelEnabled(_ context.Context, providerID uuid.UUID, modelID string, enabled bool) error {
+	return nil
+}
+
+func (m *mockProviderStore) ListQuirks(_ context.Context, wireAPI string) ([]store.ProviderQuirk, error) {
+	return nil, nil
+}
+
+// Provider health (provider rework, phase 5): the OAuth token-source tests never
+// touch cooldown state, so the stubs report a provider that never failed.
+func (m *mockProviderStore) GetProviderHealth(_ context.Context, providerID uuid.UUID) (*store.ProviderHealth, error) {
+	return store.NewProviderHealth(providerID), nil
+}
+func (m *mockProviderStore) RecordProviderFailure(context.Context, uuid.UUID, string, time.Time) error {
+	return nil
+}
+func (m *mockProviderStore) RecordProviderSuccess(context.Context, uuid.UUID) error { return nil }
+func (m *mockProviderStore) MarkProviderProbe(context.Context, uuid.UUID) error     { return nil }
+func (m *mockProviderStore) ResetProviderHealth(context.Context, uuid.UUID) error   { return nil }
+
 func (m *mockProviderStore) ListAllProviders(_ context.Context) ([]store.LLMProviderData, error) {
 	var out []store.LLMProviderData
 	for _, p := range m.providers {

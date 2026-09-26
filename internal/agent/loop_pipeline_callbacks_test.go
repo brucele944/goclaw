@@ -247,12 +247,22 @@ func TestPromptCacheOptionsHelpers(t *testing.T) {
 	}
 }
 
-func TestSupportsPromptCacheParams(t *testing.T) {
-	if !supportsPromptCacheParams(providers.NewCodexProvider("codex", nil, "", "")) {
-		t.Fatal("CodexProvider should support prompt cache params")
+// Phase 5 replaced the provider-type switch with a capability/compat decision:
+// CacheBreakpointsSupported reads the provider's declared capabilities (a Codex
+// provider declares CacheControl=true) and the resolved compat object, never the
+// Go type of the transport.
+func TestCacheBreakpointsSupported(t *testing.T) {
+	codex := providers.NewCodexProvider("codex", nil, "", "")
+	if !providers.CacheBreakpointsSupported(codex, codex.Capabilities()) {
+		t.Fatal("CodexProvider declares CacheControl and should get prompt cache params")
 	}
-	if supportsPromptCacheParams(finalThinkingStreamProvider{}) {
-		t.Fatal("generic provider should not support prompt cache params")
+	plain := finalThinkingStreamProvider{}
+	if providers.CacheBreakpointsSupported(plain, providers.ProviderCapabilities{}) {
+		t.Fatal("a provider that declares no cache capability must not get prompt cache params")
+	}
+	cacheDeclared := providers.ProviderCapabilities{CacheControl: true}
+	if !providers.CacheBreakpointsSupported(plain, cacheDeclared) {
+		t.Fatal("a declared CacheControl capability must get prompt cache params even for an unknown transport type")
 	}
 }
 

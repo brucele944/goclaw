@@ -369,6 +369,11 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 	return func(ctx context.Context, state *pipeline.RunState, chatReq providers.ChatRequest) (*providers.ChatResponse, error) {
 		provider := state.Provider
 		model := state.Model
+		// Per-model capability resolution for THIS run (phase 5): the provider's
+		// declared capabilities with the catalogue row's override applied. Read
+		// once — the decisions below (stream-with-tools, cache breakpoints) all
+		// key off the same resolution.
+		capabilities := l.capabilitiesFor(provider, model)
 
 		// Issue 3: surface transient provider retries to the user ("Provider busy,
 		// retrying...") instead of a silent failure ending in a 💔 reaction. The
@@ -419,9 +424,19 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 		if tenantID != uuid.Nil {
 			chatReq.Options[providers.OptTenantID] = tenantID.String()
 		}
-		if supportsPromptCacheParams(provider) {
+		// Cache breakpoints (phase 5): driven by the effective capability flag
+		// and the phase-4 resolved compat object, not by the provider's Go type.
+		// A wire the compat resolver declares cache-capable gets the parameters
+		// even when its provider-level flags say nothing.
+		if providers.CacheBreakpointsSupported(provider, capabilities.Capabilities) {
 			setDefaultPromptCacheOptions(chatReq.Options, tenantID, l.agentUUID, provider.Name(), req.SessionKey)
 		}
+
+		// Stream-vs-non-stream decision (phase 5): a model whose catalogue row
+		// declares stream_with_tools=false must not stream while it carries
+		// tools. Today's DashScope behaviour, now declared per model instead of
+		// sniffed from the provider name/type.
+		stream := shouldStreamWithTools(req.Stream, len(chatReq.Tools) > 0, capabilities)
 
 		// Reasoning decision: resolve effort level for thinking models (o3, DeepSeek-R1, Kimi).
 		reasoningDecision := providers.ResolveReasoningDecision(
@@ -516,7 +531,7 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 						}
 					}, nil
 				}
-				if req.Stream {
+				if stream {
 					return fallbackProvider.ChatStreamWithHook(ctx, request, emitChunk, before)
 				}
 				return fallbackProvider.ChatWithHook(ctx, request, before)
@@ -528,7 +543,7 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 			}
 			var callResp *providers.ChatResponse
 			var callErr error
-			if req.Stream {
+			if stream {
 				streamed := false
 				callResp, callErr = provider.ChatStream(ctx, request, func(chunk providers.StreamChunk) {
 					if chunk.Content != "" || chunk.Thinking != "" || len(chunk.Images) > 0 {
@@ -607,7 +622,7 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 				}())
 		}
 
-		if req.Stream && err == nil && resp != nil && resp.Thinking != "" && !streamThinkingEmitted {
+		if stream && err == nil && resp != nil && resp.Thinking != "" && !streamThinkingEmitted {
 			emitRun(AgentEvent{
 				Type:    protocol.ChatEventThinking,
 				AgentID: l.id,
@@ -617,7 +632,7 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 		}
 
 		// Non-streaming: emit content events matching v2 behavior (channels need these).
-		if !req.Stream && err == nil && resp != nil {
+		if !stream && err == nil && resp != nil {
 			if resp.Thinking != "" {
 				emitRun(AgentEvent{
 					Type:    protocol.ChatEventThinking,
@@ -846,13 +861,21 @@ func (l *Loop) reserveLLMUsageFor(ctx context.Context, req *RunRequest, iteratio
 	})
 }
 
-func supportsPromptCacheParams(provider providers.Provider) bool {
-	switch provider.(type) {
-	case *providers.CodexProvider, *providers.ChatGPTOAuthRouter:
-		return true
-	default:
+// shouldStreamWithTools decides whether this request may use the streaming
+// transport. Requested=false stays non-stream (the caller asked for it). A
+// request that carries tools is downgraded to the non-stream path when the
+// model's capabilities declare stream_with_tools=false — the upstream rejects
+// (or corrupts) tools+stream for such a model, which is why the flag exists
+// rather than a blanket Streaming=false: the same model still streams when the
+// request has no tools.
+func shouldStreamWithTools(requested, hasTools bool, caps providers.ModelCapabilityResolution) bool {
+	if !requested {
 		return false
 	}
+	if hasTools && caps.ProviderDeclared && !caps.Capabilities.StreamWithTools {
+		return false
+	}
+	return true
 }
 
 func setDefaultPromptCacheOptions(opts map[string]any, tenantID, agentID uuid.UUID, providerName, sessionKey string) {

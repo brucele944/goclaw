@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/discovery"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 	"github.com/nextlevelbuilder/goclaw/internal/tools"
 )
@@ -40,6 +41,99 @@ func (l *Loop) toolVisibleForChannel(name, channelType string, telegramManagerPe
 	return slices.Contains(ca.RequiredChannelTypes(), channelType)
 }
 
+// modelCapabilityLookup is the request path's per-model capability source: it
+// answers what a catalogue row (llm_models.capabilities) declares for a
+// (provider, model) pair. The default is the shipped discovery snapshot — the
+// same table the catalogue seeds into llm_models rows — so a seeded row and the
+// capability the request path applies can never disagree. A deployment that
+// reads operator-edited rows installs its own store-backed lookup here, exactly
+// like ModelCostResolver on the registry.
+var modelCapabilityLookup providers.ModelCapabilityLookup = bundledModelCapabilityLookup
+
+// bundledModelCapabilityLookup adapts the shipped snapshot to the lookup shape.
+// The snapshot is keyed by provider type (never by the user-chosen name), which
+// is why the lookup carries the type as well as the name.
+func bundledModelCapabilityLookup(_, providerType, model string) (providers.ModelCapabilityOverride, bool) {
+	return discovery.BundledModelCapabilities(providerType, model)
+}
+
+// runProvider returns the provider THIS run will call: ProviderOverride wins,
+// otherwise a ModelOverride unwraps the fallback wrapper to its primary so
+// capability probing sees the transport that actually serves the request.
+func (l *Loop) runProvider(req *RunRequest) providers.Provider {
+	if req != nil && req.ProviderOverride != nil {
+		return req.ProviderOverride
+	}
+	provider := l.provider
+	if req != nil && req.ModelOverride != "" {
+		if fallback, ok := provider.(interface{ PrimaryProvider() providers.Provider }); ok {
+			provider = fallback.PrimaryProvider()
+		}
+	}
+	return provider
+}
+
+// effectiveModel returns the model THIS run will request: ModelOverride wins
+// over the agent's configured model.
+func (l *Loop) effectiveModel(req *RunRequest) string {
+	if req != nil && req.ModelOverride != "" {
+		return req.ModelOverride
+	}
+	return l.model
+}
+
+// resolveCapabilities returns the capabilities that govern this run's request:
+// the provider's declared capabilities overlaid with the catalogue row's
+// per-model override, plus the row's declared context window.
+//
+// ProviderDeclared is false when the transport does not implement
+// CapabilitiesAware (an unknown/legacy provider): consumers must then apply no
+// gating at all — "undeclared" is not "unsupported".
+func (l *Loop) resolveCapabilities(req *RunRequest) providers.ModelCapabilityResolution {
+	return l.capabilitiesFor(l.runProvider(req), l.effectiveModel(req))
+}
+
+// capabilitiesFor resolves the same override for an explicit provider+model pair
+// — the request path uses it with the provider the pipeline will actually call
+// (RunState.Provider), which an override or a routed run can differ from
+// l.provider.
+func (l *Loop) capabilitiesFor(provider providers.Provider, model string) providers.ModelCapabilityResolution {
+	if provider == nil {
+		return providers.ModelCapabilityResolution{}
+	}
+	aware, ok := provider.(providers.CapabilitiesAware)
+	if !ok {
+		return providers.ModelCapabilityResolution{}
+	}
+	providerType := ""
+	if ta, ok := provider.(providers.ProviderTypeAware); ok {
+		providerType = ta.ProviderType()
+	}
+	return providers.ResolveModelCapabilities(
+		aware.Capabilities(),
+		modelCapabilityLookup,
+		provider.Name(),
+		providerType,
+		model,
+	)
+}
+
+// toolsUnavailableNotice tells the model — in-band, not silently — that the
+// current model cannot call tools. English-only, matching the other loop
+// hints (LLM consumption).
+func toolsUnavailableNotice(model string) providers.Message {
+	name := model
+	if name == "" {
+		name = "the selected model"
+	}
+	return providers.Message{
+		Role: "user",
+		Content: "[System] Tools are unavailable for " + name +
+			": its catalogue row declares that this model does not support tool calling. " +
+			"Answer with text only — do not request tool calls.",
+	}
+}
+
 // buildFilteredTools resolves the per-iteration tool definitions based on policy,
 // disabled tools, bootstrap mode, skill visibility, channel type, and iteration budget.
 // Per-user MCP tools (require_user_credentials servers) are passed in via userTools —
@@ -50,6 +144,22 @@ func (l *Loop) toolVisibleForChannel(name, channelType string, telegramManagerPe
 // Returns tool definitions for the provider, an allowed-tools map for execution validation,
 // and the (potentially modified) messages slice when final-iteration stripping appends a hint.
 func (l *Loop) buildFilteredTools(req *RunRequest, hadBootstrap bool, iteration, maxIter int, messages []providers.Message, userTools []tools.Tool) ([]providers.ToolDefinition, map[string]bool, []providers.Message) {
+	// Capability gate (phase 5): a model whose catalogue row declares
+	// tool_calling=false must not receive tool schemas at all, and must be told
+	// why — a silent empty tool list makes the model invent tool calls it cannot
+	// execute. The allowlist is empty (never nil): nil means "no restriction" to
+	// AuthorizeToolCall, so an empty map is what actually fails closed.
+	caps := l.resolveCapabilities(req)
+	if caps.ProviderDeclared && !caps.Capabilities.ToolCalling {
+		if iteration != maxIter {
+			// The per-run cache replays this result for iterations 0..maxIter-1;
+			// only the final iteration would replay the notice, and by then the
+			// model has already been told.
+			messages = append(messages, toolsUnavailableNotice(l.effectiveModel(req)))
+		}
+		return nil, map[string]bool{}, messages
+	}
+
 	// Build provider request with policy-filtered tools.
 	var toolDefs []providers.ToolDefinition
 	var allowedTools map[string]bool
@@ -173,15 +283,12 @@ func (l *Loop) buildFilteredTools(req *RunRequest, hadBootstrap bool, iteration,
 	}
 
 	// Two-tier image generation gate:
-	//   (1) provider supports native image_generation (ImageGeneration capability)
+	//   (1) provider supports native image_generation (ImageGeneration capability,
+	//       including any per-model catalogue override)
 	//   (2) agent config allows it (allowImageGeneration — defaults true, set false via
 	//       other_config.allow_image_generation = false in the admin agent configuration)
-	if l.allowImageGeneration {
-		if aware, ok := l.provider.(providers.CapabilitiesAware); ok {
-			if aware.Capabilities().ImageGeneration {
-				toolDefs = append(toolDefs, imageGenToolDef)
-			}
-		}
+	if l.allowImageGeneration && caps.Capabilities.ImageGeneration {
+		toolDefs = append(toolDefs, imageGenToolDef)
 	}
 
 	return toolDefs, allowedTools, messages

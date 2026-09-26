@@ -1,8 +1,10 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -24,6 +26,8 @@ import (
 	"github.com/nextlevelbuilder/goclaw/internal/oauth"
 	"github.com/nextlevelbuilder/goclaw/internal/permissions"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/catalog"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/discovery"
 	"github.com/nextlevelbuilder/goclaw/internal/security"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 	"github.com/nextlevelbuilder/goclaw/internal/tools"
@@ -47,11 +51,20 @@ type ProvidersHandler struct {
 	agents          store.AgentCRUDStore    // optional: for provider pool activity agent lookup
 	modelReg        providers.ModelRegistry // optional: forward-compat model resolver for Anthropic
 	usageCaps       *usagecaps.Service
+	// modelCatalog owns the llm_models catalogue: bundled seeding, discovery
+	// refresh, fingerprint cache and merging.
+	modelCatalog *catalog.Service
 }
 
 // NewProvidersHandler creates a handler for provider management endpoints.
 func NewProvidersHandler(s store.ProviderStore, secretStore store.ConfigSecretsStore, providerReg *providers.Registry, gatewayAddr string) *ProvidersHandler {
-	return &ProvidersHandler{store: s, secretStore: secretStore, providerReg: providerReg, gatewayAddr: gatewayAddr}
+	return &ProvidersHandler{
+		store:        s,
+		secretStore:  secretStore,
+		providerReg:  providerReg,
+		gatewayAddr:  gatewayAddr,
+		modelCatalog: catalog.NewService(s, discovery.NewRegistry(validateProviderURL)),
+	}
 }
 
 // SetMessageBus sets the message bus for audit event broadcasting.
@@ -169,6 +182,14 @@ func (h *ProvidersHandler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Model listing (proxied to upstream provider API)
 	mux.HandleFunc("GET /v1/providers/{id}/models", h.readAuth(h.handleListProviderModels))
+	// Provider quirks listing (read-only)
+	mux.HandleFunc("GET /v1/providers/quirks", h.readAuth(h.handleListQuirks))
+
+
+	// Gateway-scoped model catalogue (OpenAI shape), tenant-scoped and read-only.
+	// {model...} keeps multi-segment vendor ids addressable.
+	mux.HandleFunc("GET /v1/models", h.readAuth(h.handleListModels))
+	mux.HandleFunc("GET /v1/models/{provider}/{model...}", h.readAuth(h.handleGetModel))
 
 	// Provider + model verification (pre-flight check) — mutating actions, Admin.
 	mux.HandleFunc("POST /v1/providers/{id}/reconnect", h.auth(h.handleReconnectProvider))
@@ -177,6 +198,12 @@ func (h *ProvidersHandler) RegisterRoutes(mux *http.ServeMux) {
 
 	// Provider-scoped Codex pool activity monitor (read-only status)
 	mux.HandleFunc("GET /v1/providers/{id}/codex-pool-activity", h.readAuth(h.handleProviderCodexPoolActivity))
+
+	// Provider health (durable cooldown state + manual reset / active probe).
+	// Registered without a method prefix so the resource keeps one canonical
+	// path: the handler dispatches per method and applies each method's own auth
+	// level (GET → Viewer, POST → Admin).
+	mux.HandleFunc("/v1/providers/{id}/health", h.handleProviderHealthRoute)
 
 	// Embedding system status (read-only)
 	mux.HandleFunc("GET /v1/embedding/status", h.readAuth(h.handleEmbeddingStatus))
@@ -431,7 +458,11 @@ func normalizeOllamaAPIBase(p *store.LLMProviderData) {
 // rather than skipping SSRF validation entirely.
 var localURLProviderTypes = map[string]bool{
 	store.ProviderOllama: true,
-	store.ProviderACP:    true,
+	// Ollama Cloud speaks the same native API; the bearer token is the only
+	// difference, and a self-hosted Ollama behind a token is a legitimate
+	// api_base for it (the localhost allowlist still applies).
+	store.ProviderOllamaCloud: true,
+	store.ProviderACP:         true,
 }
 
 // allowedLocalHosts are the only hosts permitted for local provider types.
@@ -625,6 +656,21 @@ func (h *ProvidersHandler) handleCreateProvider(w http.ResponseWriter, r *http.R
 	}
 	if !store.ValidProviderTypes[p.ProviderType] {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.T(locale, i18n.MsgInvalidRequest, "unsupported provider_type")})
+		return
+	}
+
+	// exec_path is a migration-written column (the legacy api_base of a CLI
+	// provider) and it is authoritative for the executable the gateway runs. It
+	// is not a client input: accepting it here would let a caller choose that
+	// binary without passing the CLI-executable check api_base already has to
+	// pass. CLI providers are created through api_base; phase 6 can expose the
+	// declaration deliberately, with a matching validator.
+	if strings.TrimSpace(p.ExecPath) != "" {
+		slog.Warn("security.provider_exec_path.rejected",
+			"name", p.Name, "provider_type", p.ProviderType, "exec_path", p.ExecPath)
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": i18n.T(locale, i18n.MsgInvalidRequest, "exec_path is not accepted; set api_base for CLI providers"),
+		})
 		return
 	}
 
@@ -933,4 +979,265 @@ func (h *ProvidersHandler) handleDeleteProvider(w http.ResponseWriter, r *http.R
 
 	emitAudit(h.msgBus, r, "provider.deleted", "provider", id.String())
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// --- Provider health (provider rework, phase 5) ---
+
+// Provider health resource:
+//
+//	GET  /v1/providers/{id}/health  → durable cooldown / error-class state (Viewer)
+//	POST /v1/providers/{id}/health  → {"reset":true} clears the persisted state,
+//	                                  {"probe":true[,"model":"m"]} actively probes
+//	                                  the provider through the shared verify path
+//	                                  and records the outcome (Admin)
+//
+// The active probe is only ever triggered by an explicit request — there is no
+// background prober (phase 5 forbids one), so idle gateways never burn tokens.
+func (h *ProvidersHandler) handleProviderHealthRoute(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		h.readAuth(h.handleProviderHealth)(w, r)
+	case http.MethodPost:
+		h.auth(h.handleProviderHealthAction)(w, r)
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": i18n.T(extractLocale(r), i18n.MsgInvalidRequest, r.Method+" is not supported on provider health"),
+		})
+	}
+}
+
+// providerForHealth parses the {id} path value and loads the provider row,
+// writing the 400/404 response itself when that fails.
+func (h *ProvidersHandler) providerForHealth(w http.ResponseWriter, r *http.Request) (*store.LLMProviderData, bool) {
+	locale := extractLocale(r)
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.T(locale, i18n.MsgInvalidID, "provider")})
+		return nil, false
+	}
+	p, err := h.store.GetProvider(r.Context(), id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T(locale, i18n.MsgNotFound, "provider", id.String())})
+		return nil, false
+	}
+	return p, true
+}
+
+// handleProviderHealth reports the durable health of one provider.
+func (h *ProvidersHandler) handleProviderHealth(w http.ResponseWriter, r *http.Request) {
+	locale := extractLocale(r)
+	p, ok := h.providerForHealth(w, r)
+	if !ok {
+		return
+	}
+	health, err := h.store.GetProviderHealth(r.Context(), p.ID)
+	if err != nil {
+		slog.Error("providers.health_read_failed", "provider", p.Name, "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": i18n.T(locale, i18n.MsgProviderHealthFailed, p.Name),
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, providerHealthPayload(p, health, nil))
+}
+
+// handleProviderHealthAction applies one operator action (reset and/or probe) and
+// returns the resulting health, so a single round trip shows the new state.
+func (h *ProvidersHandler) handleProviderHealthAction(w http.ResponseWriter, r *http.Request) {
+	locale := extractLocale(r)
+
+	var req struct {
+		Reset bool   `json:"reset"`
+		Probe bool   `json:"probe"`
+		Model string `json:"model"`
+	}
+	if r.Body != nil && r.Body != http.NoBody && r.ContentLength != 0 {
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.T(locale, i18n.MsgInvalidJSON)})
+			return
+		}
+	}
+	if !req.Reset && !req.Probe {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": i18n.T(locale, i18n.MsgInvalidRequest, "reset or probe is required"),
+		})
+		return
+	}
+
+	p, ok := h.providerForHealth(w, r)
+	if !ok {
+		return
+	}
+
+	// reset clears the persisted cooldown/failure state so the next call retries
+	// the provider immediately: the manual escape hatch for a cooldown that
+	// outlived the outage that caused it (`goclaw providers health --reset`).
+	if req.Reset {
+		if err := h.store.ResetProviderHealth(r.Context(), p.ID); err != nil {
+			slog.Error("providers.health_reset_failed", "provider", p.Name, "error", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{
+				"error": i18n.T(locale, i18n.MsgProviderHealthResetFailed, p.Name, err.Error()),
+			})
+			return
+		}
+		emitAudit(h.msgBus, r, "provider.health_reset", "provider", p.ID.String())
+	}
+
+	var probe *providerProbeResult
+	if req.Probe {
+		probe = h.runProviderProbe(r.Context(), p, req.Model)
+	}
+
+	health, err := h.store.GetProviderHealth(r.Context(), p.ID)
+	if err != nil {
+		slog.Error("providers.health_read_failed", "provider", p.Name, "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": i18n.T(locale, i18n.MsgProviderHealthFailed, p.Name),
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, providerHealthPayload(p, health, probe))
+}
+
+// providerProbeResult is the outcome of one explicitly requested active probe.
+type providerProbeResult struct {
+	Valid bool `json:"valid"`
+	// Mode is "model" when the probe sent a chat request, "reachability" when no
+	// model could be resolved and only registration/transport was checked.
+	Mode       string `json:"mode"`
+	Model      string `json:"model,omitempty"`
+	Error      string `json:"error,omitempty"`
+	ErrorClass string `json:"error_class,omitempty"`
+}
+
+// runProviderProbe probes the provider through the shared verify path
+// (provider_verify.go) and records the outcome in provider_health: a failure
+// starts a cooldown with the same duration rules as the runtime path
+// (providers.CooldownDurationFor), a success clears the cooldown.
+//
+// The probe reuses provider verify by invoking its handler with a captured
+// ResponseWriter, so probe semantics cannot drift from `providers verify`.
+func (h *ProvidersHandler) runProviderProbe(ctx context.Context, p *store.LLMProviderData, requestedModel string) *providerProbeResult {
+	model := h.probeModel(p, requestedModel)
+	result := &providerProbeResult{Mode: "reachability", Model: model}
+	if model != "" {
+		result.Mode = "model"
+	}
+
+	body, _ := json.Marshal(map[string]string{"model": model})
+	path := "/v1/providers/" + p.ID.String() + "/verify"
+	verifyReq, err := http.NewRequestWithContext(ctx, http.MethodPost, path, bytes.NewReader(body))
+	if err != nil {
+		result.Error = err.Error()
+		result.ErrorClass = string(store.ErrorClassUnknown)
+		return result
+	}
+	verifyReq.SetPathValue("id", p.ID.String())
+	recorder := &healthProbeRecorder{header: http.Header{}}
+	h.handleVerifyProvider(recorder, verifyReq)
+
+	var verify struct {
+		Valid bool   `json:"valid"`
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(recorder.body.Bytes(), &verify); err != nil {
+		result.Error = "provider verify returned an unreadable response"
+		result.ErrorClass = string(store.ErrorClassUnknown)
+		return result
+	}
+	result.Valid = verify.Valid
+	result.Error = verify.Error
+
+	// Probe timestamps are recorded either way so the health surface can tell
+	// "no traffic" apart from "not re-checked".
+	if err := h.store.MarkProviderProbe(ctx, p.ID); err != nil {
+		slog.Warn("providers.health_probe_mark_failed", "provider", p.Name, "error", err)
+	}
+	if verify.Valid {
+		result.ErrorClass = ""
+		if err := h.store.RecordProviderSuccess(ctx, p.ID); err != nil {
+			slog.Warn("providers.health_probe_success_failed", "provider", p.Name, "error", err)
+		}
+		return result
+	}
+
+	// Classify the friendly message verify produced. It has already been stripped
+	// of the "HTTP <status>: <provider>:" prefix, so status-based classes
+	// (rate_limit etc.) usually collapse to "unknown" here; the runtime path
+	// classifies the raw error and stays the authoritative source.
+	classification := providers.ClassifyHTTPError(providers.NewDefaultClassifier(), errors.New(result.Error))
+	reason := classification.Reason
+	if classification.Kind != "reason" || reason == "" {
+		reason = providers.FailoverUnknown
+	}
+	result.ErrorClass = string(reason)
+	if err := h.store.RecordProviderFailure(ctx, p.ID, result.ErrorClass, time.Now().UTC().Add(providers.CooldownDurationFor(reason))); err != nil {
+		slog.Warn("providers.health_probe_failure_failed", "provider", p.Name, "error", err)
+	}
+	return result
+}
+
+// probeModel resolves the model an active probe should use: the requested model,
+// else the registered provider's own default. An empty result means the probe can
+// only check registration/transport (verify's ping mode).
+func (h *ProvidersHandler) probeModel(p *store.LLMProviderData, requested string) string {
+	if requested != "" {
+		return requested
+	}
+	if h.providerReg == nil {
+		return ""
+	}
+	provider, err := h.providerReg.GetForTenant(p.TenantID, p.Name)
+	if err != nil || provider == nil {
+		return ""
+	}
+	return provider.DefaultModel()
+}
+
+// healthProbeRecorder captures a handler's JSON response without a real client.
+// Only Write/WriteHeader/Header are used by the verify handler.
+type healthProbeRecorder struct {
+	header http.Header
+	body   bytes.Buffer
+	status int
+}
+
+func (r *healthProbeRecorder) Header() http.Header { return r.header }
+
+func (r *healthProbeRecorder) Write(b []byte) (int, error) { return r.body.Write(b) }
+
+func (r *healthProbeRecorder) WriteHeader(status int) { r.status = status }
+
+// providerHealthPayload is the flat health shape the CLI/UI consume:
+// jq-friendly (`.[0] | {provider, cooldown_until, consecutive_failures}`).
+func providerHealthPayload(p *store.LLMProviderData, health *store.ProviderHealth, probe *providerProbeResult) map[string]any {
+	payload := map[string]any{
+		"provider_id":          p.ID.String(),
+		"provider":             p.Name,
+		"enabled":              p.Enabled,
+		"consecutive_failures": health.ConsecutiveFailures,
+		"cooling_down":         health.CoolingDown(time.Now().UTC()),
+		"cooldown_until":       nil,
+		"last_error_class":     health.LastErrorClass,
+		"error_counts":         health.ErrorCounts,
+		"last_probe_at":        nil,
+		"updated_at":           nil,
+		// The ceiling the runtime enforces, so the UI can explain why a cooldown
+		// never exceeds it (phase 5: unbounded cooldown is a risk).
+		"max_cooldown_seconds": int(providers.MaxCooldown.Seconds()),
+	}
+	if health.CooldownUntil != nil {
+		payload["cooldown_until"] = health.CooldownUntil.UTC()
+	}
+	if health.LastProbeAt != nil {
+		payload["last_probe_at"] = health.LastProbeAt.UTC()
+	}
+	if !health.UpdatedAt.IsZero() {
+		payload["updated_at"] = health.UpdatedAt.UTC()
+	}
+	if probe != nil {
+		payload["probe"] = probe
+	}
+	return payload
 }

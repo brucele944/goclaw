@@ -20,6 +20,17 @@ func (l *Loop) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	defer l.activeRuns.Add(-1)
 	ctx = withDelegationArtifactTextRedactor(ctx, &req)
 
+	// Model selection precedence (highest first), for runs that carry a role:
+	//   1. explicit override already present in the request (WS chat.send
+	//      provider/model, HTTP X-GoClaw-Model, cron/heartbeat overrides)
+	//   2. agent role requested on ctx (WithModelRole → agents.model_roles)
+	//   3. the Loop's own provider/model (agent primary) — set by the resolver,
+	//      which also resolves provider default / global default when the agent
+	//      row cannot be served (see NewManagedResolver).
+	// Overrides are applied per run, never baked into the cached Loop, so a role
+	// request cannot leak into the next run of the same agent.
+	applyModelRoleOverride(ctx, &req, l.modelRoles)
+
 	// Per-run emit wrapper: enriches every AgentEvent with delegation + routing context.
 	emitRun := func(event AgentEvent) {
 		event.RunKind = req.RunKind

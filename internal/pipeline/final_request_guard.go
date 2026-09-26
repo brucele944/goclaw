@@ -9,7 +9,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/nextlevelbuilder/goclaw/internal/config"
+	"github.com/nextlevelbuilder/goclaw/internal/i18n"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/store"
 )
 
 // FinalRequestEstimate describes the complete pre-call context budget for the
@@ -38,18 +40,68 @@ func (s *ThinkStage) buildChatRequest(state *RunState, toolDefs []providers.Tool
 	options := map[string]any{
 		providers.OptMaxTokens: s.deps.Config.MaxTokens,
 	}
+	// Image gate (phase 5): a model whose capabilities declare Vision=false must
+	// not receive image blocks. The strip happens on the outgoing copy — the
+	// MessageBuffer keeps the images, so persisted history and a later run
+	// against a vision model still have them.
+	messages := state.Messages.All()
+	if s.visionDisabled() {
+		messages = stripImageBlocks(messages)
+	}
 	return providers.ChatRequest{
-		Messages: state.Messages.All(),
+		Messages: messages,
 		Tools:    toolDefs,
 		Model:    state.Model,
 		Options:  options,
 	}
 }
 
+// stripImageBlocks returns a copy of messages with every image block removed.
+// Message is a value type in a freshly built slice, so clearing the field cannot
+// reach the conversation buffer.
+func stripImageBlocks(messages []providers.Message) []providers.Message {
+	out := make([]providers.Message, len(messages))
+	copy(out, messages)
+	for i := range out {
+		out[i].Images = nil
+	}
+	return out
+}
+
+// hasImageBlocks reports whether any message carries an image.
+func hasImageBlocks(messages []providers.Message) bool {
+	for _, msg := range messages {
+		if len(msg.Images) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// notifyImagesDropped tells the user that the images in their message were not
+// sent to a model that cannot accept them. Fires only on the first iteration:
+// every iteration rebuilds the request from the same conversation buffer, so
+// notifying per iteration would repeat the same sentence.
+func (s *ThinkStage) notifyImagesDropped(ctx context.Context, state *RunState, outgoing []providers.Message) {
+	if state.Iteration != 0 || s.deps.EmitBlockReply == nil {
+		return
+	}
+	if hasImageBlocks(outgoing) || !hasImageBlocks(state.Messages.All()) {
+		return
+	}
+	s.deps.EmitBlockReply(i18n.T(store.LocaleFromContext(ctx), i18n.MsgModelWithoutVisionNotice))
+}
+
 func (s *ThinkStage) finalRequestEstimate(state *RunState, req providers.ChatRequest) (FinalRequestEstimate, error) {
 	contextWindow := state.Context.EffectiveContextWindow
 	if contextWindow == 0 {
 		contextWindow = s.deps.Config.ContextWindow
+	}
+	// Per-model budget clamp (phase 5): a catalogue row that declares the model's
+	// own window clamps the request budget. min() only — a row never raises the
+	// agent's configured window, it only lowers it to what the model accepts.
+	if clamp := s.capabilityResolution().ContextWindowClamp; clamp > 0 && (contextWindow <= 0 || clamp < contextWindow) {
+		contextWindow = clamp
 	}
 	if contextWindow <= 0 {
 		return FinalRequestEstimate{}, nil
@@ -135,6 +187,7 @@ func (e FinalRequestEstimate) withinLimit() bool {
 
 func (s *ThinkStage) prepareFinalRequest(ctx context.Context, state *RunState, toolDefs []providers.ToolDefinition) (providers.ChatRequest, FinalRequestEstimate, error) {
 	req := s.buildChatRequest(state, toolDefs)
+	s.notifyImagesDropped(ctx, state, req.Messages)
 	estimate, err := s.finalRequestEstimate(state, req)
 	if err != nil {
 		return req, estimate, err

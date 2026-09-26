@@ -3,10 +3,15 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+	"sort"
+	"strings"
 	"text/tabwriter"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +25,9 @@ func providersCmd() *cobra.Command {
 	cmd.AddCommand(providersUpdateCmd())
 	cmd.AddCommand(providersDeleteCmd())
 	cmd.AddCommand(providersVerifyCmd())
+	cmd.AddCommand(providersModelsCmd())
+	cmd.AddCommand(providersQuirksCmd())
+	cmd.AddCommand(providersHealthCmd())
 	return cmd
 }
 
@@ -320,4 +328,407 @@ func defaultBaseURL(providerType string) string {
 	default:
 		return ""
 	}
+}
+
+// providersModelsCmd inspects a provider's model catalogue. The catalogue lives
+// in the gateway (llm_models rows seeded from the bundled snapshot and refreshed
+// through discovery), so both subcommands are thin HTTP clients of
+// /v1/providers/{id}/models.
+func providersModelsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "models",
+		Short: "Inspect a provider's model catalog",
+	}
+	cmd.AddCommand(providersModelsListCmd())
+	cmd.AddCommand(providersModelsRefreshCmd())
+	return cmd
+}
+
+// providersModelsRefreshTimeout bounds a forced upstream refresh: the gateway
+// applies the provider's own timeout (settings.timeout_sec, default 30s), so the
+// client must not give up first.
+const providersModelsRefreshTimeout = 90 * time.Second
+
+func providersModelsListCmd() *cobra.Command {
+	var (
+		providerID string
+		jsonOutput bool
+		refresh    bool
+	)
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List the models of a provider",
+		Long: "Prints the provider's catalog as the gateway knows it. The catalog is served from\n" +
+			"the gateway cache; --refresh re-fetches it from the upstream first.",
+		Run: func(cmd *cobra.Command, args []string) {
+			requireRunningGatewayHTTP()
+			runProvidersModels(providerID, refresh, jsonOutput)
+		},
+	}
+	cmd.Flags().StringVar(&providerID, "provider", "", "provider id or name (required)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "output as JSON")
+	cmd.Flags().BoolVar(&refresh, "refresh", false, "re-fetch the catalog from the upstream")
+	_ = cmd.MarkFlagRequired("provider")
+	return cmd
+}
+
+func providersModelsRefreshCmd() *cobra.Command {
+	var (
+		providerID string
+		jsonOutput bool
+	)
+	cmd := &cobra.Command{
+		Use:   "refresh",
+		Short: "Refresh a provider's model catalog from its upstream",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			requireRunningGatewayHTTP()
+			runProvidersModels(providerID, true, jsonOutput)
+		},
+	}
+	cmd.Flags().StringVar(&providerID, "provider", "", "provider id or name (required)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "output as JSON")
+	_ = cmd.MarkFlagRequired("provider")
+	return cmd
+}
+
+func runProvidersModels(providerID string, refresh, jsonOutput bool) {
+	if providerID == "" {
+		fmt.Fprintln(os.Stderr, "Error: --provider is required")
+		os.Exit(1)
+	}
+	path := "/v1/providers/" + url.PathEscape(providerID) + "/models"
+	client := httpClient
+	if refresh {
+		path += "?refresh=true"
+		client = &http.Client{Timeout: providersModelsRefreshTimeout}
+	}
+	resp, err := gatewayGetWithClient(client, path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if jsonOutput {
+		data, _ := json.MarshalIndent(resp, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	if stale, _ := resp["stale"].(bool); stale {
+		class, _ := resp["error_class"].(string)
+		message, _ := resp["error"].(string)
+		fmt.Fprintf(os.Stderr, "warning: catalog is stale (class=%s): %s\n", class, message)
+	}
+	if fetched, _ := resp["fetched"].(bool); fetched {
+		fmt.Fprintln(os.Stderr, "refreshed from upstream")
+	}
+
+	raw, _ := json.Marshal(resp["models"])
+	var models []httpProviderModel
+	if err := json.Unmarshal(raw, &models); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing models: %v\n", err)
+		os.Exit(1)
+	}
+	if len(models) == 0 {
+		fmt.Println("No models known for this provider.")
+		return
+	}
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, "ID\tNAME\n")
+	for _, m := range models {
+		fmt.Fprintf(tw, "%s\t%s\n", m.ID, m.Name)
+	}
+	tw.Flush()
+}
+
+// gatewayGetWithClient is gatewayHTTPGet with a caller-supplied client, for
+// endpoints that legitimately outlive the default CLI timeout.
+func gatewayGetWithClient(client *http.Client, path string) (map[string]any, error) {
+	raw, status, err := gatewayDoRaw(client, http.MethodGet, path, nil, gatewayHTTPResponseLimit)
+	if err != nil {
+		return nil, err
+	}
+	if status >= 400 {
+		return nil, parseHTTPError(raw, status)
+	}
+	var result map[string]any
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, fmt.Errorf("invalid JSON response from gateway: %s", string(raw))
+	}
+	return result, nil
+}
+
+func providersQuirksCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "quirks",
+		Short: "Inspect declared provider compatibility quirks",
+	}
+	cmd.AddCommand(providersQuirksListCmd())
+	return cmd
+}
+
+func providersQuirksListCmd() *cobra.Command {
+	var (
+		wireAPI    string
+		jsonOutput bool
+	)
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List declared provider quirks for a wire API",
+		Long:  "Prints the declared compatibility quirks and fragments for a wire API.",
+		Run: func(cmd *cobra.Command, args []string) {
+			requireRunningGatewayHTTP()
+			runProvidersQuirksList(wireAPI, jsonOutput)
+		},
+	}
+	cmd.Flags().StringVar(&wireAPI, "wire-api", "", "wire API protocol (required, e.g. openai-completions)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "output as JSON")
+	_ = cmd.MarkFlagRequired("wire-api")
+	return cmd
+}
+
+func runProvidersQuirksList(wireAPI string, jsonOutput bool) {
+	path := "/v1/providers/quirks?wire_api=" + url.QueryEscape(wireAPI)
+	resp, err := gatewayHTTPGet(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	quirksRaw, _ := resp["quirks"]
+	if jsonOutput {
+		data, _ := json.MarshalIndent(quirksRaw, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+	var quirks []struct {
+		ID             string          `json:"id"`
+		WireAPI        string          `json:"wire_api"`
+		EndpointFamily *string         `json:"endpoint_family,omitempty"`
+		ModelPattern   *string         `json:"model_pattern,omitempty"`
+		Compat         json.RawMessage `json:"compat"`
+		CompatKeys     []string        `json:"compat_keys"`
+		Note           *string         `json:"note,omitempty"`
+		Source         string          `json:"source"`
+		Enabled        bool            `json:"enabled"`
+	}
+	quirksJSON, _ := json.Marshal(quirksRaw)
+	_ = json.Unmarshal(quirksJSON, &quirks)
+
+	if len(quirks) == 0 {
+		fmt.Printf("No quirks declared for wire API %q.\n", wireAPI)
+		return
+	}
+
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, "WIRE_API\tFAMILY\tMODEL_PATTERN\tSOURCE\tENABLED\tKEYS\tNOTE\n")
+	for _, q := range quirks {
+		family := "-"
+		if q.EndpointFamily != nil && *q.EndpointFamily != "" {
+			family = *q.EndpointFamily
+		}
+		pattern := "*"
+		if q.ModelPattern != nil && *q.ModelPattern != "" {
+			pattern = *q.ModelPattern
+		}
+		note := ""
+		if q.Note != nil {
+			note = *q.Note
+		}
+		keys := strings.Join(q.CompatKeys, ",")
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%v\t%s\t%s\n", q.WireAPI, family, pattern, q.Source, q.Enabled, keys, note)
+	}
+	tw.Flush()
+}
+
+// providersHealthCmd inspects and repairs provider health. Health lives in the
+// gateway's provider_health table (durable cooldown state), so both subcommands
+// are thin HTTP clients of /v1/providers/{id}/health — the CLI never talks to the
+// database directly.
+func providersHealthCmd() *cobra.Command {
+	var (
+		jsonOutput bool
+		resetRef   string
+		probeRef   string
+		probeModel string
+	)
+	cmd := &cobra.Command{
+		Use:   "health [id]",
+		Short: "Show provider health (cooldown, error classes) or clear a cooldown",
+		Long: "Prints the durable health of one provider (positional id) or of every provider.\n" +
+			"--json always prints a JSON array of health objects.\n" +
+			"--reset <id|name> clears the persisted cooldown/failure state of one provider, the\n" +
+			"manual escape hatch when a cooldown outlived the outage that caused it.\n" +
+			"--probe <id|name> actively probes the provider (through the gateway's verify path)\n" +
+			"and records the result; it is never run automatically.",
+		Args: cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			requireRunningGatewayHTTP()
+			ref := ""
+			if len(args) > 0 {
+				ref = args[0]
+			}
+			switch {
+			case resetRef != "":
+				runProviderHealthAction(resolveProviderRef(resetRef), map[string]any{"reset": true}, jsonOutput)
+			case probeRef != "":
+				body := map[string]any{"probe": true}
+				if probeModel != "" {
+					body["model"] = probeModel
+				}
+				runProviderHealthAction(resolveProviderRef(probeRef), body, jsonOutput)
+			default:
+				runProvidersHealth(ref, jsonOutput)
+			}
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "output as JSON (always an array)")
+	cmd.Flags().StringVar(&resetRef, "reset", "", "clear persisted cooldown/health state for this provider (id or name)")
+	cmd.Flags().StringVar(&probeRef, "probe", "", "actively probe this provider (id or name) and record the outcome")
+	cmd.Flags().StringVar(&probeModel, "model", "", "model for --probe (default: the provider's default model)")
+	return cmd
+}
+
+// resolveProviderRef turns a provider reference (uuid or name) into a provider id.
+func resolveProviderRef(ref string) string {
+	if _, err := uuid.Parse(ref); err == nil {
+		return ref
+	}
+	providers, err := fetchProviders()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	for _, p := range providers {
+		if p.Name == ref {
+			return p.ID
+		}
+	}
+	fmt.Fprintf(os.Stderr, "Error: no provider with id or name %q\n", ref)
+	os.Exit(1)
+	return ""
+}
+
+func runProvidersHealth(ref string, jsonOutput bool) {
+	var reports []map[string]any
+	if ref == "" {
+		providers, err := fetchProviders()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		for _, p := range providers {
+			resp, err := gatewayHTTPGet("/v1/providers/" + url.PathEscape(p.ID) + "/health")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "warning: %s: %v\n", p.Name, err)
+				continue
+			}
+			reports = append(reports, resp)
+		}
+	} else {
+		resp, err := gatewayHTTPGet("/v1/providers/" + url.PathEscape(resolveProviderRef(ref)) + "/health")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		reports = append(reports, resp)
+	}
+
+	if jsonOutput {
+		data, _ := json.MarshalIndent(reports, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	if len(reports) == 0 {
+		fmt.Println("No providers configured.")
+		return
+	}
+
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, "PROVIDER\tSTATE\tFAILURES\tCOOLDOWN_UNTIL\tLAST_ERROR\tERROR_CLASSES\n")
+	for _, report := range reports {
+		name, _ := report["provider"].(string)
+		state := "available"
+		if cooling, _ := report["cooling_down"].(bool); cooling {
+			state = "cooling-down"
+		}
+		failures := intFromJSON(report["consecutive_failures"])
+		cooldownUntil := "-"
+		if until, ok := report["cooldown_until"].(string); ok && until != "" {
+			cooldownUntil = until
+		}
+		lastError := "-"
+		if class, ok := report["last_error_class"].(string); ok && class != "" {
+			lastError = class
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%d\t%s\t%s\t%s\n",
+			name, state, failures, cooldownUntil, lastError, formatErrorCounts(report["error_counts"]))
+	}
+	tw.Flush()
+}
+
+// runProviderHealthAction posts one reset/probe action and prints the result.
+func runProviderHealthAction(providerID string, body map[string]any, jsonOutput bool) {
+	resp, err := gatewayHTTPPost("/v1/providers/"+url.PathEscape(providerID)+"/health", body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	if jsonOutput {
+		data, _ := json.MarshalIndent(resp, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	name, _ := resp["provider"].(string)
+	if reset, _ := body["reset"].(bool); reset {
+		fmt.Printf("Provider %s health reset.\n", name)
+	}
+	if probe, ok := resp["probe"].(map[string]any); ok {
+		if valid, _ := probe["valid"].(bool); valid {
+			mode, _ := probe["mode"].(string)
+			fmt.Printf("Probe OK (%s): %s\n", mode, name)
+		} else {
+			msg, _ := probe["error"].(string)
+			class, _ := probe["error_class"].(string)
+			fmt.Printf("Probe FAILED (%s): %s\n", class, msg)
+		}
+	}
+	if cooling, _ := resp["cooling_down"].(bool); cooling {
+		until, _ := resp["cooldown_until"].(string)
+		fmt.Printf("Provider %s is cooling down until %s.\n", name, until)
+		return
+	}
+	fmt.Printf("Provider %s is available.\n", name)
+}
+
+// intFromJSON reads a numeric JSON field the gateway may have encoded as int or
+// float64 (encoding/json decodes into map[string]any).
+func intFromJSON(v any) int {
+	switch n := v.(type) {
+	case float64:
+		return int(n)
+	case int:
+		return n
+	case json.Number:
+		i, _ := n.Int64()
+		return int(i)
+	default:
+		return 0
+	}
+}
+
+// formatErrorCounts renders the error-class histogram ("rate_limit=3,timeout=1").
+func formatErrorCounts(v any) string {
+	counts, ok := v.(map[string]any)
+	if !ok || len(counts) == 0 {
+		return "-"
+	}
+	classes := make([]string, 0, len(counts))
+	for class, count := range counts {
+		classes = append(classes, fmt.Sprintf("%s=%d", class, intFromJSON(count)))
+	}
+	sort.Strings(classes)
+	return strings.Join(classes, ",")
 }

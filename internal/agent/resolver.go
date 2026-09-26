@@ -145,6 +145,99 @@ type ResolverDeps struct {
 	OnTextUploaded func(ctx context.Context, path, content string)
 }
 
+// --- Model roles (per-agent role → provider/model routing) ---
+
+// ModelRoleTarget is one entry of an agent's model_roles map with its provider
+// already resolved to a live registry entry, so selecting a role per run needs
+// no registry lookup on the hot path.
+type ModelRoleTarget struct {
+	ProviderName string             // provider name as declared (e.g. "anthropic")
+	Model        string             // model id serving that role
+	Provider     providers.Provider // resolved registry entry (nil = not in registry)
+}
+
+// modelRoleContextKey scopes a requested model role to a single run.
+type modelRoleContextKey struct{}
+
+// WithModelRole marks ctx as serving `role` (e.g. "summarizer", "coder").
+// A caller that already knows which workload it is running sets this so the
+// agent's model_roles map decides provider/model instead of the agent primary.
+// Explicit per-request overrides (RunRequest.ProviderOverride/ModelOverride) win
+// over the role; see the precedence note in the Loop.Run model selection.
+func WithModelRole(ctx context.Context, role string) context.Context {
+	if role == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, modelRoleContextKey{}, role)
+}
+
+// ModelRoleFromContext returns the model role requested for this run, or "" when
+// the run did not request one.
+func ModelRoleFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	role, _ := ctx.Value(modelRoleContextKey{}).(string)
+	return role
+}
+
+// resolveModelRoleTargets turns agents.model_roles into runnable targets.
+// Roles whose provider is absent from the registry are kept but left without a
+// provider: a run requesting such a role falls back to the agent primary (and
+// this logs once at resolution) rather than silently routing to a provider the
+// operator did not name.
+func resolveModelRoleTargets(deps ResolverDeps, ag *store.AgentData) map[string]ModelRoleTarget {
+	roles := ag.ParseModelRoles()
+	if len(roles) == 0 {
+		return nil
+	}
+	targets := make(map[string]ModelRoleTarget, len(roles))
+	for name, role := range roles {
+		target := ModelRoleTarget{ProviderName: role.Provider, Model: role.Model}
+		if deps.ProviderReg != nil {
+			if prov, err := deps.ProviderReg.GetForTenant(ag.TenantID, role.Provider); err == nil {
+				target.Provider = prov
+			} else {
+				slog.Warn("model role provider not in registry; role falls back to agent primary",
+					"agent", ag.AgentKey, "role", name, "provider", role.Provider, "model", role.Model, "error", err)
+			}
+		}
+		targets[name] = target
+	}
+	return targets
+}
+
+// applyModelRoleOverride promotes a role requested on ctx into the run's
+// provider/model override. It is a no-op when the request already carries an
+// explicit override (explicit wins), when no role was requested, when the role is
+// not declared for this agent, or when the role's provider is not in the
+// registry — in every no-op case the agent's primary provider/model applies, so a
+// mis-declared role degrades to today's routing rather than to a wrong provider.
+func applyModelRoleOverride(ctx context.Context, req *RunRequest, roles map[string]ModelRoleTarget) {
+	if req == nil || len(roles) == 0 {
+		return
+	}
+	if req.ProviderOverride != nil || req.ModelOverride != "" {
+		return
+	}
+	role := ModelRoleFromContext(ctx)
+	if role == "" {
+		return
+	}
+	target, ok := roles[role]
+	if !ok {
+		slog.Warn("requested model role is not declared for this agent; using agent primary", "role", role)
+		return
+	}
+	if target.Provider == nil || target.Model == "" {
+		slog.Warn("model role target unresolved; using agent primary",
+			"role", role, "provider", target.ProviderName, "model", target.Model)
+		return
+	}
+	req.ModelOverride = target.Model
+	req.ProviderOverride = target.Provider
+}
+
 // NewManagedResolver creates a ResolverFunc that builds Loops from DB agent data.
 // Agents are defined in Postgres, not config.json.
 func NewManagedResolver(deps ResolverDeps) ResolverFunc {
@@ -167,7 +260,7 @@ func NewManagedResolver(deps ResolverDeps) ResolverFunc {
 		}
 
 		// Resolve provider (tenant-aware: tries tenant-specific first, falls back to master)
-		provider, err := providerresolve.ResolveAgentProvider(deps.ProviderReg, ag)
+		provider, err := providerresolve.ResolveAgentProvider(ctx, deps.ProviderReg, ag, providerresolve.ResolveInputs{Providers: deps.ProviderStore})
 		if err != nil {
 			// Fallback to any available provider for this tenant
 			names := deps.ProviderReg.ListForTenant(ag.TenantID)
@@ -470,6 +563,25 @@ func NewManagedResolver(deps ResolverDeps) ResolverFunc {
 			evoMetricsStore = deps.EvolutionMetricsStore
 		}
 
+		// --- Model selection precedence (highest first) ---
+		//   1. Explicit per-request override: RunRequest.ProviderOverride /
+		//      ModelOverride (WS `chat.send` `provider`/`model`, HTTP
+		//      X-GoClaw-Model, heartbeat/cron per-run overrides). Applied per run
+		//      in Loop.runViaPipeline, where it also bypasses the fallback chain.
+		//   2. Agent role: agents.model_roles[role] for a role requested on the
+		//      run context (agent.WithModelRole). Resolved to a live provider here
+		//      so the per-run selection is a map lookup; applied in Loop.Run.
+		//   3. Agent primary: agents.provider + agents.model — the Loop defaults
+		//      built below.
+		//   4. Provider default: the provider's own DefaultModel() when the agent
+		//      row leaves model empty.
+		//   5. Global default: first provider available to the tenant (the
+		//      provider-fallback branch above).
+		// A provider-level fallback_chain may later extend step 1 — it would plug
+		// in where RunRequest.ModelOverride/ProviderOverride are applied, keeping
+		// this ordering intact.
+		modelRoles := resolveModelRoleTargets(deps, ag)
+
 		restrictVal := true // always restrict agents to their workspace
 		loop := NewLoop(LoopConfig{
 			ID:                     ag.AgentKey,
@@ -482,6 +594,7 @@ func NewManagedResolver(deps ResolverDeps) ResolverFunc {
 			AutoInjector:           deps.AutoInjector,
 			Provider:               provider,
 			Model:                  ag.Model,
+			ModelRoles:             modelRoles,
 			ModelRegistry:          deps.ModelRegistry,
 			ContextWindow:          contextWindow,
 			MaxTokens:              ag.ParseMaxTokens(),

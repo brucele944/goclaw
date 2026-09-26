@@ -9,9 +9,22 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+
+	"github.com/nextlevelbuilder/goclaw/internal/providers/dialect"
 )
 
 func (p *OpenAIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatImpl(ctx, req)
+	})
+}
+
+func (p *OpenAIProvider) chatImpl(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	model := p.resolveModel(req.Model)
 	body := p.buildRequestBody(model, req, false)
 	body = ApplyMiddlewares(body, p.middlewares, p.middlewareConfig(model, req))
@@ -25,6 +38,15 @@ func (p *OpenAIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRespon
 		if clamped := clampMaxTokensFromError(err, body); clamped {
 			slog.Info("max_tokens clamped, retrying", "model", model, "limit", clampedLimit(body))
 			resp, err = RetryDo(ctx, p.retryConfig, chatFn)
+		} else if IsStrictRejectionError(err) {
+			key := StrictScopeKey{Provider: p.name, BaseURL: p.apiBase, Model: model}
+			if !DefaultStrictTools().Disabled(key) {
+				DefaultStrictTools().Disable(key)
+				slog.Info("openai: model rejected strict tool mode, retrying with strict disabled", "provider", p.name, "model", model)
+				body = p.buildRequestBody(model, req, false)
+				body = ApplyMiddlewares(body, p.middlewares, p.middlewareConfig(model, req))
+				resp, err = RetryDo(ctx, p.retryConfig, p.chatRequestFn(ctx, body, req.Tools))
+			}
 		}
 	}
 
@@ -34,6 +56,21 @@ func (p *OpenAIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRespon
 	if resp != nil {
 		if strip, _ := req.Options[OptStripThinking].(bool); strip {
 			resp.Thinking = ""
+		}
+		if conv := dialect.Select(p.wireAPI, p.resolvedFor(model, false).ToolDialect); conv != nil && resp.Content != "" {
+			var st dialect.State
+			visible, calls, _ := conv.ScanStream(resp.Content, &st)
+			if len(calls) > 0 {
+				resp.Content = conv.Heal(visible)
+				for _, c := range calls {
+					resp.ToolCalls = append(resp.ToolCalls, ToolCall{
+						ID:         c.ID,
+						Name:       c.Name,
+						Arguments:  c.Arguments,
+						ParseError: c.ParseError,
+					})
+				}
+			}
 		}
 	}
 
@@ -60,6 +97,17 @@ func (p *OpenAIProvider) chatRequestFn(ctx context.Context, body map[string]any,
 }
 
 func (p *OpenAIProvider) ChatStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatStreamImpl(ctx, req, onChunk)
+	})
+}
+
+func (p *OpenAIProvider) chatStreamImpl(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	model := p.resolveModel(req.Model)
 	// stripThinking suppresses user-visible reasoning while leaving
 	// Usage.ThinkingTokens untouched (the usage chunk below still records it).
@@ -72,13 +120,24 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, req ChatRequest, onChun
 		return p.doRequest(ctx, body)
 	})
 
-	// Auto-clamp max_tokens and retry once if the model rejects the value
+	// Auto-clamp max_tokens or disable strict tool mode and retry once if the model rejects the value
 	if err != nil {
 		if clamped := clampMaxTokensFromError(err, body); clamped {
 			slog.Info("max_tokens clamped, retrying stream", "model", model, "limit", clampedLimit(body))
 			respBody, err = RetryDo(ctx, p.retryConfig, func() (io.ReadCloser, error) {
 				return p.doRequest(ctx, body)
 			})
+		} else if IsStrictRejectionError(err) {
+			key := StrictScopeKey{Provider: p.name, BaseURL: p.apiBase, Model: model}
+			if !DefaultStrictTools().Disabled(key) {
+				DefaultStrictTools().Disable(key)
+				slog.Info("openai_stream: model rejected strict tool mode, retrying with strict disabled", "provider", p.name, "model", model)
+				body = p.buildRequestBody(model, req, true)
+				body = ApplyMiddlewares(body, p.middlewares, p.middlewareConfig(model, req))
+				respBody, err = RetryDo(ctx, p.retryConfig, func() (io.ReadCloser, error) {
+					return p.doRequest(ctx, body)
+				})
+			}
 		}
 	}
 	if err != nil {
@@ -92,6 +151,9 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, req ChatRequest, onChun
 	accumulators := make(map[int]*toolCallAccumulator)
 	normalizer := newControlOutputNormalizer(req.Tools)
 	var textToolCalls []ToolCall
+	conv := dialect.Select(p.wireAPI, p.resolvedFor(model, false).ToolDialect)
+	var dialectState dialect.State
+
 
 	sse := NewSSEScanner(cb)
 	for sse.Next() {
@@ -141,9 +203,24 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, req ChatRequest, onChun
 			}
 		}
 		if delta.Content != "" {
-			normalized := normalizer.Append(delta.Content)
-			emitNormalizedControlChunk(result, normalized, stripThinking, onChunk)
-			textToolCalls = append(textToolCalls, normalized.ToolCalls...)
+			rawContent := delta.Content
+			if conv != nil {
+				var dialectCalls []dialect.ToolCall
+				rawContent, dialectCalls, _ = conv.ScanStream(rawContent, &dialectState)
+				for _, c := range dialectCalls {
+					textToolCalls = append(textToolCalls, ToolCall{
+						ID:         c.ID,
+						Name:       c.Name,
+						Arguments:  c.Arguments,
+						ParseError: c.ParseError,
+					})
+				}
+			}
+			if rawContent != "" {
+				normalized := normalizer.Append(rawContent)
+				emitNormalizedControlChunk(result, normalized, stripThinking, onChunk)
+				textToolCalls = append(textToolCalls, normalized.ToolCalls...)
+			}
 		}
 
 		// Accumulate images from delta.images[].
@@ -222,6 +299,9 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, req ChatRequest, onChun
 		onChunk(StreamChunk{Done: true})
 	}
 
+	if conv != nil {
+		result.Content = conv.Heal(result.Content)
+	}
 	return result, nil
 }
 

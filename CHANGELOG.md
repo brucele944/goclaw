@@ -6,6 +6,77 @@ All notable changes to GoClaw are documented here. For full documentation, see [
 
 ### Changed
 
+- **Provider declaration scaffolding (no behaviour change yet).** Providers now declare
+  *what they are* instead of it being inferred in Go: `llm_providers` gains `wire_api`
+  (transport family), `auth_kind` (how credentials are obtained), `exec_path` and a
+  versioned `settings` blob, backfilled from the existing `provider_type` values
+  (migration `000098`; SQLite schema version 61). Two new tables carry the data that was
+  previously code or absent: `llm_models` (per-model context/output caps, cost, modalities,
+  reasoning, tokenizer, compat, provenance) and `provider_quirks` (declared compatibility,
+  nullable `tenant_id` for tenant overrides).
+  Also removed the unused provider abstractions that had drifted from the live path:
+  `ProviderAdapter`/`AdapterFactory`/`AdapterRegistry` (`DefaultAdapterRegistry` had no
+  production caller) and `RunWithFailover`/`FailoverConfig`, while rescuing the live
+  helpers they had accumulated (`usageFromCodexUsage`, `ModelCandidate`,
+  `FailoverAttempt`, `FailoverSummaryError`).
+- **Wire-protocol dispatch registry.** Provider construction now dispatches on the
+  declared `wire_api`, not a 28-branch switch on `provider_type`: `internal/providers/wire`
+  is a single registry (`Descriptor`/`Register`/`Lookup`/`Build`) that every brand's
+  base URL, default model, headers, and construction hook come from as data. Deleted
+  `cmd/gateway_providers.go`'s two brand switches and `openAIProviderDefaults`. An
+  unregistered `wire_api` is now logged (`provider.wire_api.unknown`) and skipped instead
+  of silently building an OpenAI-compatible client. `internal/store` keeps `WireAPI*`/
+  `AuthKind*` constants and the `ValidWireAPIs`/`ValidAuthKinds` sets as aliases of the
+  registry, so the validated values and the dispatchable values cannot drift.
+  `llm_providers.settings.timeout_sec` now bounds the chat path (previously only
+  verify/models-list; the 300s response-header default still applies when unset).
+  **Fix:** a provider created (not migrated) after this change — through HTTP, MCP, the
+  onboarding wizard, or OAuth — now has its `wire_api`/`auth_kind` derived from its
+  `provider_type`'s brand, instead of defaulting to OpenAI-compatible/api_key regardless
+  of type. Repointing a provider's `provider_type` on update re-derives the declaration
+  unless the caller states `wire_api`/`auth_kind` explicitly. `POST /v1/providers` no
+  longer accepts a client-supplied `exec_path` (it selects the executable the gateway
+  runs for CLI-delegated providers); `PUT /v1/providers/{id}` now accepts `wire_api`/
+  `auth_kind` but still excludes `exec_path`.
+- **Per-model catalog, discovery, and `/v1/models`.** `llm_models` rows (context window,
+  max tokens, cost, capabilities, tokenizer, compat) are seeded from a bundled snapshot
+  on first read and refreshed through per-wire discovery (OpenAI-shaped models-list,
+  Ollama native, proxy/litellm) with a fingerprint-cached result and a
+  `discovered_models_authoritative` toggle between gap-fill and replace-membership.
+  New endpoints: `GET /v1/models` (OpenAI-shaped, tenant-scoped) and
+  `GET /v1/models/{provider}/{model}`; `GET /v1/providers/{id}/models` now reports
+  `stale`/`error`/`error_class` on a discovery failure instead of silently returning an
+  empty list.
+- **Compat as data and tool-call dialects.** `provider_quirks` rows (seeded from the
+  previous string-sniffing heuristics) replace `isOllamaEndpoint`/`isTogetherEndpoint`/
+  `isFireworksEndpoint`/`isDashScopeAPIBase`'s name/URL matching: a provider named
+  `ollama-proxy` no longer receives Ollama-specific request shaping unless it is
+  actually declared as one. `internal/providers/compat` resolves the request-shaping
+  fragment once per catalog build (pointer swap at request time, no per-request
+  allocation); `internal/providers/dialect` adds a table-driven tool-call parser
+  (qwen3, deepseek-v3, kimi-k2, glm, hermes/xml, harmony) selectable per model or via
+  `GOCLAW_TOOL_DIALECT`. Retry/fallback no longer discards a stream that already
+  emitted content, an image, or a tool call, but does retry a thinking-only partial.
+  Strict-tool rejection is now scoped to `(provider, base_url, model)` instead of the
+  whole process.
+- **Provider-level fallback chains, durable cooldown, and a provider health surface.**
+  `llm_providers.settings.fallback_chain` declares an ordered provider-level default chain
+  (`{"provider":"…","model":"…"}` entries, or compact `"provider/model"` strings); it is
+  merged *after* an agent's own `model_fallback` candidates (the agent wins on a duplicate
+  pair) when the runtime provider is resolved, so a default chain no longer has to be
+  repeated on every agent. Cooldown is now durable: `provider_health` (consecutive failures,
+  `cooldown_until`, last error class, last probe) and `provider_error_counts` (error-class
+  histogram) carry the state that used to live only in the fallback wrapper's in-memory map
+  — migration `000100`, SQLite schema version 63. The in-memory tracker stays the fast path
+  but reads the persisted deadline whenever a key has no local state and writes every
+  failure/probe/success through, so a restart no longer forgets an active cooldown (and no
+  longer burns a fresh probe on boot). Cooldown stays bounded: `providers.MaxCooldown` (1h)
+  clamps both the in-memory deadline and the persisted one. New `GET /v1/providers/{id}/health`
+  (and `POST /v1/providers/{id}/health` with `{"reset":true}` or `{"probe":true,"model":"…"}`)
+  plus `goclaw providers health [id] [--json] [--reset <id>] [--probe <id>]` report the state
+  and give operators the manual reset for a cooldown that outlived the outage that caused it.
+  The active probe reuses the existing verify path and runs only when explicitly requested —
+  there is no background prober.
 - **Bitrix24 channel migrated to imbot v2 messaging API** — outbound text now uses
   `imbot.v2.Chat.Message.send` (replacing `imbot.message.add`); bot verification/lookup
   uses `imbot.v2.Bot.list` (replacing `imbot.bot.list` + the legacy `imbot.list` fallback);
@@ -13,6 +84,48 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   registration intentionally stays on v1 `imbot.register` — v2 `imbot.v2.Bot.register`
   changes the event-delivery model (per-event handler URLs → `eventMode`), which would
   require rewriting the inbound event parser. No user-facing behavior change.
+- **Per-model capabilities now drive the request path.** `llm_models.capabilities`
+  (keys `tool_calling`, `vision`, `stream_with_tools`, `cache_control`) plus
+  `max_context_window` were declared but inert; they are now resolved per request as
+  `provider.Capabilities()` overlaid with the catalogue row
+  (`providers.ResolveModelCapabilities`) and consumed by the pipeline:
+  `tool_calling=false` drops the tool schemas from the outgoing request and injects an
+  in-band `[System]` notice so the model does not invent calls it cannot execute (the
+  execution allowlist is emptied, not left nil); `vision=false` strips image blocks from
+  the outgoing request only (the conversation buffer keeps them, so persisted history and
+  later vision runs are unaffected) and emits a user-visible notice once per run
+  (`chat.model_without_vision_notice` in en/vi/zh/ko/ru); `max_context_window` clamps the
+  request budget with min() semantics — a row never raises an agent's configured window;
+  `stream_with_tools=false` forces the non-stream transport for requests that carry tools,
+  which is how DashScope's tools-plus-stream limitation is now declared per model instead
+  of sniffed from the provider name/type (and a tool-free request to the same model still
+  streams); `cache_control=true`, or a resolved compat object declaring
+  `system_cache_control`/`tool_prefix_cache`, enables the prompt-cache parameters for any
+  wire the resolver declares cache-capable, replacing the Codex/ChatGPT-only Go type switch
+  (Anthropic's own block-level `cache_control` is untouched). The shipped model snapshot
+  seeds today's behaviour: anthropic/openai entries declare tool calling, streaming and
+  cache explicitly with their context window, and every DashScope chat model declares
+  `stream_with_tools:false`. A provider that declares no capabilities (no
+  `CapabilitiesAware`) is never gated — "undeclared" is not "unsupported".
+- **Per-request model routing and per-agent model roles.** `chat.send` accepts `model`
+  (and an optional `provider` name) and `POST /v1/chat/completions` honours an
+  `X-GoClaw-Model` header: the run uses that model — and, when a provider is named, that
+  provider — instead of the agent's own, and the explicit override bypasses the model
+  fallback chain (the semantics heartbeat/cron per-run overrides already had). A named
+  provider that is not in the registry fails the request (`provider not found: <name>`)
+  instead of silently running somewhere else; with no registry wired the pin is logged and
+  ignored while the model override still applies, and the response reports the effective
+  model. `agents.model_roles` (JSONB, PG migration `000099`, SQLite schema version 62)
+  declares role → `provider/model` targets per agent (e.g.
+  `{"summarizer":"anthropic/claude-haiku-4-5"}`), settable through the agent update
+  endpoint, validated on write (`role names are [A-Za-z0-9_.-]`, values must split into
+  provider + model on the first `/`) and carried by agent export/import. A run that
+  requests a role (`agent.WithModelRole`, for callers that already know which workload they
+  are running) picks the role's provider/model per run — resolved to live registry entries
+  at agent-resolution time but applied per run, never baked into the cached agent — with the
+  precedence: explicit per-request override → agent role → agent primary → provider default
+  → global default. An undeclared role, or one whose provider is not in the registry,
+  degrades to the agent primary instead of routing to a provider the operator did not name.
 
 ### Added
 
@@ -75,6 +188,20 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   for provider-first model selection.
 
 ### Fixed
+
+- **Claude CLI provider failed every follow-up turn with `Session ID ... is already
+  in use`** — `sessionFileExists` encoded the work directory into the Claude CLI's
+  `~/.claude/projects/<encoded-path>` name with a narrow replacement set
+  (separators, `_`, `.`, `:`), but the CLI replaces every character outside
+  `[A-Za-z0-9]` with `-` (per UTF-16 code unit). On any host whose data dir
+  contains a space (e.g. `C:\Users\Jane Doe\.goclaw\data`) the lookup missed the
+  real session file, so the provider passed `--session-id` for an ID the CLI
+  already owned and the turn died in `iter 0 think` — on every turn after the
+  first. Fixed by mirroring the CLI encoding (`encodeClaudeProjectDir`; verified
+  on Windows against Claude Code 2.1.282 — unix paths follow the same rule but
+  were not probed) and by
+  retrying once with `--resume` if the CLI still reports a duplicate session ID.
+  `ResetCLISession` now shares the same path helper.
 
 - **Quick Acknowledgement generated mode** — Generated acknowledgements now use
   the sidecar delivery generator instead of always falling back to fixed
@@ -182,6 +309,29 @@ All notable changes to GoClaw are documented here. For full documentation, see [
 - **Agent provider switching.** Saving an agent after changing provider/model now
   handles cleared ChatGPT OAuth routing config without writing SQL NULL into
   NOT NULL JSON config columns.
+
+- **Windows gateway could hang forever during startup.** `artifactNtOpen` (the
+  NT-native open behind the delegation-artifact secure root) omitted
+  `FILE_SYNCHRONOUS_IO_NONALERT`, so directory handles landed in asynchronous
+  mode. Go's `os.File.ReadDir` issues a synchronous `NtQueryDirectoryFile` that
+  waits on the file object and never completes for such a handle. Because
+  delegation artifact recovery enumerates
+  `workspace/collaboration/delegations` while wiring the delegate tool, any
+  Windows gateway whose workspace contained that directory stalled after channel
+  loading: no listener on the gateway port and no further log lines. Handles are
+  now opened synchronously, matching Win32 `CreateFile` semantics for the
+  `os.File` callers.
+
+- **Claude CLI sessions were recreated on every turn** ("Session ID <uuid> is
+  already in use"). Resuming depended on a `~/.claude/projects/<workdir>` lookup
+  whose path encoding did not match the CLI's for common Windows paths (spaces,
+  dots, non-ASCII segments), so every turn after the first passed `--session-id`
+  for an ID the CLI already owned and the turn failed with exit status 1. The
+  provider now encodes the project directory exactly as the CLI does
+  (per-UTF-16-code-unit replacement of non-alphanumerics, verified against CLI
+  session files), passes `--resume` for existing sessions, and retries once with
+  `--resume` if the CLI still reports the collision. The model allowlist also
+  accepts the current granular CLI model IDs.
 
 ## Project Status
 

@@ -30,6 +30,8 @@ type CodexProvider struct {
 	middlewares     RequestMiddleware // composed middleware chain (nil = no-op)
 	tokenSource     TokenSource
 	routingDefaults *CodexRoutingDefaults
+	requestTimeout  time.Duration // per-provider deadline from settings.timeout_sec (0 = none)
+	concurrencyGate ConcurrencyGate // per-provider max_in_flight gate (nil = unbounded)
 }
 
 // NewCodexProvider creates a provider for the OpenAI Responses API with OAuth token.
@@ -131,6 +133,17 @@ func (p *CodexProvider) middlewareConfig(req ChatRequest) MiddlewareConfig {
 }
 
 func (p *CodexProvider) ChatStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatStreamImpl(ctx, req, onChunk)
+	})
+}
+
+func (p *CodexProvider) chatStreamImpl(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	cfg := p.retryConfig
 	if cfg.Attempts <= 0 {
 		cfg.Attempts = 1
@@ -250,10 +263,7 @@ func (p *CodexProvider) chatStreamOnce(ctx context.Context, req ChatRequest, onC
 }
 
 func codexResultHasVisibleOutput(result *ChatResponse) bool {
-	if result == nil {
-		return false
-	}
-	return result.Content != "" || result.Thinking != "" || len(result.ToolCalls) > 0 || len(result.Images) > 0
+	return ResponseHasVisibleOutput(result)
 }
 
 // processSSEEvent handles a single SSE event during streaming.
@@ -383,4 +393,33 @@ func (p *CodexProvider) processSSEEvent(event *codexSSEEvent, result *ChatRespon
 		return errors.New(errMsg)
 	}
 	return nil
+}
+
+// usageFromCodexUsage maps a Codex Responses API usage block onto the internal
+// Usage type, including cached-input and reasoning-token details.
+func usageFromCodexUsage(u *codexUsage) *Usage {
+	if u == nil {
+		return nil
+	}
+	usage := &Usage{
+		PromptTokens:     u.InputTokens,
+		CompletionTokens: u.OutputTokens,
+		TotalTokens:      u.TotalTokens,
+	}
+	if u.InputTokensDetails != nil {
+		usage.CacheReadTokens = u.InputTokensDetails.CachedTokens
+		usage.PromptTokensIncludeCachedSegments = true
+	}
+	if u.PromptTokensDetails != nil {
+		// Some Responses API payloads use the older Chat Completions naming.
+		// Prefer the larger value if both aliases are present.
+		if u.PromptTokensDetails.CachedTokens > usage.CacheReadTokens {
+			usage.CacheReadTokens = u.PromptTokensDetails.CachedTokens
+		}
+		usage.PromptTokensIncludeCachedSegments = true
+	}
+	if u.OutputTokensDetails != nil {
+		usage.ThinkingTokens = u.OutputTokensDetails.ReasoningTokens
+	}
+	return usage
 }

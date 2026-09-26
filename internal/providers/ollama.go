@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	ollamaapi "github.com/ollama/ollama/api"
 )
@@ -34,6 +35,8 @@ type OllamaProvider struct {
 	// should ask Ollama to emit visible reasoning/thinking tokens.
 	// nil = default off (see buildRequest).
 	thinkingEnabled *bool
+	requestTimeout  time.Duration // per-provider deadline from settings.timeout_sec (0 = none)
+	concurrencyGate ConcurrencyGate // per-provider max_in_flight gate (nil = unbounded)
 }
 
 // NewOllamaProvider creates an OllamaProvider.
@@ -142,6 +145,17 @@ func (p *OllamaProvider) Capabilities() ProviderCapabilities {
 
 // Chat sends a non-streaming chat request to Ollama and returns the full response.
 func (p *OllamaProvider) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatImpl(ctx, req)
+	})
+}
+
+func (p *OllamaProvider) chatImpl(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	var result *ChatResponse
 	var chatErr error
 
@@ -169,6 +183,17 @@ func (p *OllamaProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRespon
 // ChatStream sends a streaming chat request to Ollama, calling onChunk for each
 // content delta, and returns the accumulated final response.
 func (p *OllamaProvider) ChatStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	return runGated(ctx, p.concurrencyGate, func() (*ChatResponse, error) {
+		return p.chatStreamImpl(ctx, req, onChunk)
+	})
+}
+
+func (p *OllamaProvider) chatStreamImpl(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) (*ChatResponse, error) {
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
 	result := &ChatResponse{FinishReason: "stop"}
 
 	fn := func() (*ChatResponse, error) {

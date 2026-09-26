@@ -578,7 +578,10 @@ func providersHealthCmd() *cobra.Command {
 				}
 				runProviderHealthAction(resolveProviderRef(probeRef), body, jsonOutput)
 			default:
-				runProvidersHealth(ref, jsonOutput)
+				if err := runProvidersHealth(ref, jsonOutput); err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
 			}
 		},
 	}
@@ -609,40 +612,52 @@ func resolveProviderRef(ref string) string {
 	return ""
 }
 
-func runProvidersHealth(ref string, jsonOutput bool) {
-	var reports []map[string]any
+// runProvidersHealth prints the durable health of one provider, or of every
+// provider when ref is empty. It returns an error when the health surface could
+// not be read at all: a gateway too old to serve the route must not look like a
+// provider set with nothing to report.
+func runProvidersHealth(ref string, jsonOutput bool) error {
+	reports := []map[string]any{}
+	var listErr error
 	if ref == "" {
 		providers, err := fetchProviders()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+			return err
 		}
+		failures := 0
 		for _, p := range providers {
 			resp, err := gatewayHTTPGet("/v1/providers/" + url.PathEscape(p.ID) + "/health")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "warning: %s: %v\n", p.Name, err)
+				failures++
 				continue
 			}
 			reports = append(reports, resp)
 		}
+		if failures > 0 && len(reports) == 0 {
+			listErr = fmt.Errorf("provider health unavailable: all %d providers failed", failures)
+		}
 	} else {
 		resp, err := gatewayHTTPGet("/v1/providers/" + url.PathEscape(resolveProviderRef(ref)) + "/health")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+			return err
 		}
 		reports = append(reports, resp)
 	}
 
 	if jsonOutput {
+		// --json always prints an array: an empty result is [], never null, so a
+		// pipeline consuming this output cannot be handed a null document.
 		data, _ := json.MarshalIndent(reports, "", "  ")
 		fmt.Println(string(data))
-		return
+		return listErr
 	}
 
 	if len(reports) == 0 {
-		fmt.Println("No providers configured.")
-		return
+		if listErr == nil {
+			fmt.Println("No providers configured.")
+		}
+		return listErr
 	}
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -666,6 +681,7 @@ func runProvidersHealth(ref string, jsonOutput bool) {
 			name, state, failures, cooldownUntil, lastError, formatErrorCounts(report["error_counts"]))
 	}
 	tw.Flush()
+	return listErr
 }
 
 // runProviderHealthAction posts one reset/probe action and prints the result.

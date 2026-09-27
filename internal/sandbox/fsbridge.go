@@ -173,8 +173,8 @@ func fsBridgePathWithin(root, target string) bool {
 	return strings.HasPrefix(target, root+"/")
 }
 
-func (b *FsBridge) containerRealPath(ctx context.Context, path string) (string, error) {
-	stdout, stderr, exitCode, err := b.dockerExec(ctx, nil, "realpath", "-e", "--", path)
+func (b *FsBridge) containerRealPath(ctx context.Context, p string) (string, error) {
+	stdout, stderr, exitCode, err := b.dockerExec(ctx, nil, "realpath", "-e", "--", p)
 	if err != nil {
 		return "", fmt.Errorf("fsbridge realpath: %w", err)
 	}

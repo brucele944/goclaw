@@ -480,6 +480,16 @@ func artifactNtOpen(
 	if err != nil {
 		return windows.InvalidHandle, err
 	}
+	// Handles are always consumed through os.File, whose ReadDir/Read/Write paths
+	// issue synchronous NtQueryDirectoryFile/NtReadFile calls that wait on the file
+	// object. Without FILE_SYNCHRONOUS_IO_NONALERT the kernel treats the handle as
+	// asynchronous and never signals that wait: on Windows, File.ReadDir on such a
+	// directory handle blocks forever (verified: GENERIC_READ|SYNCHRONIZE +
+	// FILE_OPEN_REPARSE_POINT hangs, adding this flag returns the entries
+	// immediately). The failure surfaced as a gateway that never finished startup,
+	// because delegation artifact recovery enumerates
+	// workspace/collaboration/delegations on boot.
+	options |= windows.FILE_SYNCHRONOUS_IO_NONALERT
 	oa := &windows.OBJECT_ATTRIBUTES{
 		Length:        uint32(unsafe.Sizeof(windows.OBJECT_ATTRIBUTES{})),
 		RootDirectory: root,

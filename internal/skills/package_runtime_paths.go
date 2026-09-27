@@ -58,6 +58,25 @@ func FindRuntimeExecutable(name string) (string, bool) {
 	return "", false
 }
 
+// NormalizeBinaryName returns the identity of a binary reference: its lowercased
+// file base, with the Windows executable suffix removed. Callers compare binary
+// identity through this helper so a registered name ("goclaw") and a resolved
+// executable path (`C:\bin\goclaw.exe`) agree on every platform.
+// Examples: "/usr/bin/gh" → "gh", "./GH" → "gh", `C:\bin\gh.exe` → "gh" (Windows).
+func NormalizeBinaryName(s string) string {
+	return normalizeBinaryNameFor(runtime.GOOS, s)
+}
+
+// normalizeBinaryNameFor is NormalizeBinaryName with an explicit GOOS so both
+// platform branches stay testable on any host.
+func normalizeBinaryNameFor(goos, s string) string {
+	name := filepath.Base(strings.TrimSpace(strings.ToLower(s)))
+	if goos == "windows" {
+		name = strings.TrimSuffix(name, ".exe")
+	}
+	return name
+}
+
 func IsExecutableFile(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {

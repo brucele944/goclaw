@@ -37,14 +37,6 @@ var wrapperBinaries = map[string]bool{
 	"env": true, "nohup": true, "stdbuf": true, "timeout": true,
 }
 
-// normalizeBinaryName returns the lowercased file base of a binary reference.
-// Examples: "/usr/bin/gh" → "gh", "./GH" → "gh", "  Gh  " → "gh".
-// Applied at both the gate lookup and lookupCredentialedBinary so the two
-// layers agree on identity.
-func normalizeBinaryName(s string) string {
-	return filepath.Base(strings.TrimSpace(strings.ToLower(s)))
-}
-
 // detectWrapper recognises shell-wrapper invocations and returns the inner
 // command string. Supported shapes:
 //
@@ -64,7 +56,7 @@ func detectWrapper(cmd string) (wrapper string, innerCmd string, ok bool) {
 	if err != nil || len(words) == 0 {
 		return "", "", false
 	}
-	head := normalizeBinaryName(words[0])
+	head := skills.NormalizeBinaryName(words[0])
 	if !wrapperBinaries[head] {
 		return "", "", false
 	}
@@ -146,7 +138,7 @@ func collectGateCandidates(cmd string) (candidates []gateCandidate, tooDeep bool
 		if err != nil || bin == "" {
 			return candidates, false
 		}
-		norm := normalizeBinaryName(bin)
+		norm := skills.NormalizeBinaryName(bin)
 		candidates = append(candidates, gateCandidate{binary: norm, wrapper: wrapper})
 		w, inner, ok := detectWrapper(current)
 		if !ok || strings.TrimSpace(inner) == "" {
@@ -275,7 +267,7 @@ func resolveAndMatchBinary(binaryName string, configPath *string) (string, error
 		if !skills.IsExecutableFile(expectedPath) {
 			return "", fmt.Errorf("configured binary path %q is not executable", expectedPath)
 		}
-		if normalizeBinaryName(expectedPath) == normalizeBinaryName(binaryName) {
+		if skills.NormalizeBinaryName(expectedPath) == skills.NormalizeBinaryName(binaryName) {
 			return expectedPath, nil
 		}
 		if runtimePath, ok := skills.FindRuntimeExecutable(binaryName); ok && runtimePath == expectedPath {
@@ -849,10 +841,11 @@ func (t *ExecTool) lookupCredentialedBinary(ctx context.Context, command string)
 	if err != nil {
 		return nil, "", nil
 	}
-	// Normalize lookup key so path/case variants (/usr/bin/gh, ./gh, GH) all
-	// resolve to the same registry row. Same helper is used by the gate
-	// branch in Execute because identity must agree at both layers.
-	normBinary := normalizeBinaryName(binary)
+	// Normalize lookup key so path/case variants (/usr/bin/gh, ./gh, GH, and
+	// goclaw.exe on Windows) all resolve to the same registry row.
+	// skills.NormalizeBinaryName is shared with the gate branch in Execute
+	// because identity must agree at both layers.
+	normBinary := skills.NormalizeBinaryName(binary)
 	// Get agent ID from context for scoped lookup
 	agentID := store.AgentIDFromContext(ctx)
 	var agentIDPtr *uuid.UUID

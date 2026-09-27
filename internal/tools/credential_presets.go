@@ -1,6 +1,10 @@
 package tools
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/nextlevelbuilder/goclaw/internal/skills"
+)
 
 // CLIPreset defines a built-in configuration template for a common CLI tool.
 // Presets eliminate admin research friction by pre-filling env var names,
@@ -172,7 +176,7 @@ func ListPresetNames() []string {
 }
 
 func requiredCredentialEnvVars(binary string) []string {
-	name := normalizeBinaryName(binary)
+	name := skills.NormalizeBinaryName(binary)
 	preset := GetPreset(name)
 	if preset == nil {
 		return nil

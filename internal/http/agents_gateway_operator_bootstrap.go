@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -319,8 +318,12 @@ func gatewayOperatorServerURL(addr string) string {
 	return "http://" + strings.TrimRight(addr, "/")
 }
 
+func gatewayOperatorBinaryBaseMatches(path string) bool {
+	return skills.NormalizeBinaryName(path) == skills.NormalizeBinaryName(gatewayOperatorBinaryName)
+}
+
 func defaultFindGatewayOperatorBinary() (string, error) {
-	if exe, err := os.Executable(); err == nil && strings.EqualFold(filepath.Base(exe), gatewayOperatorBinaryName) && skills.IsExecutableFile(exe) {
+	if exe, err := os.Executable(); err == nil && gatewayOperatorBinaryBaseMatches(exe) && skills.IsExecutableFile(exe) {
 		return exe, nil
 	}
 	if path, err := exec.LookPath(gatewayOperatorBinaryName); err == nil && skills.IsExecutableFile(path) {

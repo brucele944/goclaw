@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nextlevelbuilder/goclaw/internal/config"
+	"github.com/nextlevelbuilder/goclaw/internal/skills"
 )
 
 type commandKeywordAllowAudit struct {
@@ -28,7 +29,7 @@ func applyCommandKeywordAllowlist(command string, args []string, rules []config.
 		if !commandKeywordAllowlistRuleEnabled(rule) {
 			continue
 		}
-		if normalizeBinaryName(rule.Command) != normalizeBinaryName(command) {
+		if skills.NormalizeBinaryName(rule.Command) != skills.NormalizeBinaryName(command) {
 			continue
 		}
 		subcommand, argStart, ok := matchCommandKeywordSubcommand(args, rule.Subcommands)
@@ -78,7 +79,7 @@ func applyCommandKeywordAllowlist(command string, args []string, rules []config.
 			for _, keyword := range hits {
 				audits = append(audits, commandKeywordAllowAudit{
 					RuleID:     rule.ID,
-					Command:    normalizeBinaryName(command),
+					Command:    skills.NormalizeBinaryName(command),
 					Subcommand: subcommand,
 					Arg:        argName,
 					Keyword:    keyword,

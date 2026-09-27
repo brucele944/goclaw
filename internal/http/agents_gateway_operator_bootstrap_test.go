@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -326,6 +327,40 @@ func (s *gatewayOperatorAgentStore) SetAgentContextFile(_ context.Context, agent
 	}
 	s.files[agentID][fileName] = content
 	return nil
+}
+
+func TestGatewayOperatorBinaryBaseMatches(t *testing.T) {
+	type testCase struct {
+		path string
+		want bool
+	}
+	cases := []testCase{
+		{"/usr/local/bin/goclaw", true},
+		{"/opt/goclaw/current/goclaw", true},
+		{"/usr/local/bin/goclawx", false},
+		// Only a ".exe" suffix is ever stripped — never an arbitrary
+		// extension — so a renamed copy is not the goclaw binary.
+		{"/usr/local/bin/goclaw.bak", false},
+	}
+	if runtime.GOOS == "windows" {
+		// filepath.Base only splits on the native separator, so backslash
+		// paths are meaningful on Windows only; on Linux CI they'd stay
+		// unsplit and fail these assertions for the wrong reason.
+		cases = append(cases,
+			testCase{`C:\Program Files\GoClaw\goclaw.exe`, true},
+			testCase{`C:\Program Files\GoClaw\GOCLAW.EXE`, true},
+			testCase{`C:\bin\other.exe`, false},
+			testCase{`C:\bin\goclaw.bak`, false},
+		)
+	} else {
+		// Unix: ".exe" carries no meaning, so the suffix is part of identity.
+		cases = append(cases, testCase{"/usr/local/bin/goclaw.exe", false})
+	}
+	for _, c := range cases {
+		if got := gatewayOperatorBinaryBaseMatches(c.path); got != c.want {
+			t.Errorf("gatewayOperatorBinaryBaseMatches(%q) = %v, want %v", c.path, got, c.want)
+		}
+	}
 }
 
 func TestGatewayOperatorBootstrapCreatesBinaryGrantAndSensitiveTokenEnv(t *testing.T) {

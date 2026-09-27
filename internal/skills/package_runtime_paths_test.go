@@ -7,6 +7,29 @@ import (
 	"testing"
 )
 
+// normalizeBinaryNameFor's .exe-stripping branch only matters on Windows,
+// but bare basenames (no separators) let us exercise both GOOS branches
+// deterministically regardless of the host running the test — unlike
+// filepath.Base, which only splits on the native separator.
+func TestNormalizeBinaryNameForStripsExeOnWindowsOnly(t *testing.T) {
+	cases := []struct {
+		goos string
+		in   string
+		want string
+	}{
+		{"windows", "goclaw.exe", "goclaw"},
+		{"windows", "GOCLAW.EXE", "goclaw"},
+		{"windows", "goclaw", "goclaw"},
+		{"linux", "goclaw.exe", "goclaw.exe"},
+		{"darwin", "goclaw", "goclaw"},
+	}
+	for _, c := range cases {
+		if got := normalizeBinaryNameFor(c.goos, c.in); got != c.want {
+			t.Errorf("normalizeBinaryNameFor(%q, %q) = %q, want %q", c.goos, c.in, got, c.want)
+		}
+	}
+}
+
 func TestNpmCommandEnvUsesRuntimePrefix(t *testing.T) {
 	runtimeDir := t.TempDir()
 	t.Setenv("RUNTIME_DIR", runtimeDir)

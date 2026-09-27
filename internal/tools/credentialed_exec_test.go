@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/nextlevelbuilder/goclaw/internal/config"
@@ -314,6 +315,38 @@ func TestApplyCommandKeywordAllowlistRequiresSubcommandForPositions(t *testing.T
 	}
 	if len(audits) != 0 {
 		t.Fatalf("position rule without subcommand emitted audit records: %v", audits)
+	}
+}
+
+// Regression: resolveAndMatchBinary must accept a configured path whose
+// filename differs from the command binary only by the Windows executable
+// suffix (e.g. registry row stores "goclaw", resolved path is
+// "...\goclaw.exe"). Uses runtime.GOOS directly (not TestMain injection)
+// since skills.NormalizeBinaryName only strips ".exe" when GOOS=="windows";
+// on non-Windows hosts the suffix is part of identity, so this asserts the
+// opposite outcome there.
+func TestResolveAndMatchBinaryMatchesWindowsExeSuffix(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin")
+	binDir := t.TempDir()
+	binaryPath := filepath.Join(binDir, "goclaw.exe")
+	if err := os.WriteFile(binaryPath, []byte("MZ"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := resolveAndMatchBinary("goclaw", &binaryPath)
+	if runtime.GOOS == "windows" {
+		if err != nil {
+			t.Fatalf("resolveAndMatchBinary returned error: %v", err)
+		}
+		if got != binaryPath {
+			t.Fatalf("path = %q, want %q", got, binaryPath)
+		}
+		return
+	}
+	// Non-Windows: "goclaw.exe" is not the same file identity as "goclaw"
+	// and isn't on PATH or in the runtime dirs, so this must fail closed.
+	if err == nil {
+		t.Fatalf("resolveAndMatchBinary(%q) unexpectedly matched %q on GOOS=%s", binaryPath, got, runtime.GOOS)
 	}
 }
 

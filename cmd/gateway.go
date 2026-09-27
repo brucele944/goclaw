@@ -497,7 +497,7 @@ func runGateway() {
 	loadBootstrapFiles(pgStores, workspace, agentCfg)
 
 	// Backfill CAPABILITIES.md for pre-v3 agents that don't have it yet.
-	if count, err := bootstrap.BackfillCapabilities(context.Background(), pgStores.DB); err != nil {
+	if count, err := bootstrap.BackfillCapabilities(context.Background(), pgStores.DB, pgStores.Dialect); err != nil {
 		slog.Warn("bootstrap: capabilities backfill failed", "error", err)
 	} else if count > 0 {
 		slog.Info("bootstrap: capabilities backfill complete", "agents", count)

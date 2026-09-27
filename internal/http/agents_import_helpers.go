@@ -190,6 +190,21 @@ func importTenantID(ctx context.Context) uuid.UUID {
 	return tid
 }
 
+// maxBindVars caps the bound parameters of a single statement. PostgreSQL allows
+// 65535 and SQLite 32766 (32767 fails with "too many SQL variables"), so imports
+// size their multi-row batches from this ceiling instead of a fixed row count.
+const maxBindVars = 30000
+
+// bindLimitedChunkSize returns how many rows fit in one multi-row INSERT that
+// binds paramsPerRow parameters per row, leaving room for extraParams
+// batch-level parameters (e.g. a bound updated_at).
+func bindLimitedChunkSize(paramsPerRow, extraParams int) int {
+	if paramsPerRow < 1 || maxBindVars-extraParams < 1 {
+		return 1
+	}
+	return max(1, (maxBindVars-extraParams)/paramsPerRow)
+}
+
 // nullJSON returns nil if raw is empty (for JSONB nullable columns), otherwise returns raw.
 func nullJSON(raw json.RawMessage) any {
 	if len(raw) == 0 {
@@ -204,6 +219,24 @@ func coalesceJSON(raw json.RawMessage) json.RawMessage {
 		return json.RawMessage(`{}`)
 	}
 	return raw
+}
+
+// coalesceStr returns *s, or fallback when the pointer is nil — for NOT NULL text
+// columns whose DDL default the import must not override with an explicit NULL.
+func coalesceStr(s *string, fallback string) any {
+	if s == nil {
+		return fallback
+	}
+	return *s
+}
+
+// coalesceInt returns *n, or fallback when the pointer is nil — for NOT NULL int
+// columns whose DDL default the import must not override with an explicit NULL.
+func coalesceInt(n *int, fallback int) any {
+	if n == nil {
+		return fallback
+	}
+	return *n
 }
 
 // nullStr converts a *string pointer to nil interface if the pointer is nil.

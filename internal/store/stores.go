@@ -1,10 +1,20 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/nextlevelbuilder/goclaw/internal/store/base"
+)
 
 // Stores is the top-level container for all storage backends.
 type Stores struct {
-	DB                    *sql.DB // underlying connection
+	DB *sql.DB // underlying connection
+
+	// Dialect is the backend's SQL dialect, set by whichever factory built this
+	// container. Shared code outside store/pg and store/sqlitestore (bootstrap,
+	// HTTP importers) needs it to emit placeholders and SQL expressions that the
+	// backend actually accepts.
+	Dialect               base.Dialect
 	Sessions              SessionStore
 	Memory                MemoryStore
 	Cron                  CronStore

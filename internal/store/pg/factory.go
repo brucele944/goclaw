@@ -26,6 +26,7 @@ func NewPGStores(cfg store.StoreConfig) (*store.Stores, error) {
 
 	pgStores := &store.Stores{
 		DB:                     db,
+		Dialect:                pgDialect,
 		Sessions:               NewPGSessionStore(db),
 		Memory:                 NewPGMemoryStore(db, memCfg),
 		Cron:                   NewPGCronStore(db),

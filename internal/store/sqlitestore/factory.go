@@ -38,6 +38,7 @@ func NewSQLiteStores(cfg store.StoreConfig) (*store.Stores, error) {
 
 	sqliteStores := &store.Stores{
 		DB:                     db,
+		Dialect:                sqliteDialect,
 		Sessions:               NewSQLiteSessionStore(db),
 		Agents:                 NewSQLiteAgentStore(db),
 		Providers:              NewSQLiteProviderStore(db, cfg.EncryptionKey),

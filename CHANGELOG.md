@@ -127,67 +127,58 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   → global default. An undeclared role, or one whose provider is not in the registry,
   degrades to the agent primary instead of routing to a provider the operator did not name.
 
-### Added
+- **SQLite (desktop/lite) startup and agent import: shared SQL relied on
+  PostgreSQL-only defaults.** Three defect sites, all of the same shape — SQL
+  written once for both dialects but only valid on PostgreSQL, where the failure
+  is either a logged warning or a silently missing row:
+  1. **Tenant/system-config seed aborted the boot-time read** (`sql: Scan error
+     ... unsupported Scan, storing driver.Value type string into type
+     *jsontext.Value`). SQLite returns JSON columns as text; the row structs
+     declared `json.RawMessage` and `database/sql` cannot scan into it. Those
+     fields now use the SQLite scanner types (`sqliteJSONValue`) already used by
+     the other row structs.
+  2. **Capability backfill failed on every boot** (`no such function:
+     uuid_generate_v7`) — `internal/bootstrap` inserted rows without an `id`,
+     relying on PostgreSQL's `DEFAULT uuid_generate_v7()`. Ids now come from Go.
+  3. **Agent import dropped rows on SQLite** — `cron_jobs`,
+     `user_agent_overrides`, `agent_evolution_metrics` and
+     `agent_evolution_suggestions` inserted without `id` (PostgreSQL default
+     only), and `team_tasks` bound NULL into `metadata`/`task_type`/
+     `task_number`, which are `NOT NULL` in *both* dialects. Each statement
+     aborted with a `NOT NULL`/`FOREIGN KEY` error, the import logged a warning
+     and continued, and the summary still reported success — so a team import
+     lost its task, and with it every comment and event (FK). Ids now come from
+     Go and the NULL-bound columns coalesce to their DDL defaults (`{}`,
+     `general`, `0`).
+  4. **Multi-row import batches bound the wrong parameters.** The team member,
+     comment and event batches declared a per-row stride one short of their
+     placeholder and argument count (`cols = 4/8/7` against 5/9/8 binds), so from
+     the second row on, the placeholder indices overlapped and each row took a
+     neighbour's value — the first row was always correct, which is why
+     single-row fixtures and the earlier smoke missed it. Strides now match the
+     bind count.
+  5. **Import batches exceeded SQLite's bound-parameter ceiling.** SQLite allows
+     32766 parameters per statement (32767 fails with `too many SQL variables`);
+     the cron batch bound 11 × 5000 = 55000 and the user-override batch
+     7 × 5000 + 1 = 35001, so any sizeable import lost whole sections on the
+     desktop/lite build. Chunk sizes are now derived from a shared ceiling
+     (`maxBindVars`) instead of a fixed row count.
+  6. **Import counters counted failed writes as imported.** `CronJobs`,
+     `UserProfiles` and `UserOverrides` were incremented per chunk regardless of
+     the `ExecContext` result, and the team phase reported the archive's row
+     count rather than what landed — which is what made the failures above look
+     like a clean import. Counters now advance only on a successful statement,
+     and the team section logs a `partial import` warning with per-table
+     landed/expected counts.
 
-- **Behavior UX sidecar delivery overrides** — Adds sidecar-generated Quick
-  Acknowledgement and Intermediate Replies with provider/model, timeout, token,
-  and char caps. Effective config resolves Channel > Agent > Workspace, with
-  agent overrides stored in `other_config.delivery_behavior`.
-
-- **Built-in skill `workspace-organizing`** — closes #71. Discipline skill that
-  teaches agents to keep personal, team, and delegate workspaces tidy.
-  Enforces a purpose-based folder convention with two modes: flat
-  (`notes/`, `data/`, `outputs/`, `scripts/`, `archive/`) for ad-hoc work
-  and project (`projects/<slug>/{docs,assets,source,reports,research}/`)
-  for named multi-file work. Per-agent namespacing under
-  `shared/<agent_key>/` prevents collisions in team workspaces. Integrates
-  pre-write discovery via `vault_search`, `memory_search`, and
-  `knowledge_graph_search` to surface related files before writing and
-  avoid duplicates; documents Vault scope mirroring and id-routing rules.
-- **Bitrix24 channel 2-way media (file) transfer** — Inbound media downloads via
-  `imbot.v2.File.download` (one-time authenticated URL) with MIME preservation for
-  images, PDFs, audio, and video. Outbound uploads via `imbot.v2.File.upload` (base64).
-  Shared `media_max_mb` config knob (default 20 MB) caps both directions. Requires
-  `imbot` OAuth scope (no `disk` scope needed). Inbound handled by new
-  `internal/channels/bitrix24/download.go`; outbound by `send_media.go`. New
-  `BaseChannel.HandleMessageMedia()` method centralizes media-aware message handling.
-  See `docs/05-channels-messaging.md` § 16 (Bitrix24) for configuration.
-
-- **Skill agent manage grants** — Adds per-agent skill edit/delete grants with
-  backend checks, HTTP/WS support, SQLite and PostgreSQL schema updates, and web
-  dashboard controls for granting and revoking manage access.
-
-- **Packages Update Flow (Phase 2a: pip + npm)** — closes #900 (Phase 2a). Extends
-  Phase 1 update infrastructure to pip and npm package sources. `/v1/packages/updates`
-  now returns mixed-source results with an `availability: {github, pip, npm}` map.
-  Multi-source UI with per-source filter pills; unavailable sources (binary not on PATH
-  or Lite edition) hidden automatically. apk deferred to Phase 2b.
-  See `docs/packages-pip-npm.md` for command matrix, runbook, and min versions.
-
-- **Packages Update Flow (Phase 1: GitHub binaries)** — closes #900. Proactive
-  "N updates available" badge + per-row `[Update]` + `[Update All]` on the
-  Runtime & Packages page. Backend endpoints under `/v1/packages/updates*`
-  (master-scope). ETag-aware polling (304 responses don't burn rate limit),
-  stale-while-revalidate cache, atomic two-phase `.bak` swap with rollback.
-  Pre-release detection via regex + GitHub API flag; semver ordering via
-  `golang.org/x/mod/semver`; non-semver tags use string-inequality fallback
-  with downgrade protection. WebSocket events `package.update.*` for owner
-  clients. See `docs/packages-github.md` § "Updating Installed Packages".
-
-### Changed
-
-- **Behavior UX simplification** — Retires user-facing Tool Status Messages and
-  deterministic tool-status channel text. Show Reasoning remains separate for
-  debugging/testing, while Quick Acknowledgement and Intermediate Replies are
-  delivery-only sidecar messages. Legacy `block_reply` config remains readable
-  as an inherited Intermediate Replies default but is no longer exposed as a
-  separate Web UI control.
-
-- **ChatGPT Subscription (OAuth)** — default model and backend-owned model catalog
-  now prefer `gpt-5.5`, with reasoning metadata and context-window defaults updated
-  for provider-first model selection.
-
-### Fixed
+     Regression tests: `internal/http/agents_import_sqlite_test.go`
+     (`-tags sqliteonly`) drives the cron, user-override, evolution and team
+     sections against an in-memory SQLite schema and asserts row counts *and*
+     values (the stride bug keeps counts intact and corrupts data). Verified
+     failing before each fix — reverted strides lose rows, a fixed 5000-row chunk
+     fails with `too many SQL variables` — and end-to-end against the lite
+     gateway binary with a hand-built archive: 11 import tables populated with
+     the right values, versus only `agents` and `agent_context_files` before.
 
 - **Claude CLI provider failed every follow-up turn with `Session ID ... is already
   in use`** — `sessionFileExists` encoded the work directory into the Claude CLI's

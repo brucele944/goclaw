@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -165,10 +166,11 @@ func createNewTenant(ctx context.Context, db *sql.DB, source *tenantRestoreRow, 
 	}
 
 	newID := uuid.New()
+	now := time.Now().UTC()
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO tenants (id, name, slug, status, settings, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
-		newID, name, slug, status, settings,
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		newID, name, slug, status, settings, now, now,
 	)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("insert tenant: %w", err)
@@ -178,12 +180,12 @@ func createNewTenant(ctx context.Context, db *sql.DB, source *tenantRestoreRow, 
 
 // shouldRestoreTable reports whether a table from the archive should be restored for the given mode.
 //   - mode=new:     tenants row is created fresh from archive metadata via createNewTenant,
-//                   so the archived tenants copy is skipped to avoid duplicate INSERT.
+//     so the archived tenants copy is skipped to avoid duplicate INSERT.
 //   - mode=replace: tenants row is preserved in place (deleteTenantData skips it to respect
-//                   FK from excluded diagnostic tables), so the archived copy is NOT re-applied
-//                   either — existing tenant metadata (name/status/settings) remains untouched.
+//     FK from excluded diagnostic tables), so the archived copy is NOT re-applied
+//     either — existing tenant metadata (name/status/settings) remains untouched.
 //   - mode=upsert:  all tables including tenants are restored via ON CONFLICT DO NOTHING
-//                   (NO-OP if the row already exists).
+//     (NO-OP if the row already exists).
 func shouldRestoreTable(mode string, table TableDef) bool {
 	if table.Name == "tenants" && (mode == "new" || mode == "replace") {
 		return false

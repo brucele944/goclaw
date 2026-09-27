@@ -395,7 +395,7 @@ func (s *SQLiteTracingStore) RecoverStaleRunningTraces(ctx context.Context, cuto
 	// Recover stuck spans first.
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE spans SET status = 'error', error = 'recovered: server restart',
-		   end_time = datetime('now'), duration_ms = CAST((julianday('now') - julianday(start_time)) * 86400000 AS INTEGER)
+		   end_time = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), duration_ms = CAST((julianday('now') - julianday(start_time)) * 86400000 AS INTEGER)
 		 WHERE status = 'running' AND start_time < ?`, cutoff)
 	if err != nil {
 		return 0, fmt.Errorf("recover stale spans: %w", err)
@@ -404,7 +404,7 @@ func (s *SQLiteTracingStore) RecoverStaleRunningTraces(ctx context.Context, cuto
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE traces SET status = 'error',
 		   error = 'recovered: stuck in running state (server restart)',
-		   end_time = datetime('now'), duration_ms = CAST((julianday('now') - julianday(start_time)) * 86400000 AS INTEGER)
+		   end_time = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), duration_ms = CAST((julianday('now') - julianday(start_time)) * 86400000 AS INTEGER)
 		 WHERE status = 'running' AND start_time < ?`, cutoff)
 	if err != nil {
 		return 0, fmt.Errorf("recover stale running traces: %w", err)

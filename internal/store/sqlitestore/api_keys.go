@@ -91,7 +91,7 @@ func (s *SQLiteAPIKeyStore) GetByHash(ctx context.Context, keyHash string) (*sto
 	row := s.db.QueryRowContext(ctx,
 		`SELECT id, name, prefix, key_hash, scopes, owner_id, tenant_id, expires_at, last_used_at, revoked, created_by, created_at, updated_at
 		 FROM api_keys
-		 WHERE key_hash = ? AND NOT revoked AND (expires_at IS NULL OR expires_at > datetime('now'))`,
+		 WHERE key_hash = ? AND NOT revoked AND (expires_at IS NULL OR expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
 		keyHash,
 	)
 

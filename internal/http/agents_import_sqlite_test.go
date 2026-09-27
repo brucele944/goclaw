@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -186,6 +187,50 @@ func TestImportSectionsPersistRowsOnSQLite(t *testing.T) {
 	if summary.CronJobs != 1 || summary.UserOverrides != 1 || summary.EvolutionMetrics != 1 || summary.EvolutionSuggestions != 1 {
 		t.Errorf("summary = cron:%d overrides:%d metrics:%d suggestions:%d, want 1 each",
 			summary.CronJobs, summary.UserOverrides, summary.EvolutionMetrics, summary.EvolutionSuggestions)
+	}
+}
+
+// TestImportEvolutionWithoutCreatedAt pins the archive shape where an older
+// export omitted CreatedAt on evolution rows (empty string, e.g. from an archive
+// built before that field existed). NOT NULL created_at columns reject a bound
+// empty string outright, so a naive bind would abort the statement and silently
+// drop the row while the section still reports success. coalesceTimestamp must
+// substitute the current time instead of binding "".
+func TestImportEvolutionWithoutCreatedAt(t *testing.T) {
+	ctx, db, h, ag := newImportTestDB(t)
+
+	arc := &importArchive{
+		evolutionMetrics: []pg.EvolutionMetricExport{{
+			SessionKey: "session-1", MetricType: "tokens", MetricKey: "total",
+			Value: pg.ExportJSON(`{"n":1}`), CreatedAt: "",
+		}},
+		evolutionSuggestions: []pg.EvolutionSuggestionExport{{
+			SuggestionType: "prompt", Suggestion: "tighten the system prompt",
+			Rationale: "repeated retries", Status: "pending", CreatedAt: "",
+		}},
+	}
+
+	summary := &ImportSummary{}
+	h.importEvolution(ctx, ag, arc, summary, nil)
+
+	if summary.EvolutionMetrics != 1 || summary.EvolutionSuggestions != 1 {
+		t.Fatalf("summary = metrics:%d suggestions:%d, want 1 each (row dropped silently)",
+			summary.EvolutionMetrics, summary.EvolutionSuggestions)
+	}
+	for _, tc := range []struct {
+		table  string
+		column string
+	}{
+		{"agent_evolution_metrics", "created_at"},
+		{"agent_evolution_suggestions", "created_at"},
+	} {
+		var createdAt string
+		if err := db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s LIMIT 1", tc.column, tc.table)).Scan(&createdAt); err != nil {
+			t.Fatalf("select %s.%s: %v (row missing entirely)", tc.table, tc.column, err)
+		}
+		if strings.TrimSpace(createdAt) == "" {
+			t.Errorf("%s.%s = %q, want a substituted non-empty timestamp", tc.table, tc.column, createdAt)
+		}
 	}
 }
 

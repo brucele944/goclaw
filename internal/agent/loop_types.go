@@ -94,7 +94,7 @@ type Loop struct {
 	// modelRoles is the resolved agents.model_roles map (nil = no roles declared).
 	// A run that requests a role via ctx (WithModelRole) uses the role's provider
 	// and model instead of provider/model above — see Loop.Run.
-	modelRoles map[string]ModelRoleTarget
+	modelRoles       map[string]ModelRoleTarget
 	contextWindow    int
 	maxTokens        int // max output tokens per LLM call (0 = default 8192)
 	maxIterations    int
@@ -661,6 +661,23 @@ type RunRequest struct {
 	ProviderOverride           providers.Provider // per-request provider override (heartbeat uses different provider)
 	LightContext               bool               // skip loading context files (only inject ExtraSystemPrompt)
 
+	// Per-request generation options from a stateless API caller (the
+	// OpenAI-compatible surface). They apply to this run's provider calls only and
+	// never modify the agent row: nil/"" = keep the agent's configured default.
+	Temperature *float64 // sampling temperature for this run
+	MaxTokens   *int     // max output tokens per LLM call (provider layer clamps to the model limit)
+	// ToolChoice is forwarded to the provider as the request's tool_choice: the
+	// string forms "auto"/"none"/"required", or the OpenAI object form naming a
+	// function ({"type":"function","function":{"name":"…"}}). Wires that do not
+	// consume the option ignore it.
+	ToolChoice any
+
+	// ClientTools turns the run into a passthrough (OpenAI-compatible callers that
+	// declare their own tools): these definitions replace the agent's tool surface
+	// for this run and are never executed here — the model's calls are returned in
+	// RunResult.ToolCalls for the caller to execute. Nil = normal agent run.
+	ClientTools []providers.ToolDefinition
+
 	// Run classification
 	RunKind       string // "delegation", "announce" — empty for user-initiated runs
 	HideInput     bool   // don't persist input message in session history (announce runs)
@@ -713,6 +730,14 @@ type RunResult struct {
 	LastBlockReply string                `json:"lastBlockReply,omitempty"` // last block reply content (for dedup)
 	LoopKilled     bool                  `json:"loopKilled,omitempty"`     // true when run was terminated by loop detector
 	Calls          []providers.CallUsage `json:"calls,omitempty"`          // per-call usage breakdown
+	// ToolCalls carries the model's tool calls for a passthrough run (the caller
+	// declared the tools and executes them). Empty for every other run: the agent
+	// executes its own tools internally.
+	ToolCalls []providers.ToolCall `json:"toolCalls,omitempty"`
+	// FinishReason is the provider's finish reason for the final response
+	// ("stop", "tool_calls", "length"); empty when the run never reached a
+	// response.
+	FinishReason string `json:"finishReason,omitempty"`
 }
 
 // MediaResult represents a media file produced by a tool during the agent run.

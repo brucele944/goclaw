@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { useProviderCapability } from "@/pages/providers/hooks/use-provider-capabilities";
 import { getChatGPTOAuthPoolOwnership } from "@/pages/providers/provider-utils";
+import { buildCapabilityModelOptions } from "@/types/provider";
+import { ProviderCatalogueStatus } from "@/components/shared/model-catalogue-status";
 import { MEDIA_PARAMS_SCHEMA } from "./media-provider-params-schema";
 import { ParamFieldControl } from "./media-param-field-control";
 import { buildDefaultParams } from "./media-provider-chain-helpers";
@@ -69,9 +71,10 @@ export function SortableProviderCard({
   );
 
   const selectedProvider = enabledProviders.find((p) => p.id === entry.provider_id);
-  const { models, loading: modelsLoading } = useProviderModels(
-    entry.provider_id || undefined,
-  );
+  // Model identity comes from the capability catalogue; the chain entry keeps
+  // the bare model id the tool's request sends upstream.
+  const { models, loading: modelsLoading } = useProviderCapability(entry.provider);
+  const modelOptions = buildCapabilityModelOptions(entry.provider, models);
 
   const paramSchema = MEDIA_PARAMS_SCHEMA[toolName]?.[selectedProvider?.provider_type ?? ""] ?? [];
 
@@ -161,11 +164,15 @@ export function SortableProviderCard({
           <Combobox
             value={entry.model}
             onChange={(v) => onUpdate(entry.id, { model: v })}
-            options={models.map((m) => ({ value: m.id, label: m.name ?? m.id }))}
+            options={modelOptions}
+            allowCustom
             placeholder={modelsLoading ? t("builtin.mediaChain.loadingModels") : t("builtin.mediaChain.selectModel")}
             className="h-8 text-sm"
             portalContainer={portalRef}
           />
+          {entry.provider && (
+            <ProviderCatalogueStatus provider={entry.provider} providerId={selectedProvider?.id} />
+          )}
         </div>
       </div>
 

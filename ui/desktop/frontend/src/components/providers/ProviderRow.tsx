@@ -1,5 +1,6 @@
 import type { ProviderData } from '../../types/provider'
 import { PROVIDER_TYPES } from '../../constants/providers'
+import { ProviderMetaChips } from './ProviderMetaChips'
 
 interface ProviderRowProps {
   provider: ProviderData
@@ -25,6 +26,7 @@ export function ProviderRow({ provider, onEdit, onDelete }: ProviderRowProps) {
             {typeInfo?.label ?? provider.provider_type}
           </span>
         </div>
+        <ProviderMetaChips provider={provider} />
         {provider.api_base && (
           <p className="text-[11px] text-text-muted truncate mt-0.5">{provider.api_base}</p>
         )}

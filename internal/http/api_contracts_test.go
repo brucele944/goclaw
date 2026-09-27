@@ -178,13 +178,27 @@ func (s *recordingMemoryStore) Close() error                                   {
 type recordingSessionStore struct {
 	opts   store.SessionListOpts
 	result store.SessionListRichResult
+
+	// messages records what was appended to each session key, so a test can assert
+	// the transcript a request replayed actually reached the session.
+	messages map[string][]providers.Message
 }
 
 func (s *recordingSessionStore) GetOrCreate(context.Context, string) *store.SessionData {
 	return nil
 }
-func (s *recordingSessionStore) Get(context.Context, string) *store.SessionData        { return nil }
-func (s *recordingSessionStore) AddMessage(context.Context, string, providers.Message) {}
+func (s *recordingSessionStore) Get(context.Context, string) *store.SessionData { return nil }
+func (s *recordingSessionStore) AddMessage(_ context.Context, key string, msg providers.Message) {
+	if s.messages == nil {
+		s.messages = map[string][]providers.Message{}
+	}
+	s.messages[key] = append(s.messages[key], msg)
+}
+
+// recordedMessages returns the messages appended to a session key.
+func (s *recordingSessionStore) recordedMessages(key string) []providers.Message {
+	return s.messages[key]
+}
 func (s *recordingSessionStore) GetHistory(context.Context, string) []providers.Message {
 	return nil
 }

@@ -30,5 +30,15 @@
     "title": "Select an agent",
     "description": "Choose an agent to start chatting"
   },
-  "imageGenDownloadName": "generated-{{timestamp}}.png"
+  "imageGenDownloadName": "generated-{{timestamp}}.png",
+  "modelSelector": {
+    "label": "Model for this request",
+    "agentDefault": "Agent default",
+    "stale": "Model list may be out of date — click to refresh",
+    "unavailable": "Model list unavailable: {{message}} — click to retry",
+    "empty": "No models available — click to retry"
+  },
+  "turnModel": {
+    "tooltip": "Answered by {{model}}"
+  }
 }

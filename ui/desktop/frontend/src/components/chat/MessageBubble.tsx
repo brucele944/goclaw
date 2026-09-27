@@ -67,6 +67,11 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
         {outputTokens > 0 && (
           <span>· {outputTokens.toLocaleString()} tokens</span>
         )}
+        {(message.model || message.provider) && (
+          <span className="font-mono truncate" title={message.provider}>
+            · {message.model ?? message.provider}
+          </span>
+        )}
       </div>
     </div>
   )

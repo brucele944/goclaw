@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/use-auth-store";
 import type { RunActivity, ActiveTeamTask } from "@/types/chat";
 import type { AgentData } from "@/types/agent";
 import type { SessionInfo } from "@/types/session";
+import { ChatModelSelect } from "./chat-model-select";
 
 interface ChatTopBarProps {
   agentId: string;
@@ -17,6 +18,9 @@ interface ChatTopBarProps {
   taskPanelOpen?: boolean;
   /** Current session — when provided, the bar renders a context-usage badge. */
   session?: SessionInfo | null;
+  /** Per-request model override identity ("<provider>/<model>"); "" = agent default. */
+  modelOverride?: string;
+  onModelOverrideChange?: (identity: string) => void;
 }
 
 const phaseLabels: Record<RunActivity["phase"], string> = {
@@ -28,7 +32,7 @@ const phaseLabels: Record<RunActivity["phase"], string> = {
   leader_processing: "Processing team results…",
 };
 
-export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, onToggleTaskPanel, taskPanelOpen, session }: ChatTopBarProps) {
+export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, onToggleTaskPanel, taskPanelOpen, session, modelOverride, onModelOverrideChange }: ChatTopBarProps) {
   const http = useHttp();
   const { t } = useTranslation("chat");
   const connected = useAuthStore((s) => s.connected);
@@ -93,6 +97,13 @@ export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, on
       </div>
 
       <div className="flex items-center gap-2">
+        {onModelOverrideChange && agentId && (
+          <ChatModelSelect
+            value={modelOverride ?? ""}
+            onChange={onModelOverrideChange}
+            disabled={!connected}
+          />
+        )}
         {usage && (
           <div
             className={`hidden sm:flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] ${usage.color}`}

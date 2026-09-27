@@ -550,6 +550,9 @@ func runGateway() {
 	server.SetToolPolicy(toolPE)
 	server.SetPairingService(pgStores.Pairing)
 	server.SetMessageBus(msgBus)
+	// Lets the OpenAI-compatible endpoint honour a per-request `<provider>/<model>`
+	// model override (the identity the capability DTO hands to the UIs).
+	server.SetProviderRegistry(providerRegistry)
 	server.SetExecApprovalManager(execApprovalMgr)
 	server.SetOAuthHandler(httpapi.NewOAuthHandler(pgStores.Providers, pgStores.ConfigSecrets, providerRegistry, msgBus))
 

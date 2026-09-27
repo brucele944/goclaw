@@ -10,9 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { SubagentsConfig } from "@/types/agent";
+import { buildCapabilityModelOptions } from "@/types/provider";
 import { ConfigSection, InfoLabel, numOrUndef } from "./config-section";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { useProviderCapability } from "@/pages/providers/hooks/use-provider-capabilities";
+import { ProviderCatalogueStatus } from "@/components/shared/model-catalogue-status";
 import { useConfigDefaults } from "@/pages/config/hooks/use-config-defaults";
 
 interface SubagentsSectionProps {
@@ -28,7 +30,13 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
   const { providers } = useProviders();
   const enabledProviders = providers.filter((p) => p.enabled);
   const defaultProvider = useMemo(() => enabledProviders[0], [enabledProviders]);
-  const { models, loading: modelsLoading } = useProviderModels(defaultProvider?.id);
+  // Model identity comes from the capability catalogue; the config field keeps
+  // the bare model id a sub-agent's request sends upstream.
+  const { models, loading: catalogueLoading } = useProviderCapability(defaultProvider?.name ?? "");
+  const modelOptions = useMemo(
+    () => buildCapabilityModelOptions(defaultProvider?.name ?? "", models),
+    [defaultProvider?.name, models],
+  );
   const d = useConfigDefaults().agents.subagents;
 
   return (
@@ -101,9 +109,13 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
         <Combobox
           value={value.model ?? ""}
           onChange={(v) => onChange({ ...value, model: v || undefined })}
-          options={models.map((m) => ({ value: m.id, label: m.name }))}
-          placeholder={modelsLoading ? "Loading models..." : t(`${s}.inheritFromAgent`)}
+          options={modelOptions}
+          allowCustom
+          placeholder={catalogueLoading ? "Loading models..." : t(`${s}.inheritFromAgent`)}
         />
+        {defaultProvider && (
+          <ProviderCatalogueStatus provider={defaultProvider.name} providerId={defaultProvider.id} />
+        )}
       </div>
     </ConfigSection>
   );

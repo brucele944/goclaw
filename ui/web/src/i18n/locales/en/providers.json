@@ -254,7 +254,9 @@
     "poolActivityTopAgentsTitle": "Top agents using this pool",
     "poolActivityRequests": "req",
     "poolActivityEmpty": "No activity yet",
-    "poolActivityEmptyDesc": "Pool activity will appear here once agents start routing requests through this pool."
+    "poolActivityEmptyDesc": "Pool activity will appear here once agents start routing requests through this pool.",
+    "wireApi": "Wire protocol",
+    "authKind": "Authentication"
   },
   "embedding": {
     "enable": "Enable Embedding",
@@ -384,5 +386,25 @@
     "failedCreate": "Failed to create provider",
     "failedUpdate": "Failed to update provider",
     "failedDelete": "Failed to delete provider"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI chat completions",
+    "anthropicMessages": "Anthropic messages",
+    "cliDelegated": "CLI delegated"
+  },
+  "authKind": {
+    "apiKey": "API key",
+    "oauthBrowser": "OAuth (browser)",
+    "serviceAccount": "Service account",
+    "cliDelegated": "CLI delegated",
+    "none": "No credential"
+  },
+  "catalogue": {
+    "stale": "Model list may be out of date",
+    "empty": "No models discovered",
+    "notListed": "Provider is not in the model catalogue",
+    "error": "Could not load models: {{message}}",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing"
   }
 }

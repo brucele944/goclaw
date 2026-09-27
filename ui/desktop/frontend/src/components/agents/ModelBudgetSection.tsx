@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Combobox } from '../common/Combobox'
-import { useProviders } from '../../hooks/use-providers'
+import { CatalogueNotice } from './CatalogueNotice'
+import { useProviderCapabilities } from '../../hooks/use-provider-capabilities'
+import { isCatalogueStale, modelOptionsFor, providerOptionsFrom } from '../../api/provider-capabilities'
 import { getApiClient } from '../../lib/api'
 
 interface ModelBudgetSectionProps {
@@ -25,35 +27,19 @@ export function ModelBudgetSection({
   onSaveBlockedChange,
 }: ModelBudgetSectionProps) {
   const { t } = useTranslation(['agents', 'common'])
-  const { providers } = useProviders()
-  const [models, setModels] = useState<string[]>([])
-  const [modelsLoading, setModelsLoading] = useState(false)
+  const { capabilities, isLoading, error, refetch } = useProviderCapabilities()
   const [verifyResult, setVerifyResult] = useState<{ valid: boolean; error?: string } | null>(null)
   const [verifying, setVerifying] = useState(false)
 
-  const selectedProvider = useMemo(
-    () => providers.find((p) => p.name === provider),
-    [providers, provider],
+  // Provider identity in agent configs is the provider name (`capabilities[].id`).
+  const capability = useMemo(
+    () => capabilities.find((c) => c.id === provider),
+    [capabilities, provider],
   )
 
-  // Load models when provider changes
-  const loadModels = useCallback(async (providerId: string) => {
-    setModelsLoading(true)
-    try {
-      const res = await getApiClient().get<{ models: Array<{ id: string }> }>(
-        `/v1/providers/${providerId}/models`,
-      )
-      setModels((res.models ?? []).map((m) => m.id))
-    } catch {
-      setModels([])
-    } finally {
-      setModelsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (selectedProvider?.id) loadModels(selectedProvider.id)
-  }, [selectedProvider?.id, loadModels])
+  const providerOptions = useMemo(() => providerOptionsFrom(capabilities), [capabilities])
+  const modelOptions = useMemo(() => modelOptionsFor(capability), [capability])
+  const stale = isCatalogueStale(capability)
 
   // Show verify button when provider/model changed from saved
   const needsVerify = (provider !== savedProvider || model !== savedModel) && provider && model
@@ -67,11 +53,12 @@ export function ModelBudgetSection({
   }, [needsVerify, onSaveBlockedChange])
 
   const handleVerify = async () => {
-    if (!selectedProvider?.id || !model.trim()) return
+    const providerRef = capability?.provider_id ?? capability?.id
+    if (!providerRef || !model.trim()) return
     setVerifying(true)
     try {
       const res = await getApiClient().post<{ success: boolean; error?: string }>(
-        `/v1/providers/${selectedProvider.id}/verify`,
+        `/v1/providers/${providerRef}/verify`,
         { model: model.trim() },
       )
       setVerifyResult({ valid: res.success, error: res.error })
@@ -82,19 +69,6 @@ export function ModelBudgetSection({
       setVerifying(false)
     }
   }
-
-  const providerOptions = useMemo(
-    () => providers.filter((p) => p.enabled).map((p) => ({
-      value: p.name,
-      label: p.display_name || p.name,
-    })),
-    [providers],
-  )
-
-  const modelOptions = useMemo(
-    () => models.map((m) => ({ value: m, label: m })),
-    [models],
-  )
 
   return (
     <div className="space-y-4">
@@ -112,11 +86,14 @@ export function ModelBudgetSection({
             value={model}
             onChange={onModelChange}
             options={modelOptions}
-            placeholder={modelsLoading ? t('common:loading') : t('agents:create.enterOrSelectModel')}
+            placeholder={isLoading ? t('common:loading') : t('agents:create.enterOrSelectModel')}
+            loading={isLoading}
             allowCustom
           />
         </div>
       </div>
+
+      <CatalogueNotice stale={stale} error={error} onRetry={() => { void refetch() }} />
 
       {/* Verify button + result */}
       {needsVerify && (

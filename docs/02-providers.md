@@ -1,6 +1,8 @@
 # 02 - LLM Providers
 
-GoClaw abstracts LLM communication behind a single `Provider` interface, allowing the agent loop to work with any backend without knowing the wire format. Six concrete implementations exist: Anthropic (native HTTP+SSE), OpenAI-compatible (covering 10+ API endpoints), Claude CLI (local binary), Codex (OAuth-based), ACP (subagent orchestration), and DashScope (Alibaba Qwen with thinking). The OpenAI-compatible provider also supports BytePlus ModelArk (Seed 2.0 models with image/video generation).
+GoClaw abstracts LLM communication behind a single `Provider` interface, allowing the agent loop to work with any backend without knowing the wire format. The concrete transports are Anthropic (native HTTP+SSE), OpenAI-compatible (covering 10+ API endpoints), Claude CLI (local binary), Codex (OAuth-based), ACP (subagent orchestration), DashScope (Alibaba Qwen wrapper), Vertex AI, and native Ollama (`internal/providers/interfaces_guard_test.go:7-17`). The OpenAI-compatible transport also supports BytePlus ModelArk (Seed 2.0 models with image/video generation).
+
+Which transport a provider gets is declared data, not a Go switch. `llm_providers.wire_api` names the wire protocol, `llm_providers.auth_kind` names the credential shape, and `provider_type` is only the brand label that supplies vendor defaults — base URL, default model, identity headers and the brand's construction quirks live in the brand table (`internal/providers/wire/brand.go`). Adding a provider of an existing brand is a row insert.
 
 ---
 
@@ -32,15 +34,38 @@ flowchart TD
     DASH --> QWEN["Alibaba DashScope<br/>Qwen3 models"]
 ```
 
-Authentication and timeouts vary by provider type:
-- **Anthropic**: `x-api-key` header + `anthropic-version: 2023-06-01`
-- **OpenAI-compatible**: `Authorization: Bearer` token
-- **Claude CLI**: stdio subprocess (no auth; uses local CLI session)
-- **Codex**: OAuth access token (auto-refreshed via TokenSource)
-- **ACP**: JSON-RPC 2.0 over subprocess stdio
-- **DashScope**: `Authorization: Bearer` token (inherits from OpenAI-compatible)
+### Declared wire protocol and credential shape
 
-All HTTP-based providers (Anthropic, OpenAI-compatible, Codex) use 300-second timeout.
+Every wire protocol registers a `Descriptor` in the dispatch registry, and that descriptor declares the credential carrier (`Descriptor.AuthHeaderStyle`), the request path (`Descriptor.ChatPath`), the environment fallback keys, and whether a credential is required (`Descriptor.RequiresAPIKey`). The table below is the registered set (`internal/providers/wire/build.go:11-122`).
+
+| `wire_api` | `auth_kind` | Credential carrier | Chat path |
+|---|---|---|---|
+| `openai-completions` | `api_key` | `Authorization: Bearer` | `/chat/completions` |
+| `openai-responses` | `api_key` | `Authorization: Bearer` | `/responses` |
+| `openai-codex-responses` | `oauth_browser` | OAuth bearer (refreshed via `TokenSource`) | `/codex/responses` |
+| `anthropic-messages` | `api_key` | `x-api-key` header | `/v1/messages` |
+| `google-generative-ai` | `api_key` | `Authorization: Bearer` | `/chat/completions` |
+| `google-vertex` | `service_account` | GCP OAuth2 (inline JSON, credentials file, or ADC) | `/chat/completions` |
+| `ollama-native` | `none` | none (key optional) | `/api/chat` |
+| `cli-delegated` | `cli_delegated` | stdio subprocess (no HTTP auth; the CLI/agent owns its own login) | — |
+
+`openai-responses` is registered but has no transport in this build: `buildOpenAIResponses` returns an error telling the operator to declare `openai-codex-responses` for the ChatGPT/Codex flow, rather than silently downgrading the row to Chat Completions (`internal/providers/wire/build.go:153-158`).
+
+`auth_kind` has a sixth accepted value, `none`, which is what keyless rows default to (`internal/providers/wire/api.go:41-48`). A row with an empty `auth_kind` derives it from the descriptor (`internal/store/provider_store.go:233-241`).
+
+Request timeouts are per-provider opt-in rather than a fixed 300 seconds: `llm_providers.settings.timeout_sec` is read by `wire.TimeoutFromSettings` and bounds one whole `Chat`/`ChatStream` call, while an absent or non-positive value keeps the transport defaults (`internal/providers/wire/brand.go:371-397`). The default transport sets per-stage timeouts — a 300s response-header bound — but no overall deadline, so a streaming completion is not cut off once it has started (`internal/providers/defaults.go:14-20`, `internal/providers/defaults.go:56-60`).
+
+### Wire dispatch registry
+
+`internal/providers/wire` is the single dispatch table. A registration call site builds a `wire.Config` (declared wire API, name, brand, credential, base URL, token source, subprocess settings, quirks, per-model compat) and calls `wire.Build`, which looks the descriptor up and runs its constructor (`internal/providers/wire/descriptor.go:193-207`). There is no brand `switch` and no fallback transport: an unregistered `wire_api` returns `UnknownAPIError` naming the provider and the valid values (`internal/providers/wire/descriptor.go:177-191`).
+
+The store layer does not keep its own copy of the enum. `store.WireAPI*` / `store.AuthKind*` are constants aliasing the registry, and `ValidWireAPIs` / `ValidAuthKinds` are `wire.ValidAPIs()` / `wire.ValidAuthKinds()` (`internal/store/provider_store.go:128-155`). A test pins that every declared value has a registered transport (`internal/store/provider_store_test.go:196-209`).
+
+At startup the gateway loads declaration rows, and for each enabled row it dispatches on `wire_api` alone:
+
+- the prefix `wire.Lookup(p.WireAPI)` failing logs `provider.wire_api.unknown` with the provider name and skips the row — never a default transport (`cmd/gateway_providers.go:335-342`);
+- a build failure logs `provider.register.failed` and skips (`cmd/gateway_providers.go:407-410`);
+- config-file providers go through the same `wire.Build` path (`registerConfigProvider`, `cmd/gateway_providers.go:233-241`).
 
 ---
 
@@ -79,6 +104,8 @@ Supported price units: input, output, cache read, cache write, reasoning, reques
 ---
 
 ## 2. Supported Providers
+
+Each row below is a *brand*: the `provider_type` string plus the vendor defaults (default `api_base`, default model, identity headers, and construction quirks) recorded in the brand table. `provider_type` is a label only — it no longer selects an implementation in Go. Dispatch is on the row's declared `wire_api`, so a `provider_type` the brand table does not list still works: it simply gets no vendor defaults, exactly like the old `default:` branch (`internal/providers/wire/brand.go:48-76`). When neither the row nor the brand declares a base URL or model, the wire descriptor's own defaults apply (`internal/providers/wire/descriptor.go:125-127`).
 
 ### Six Core Provider Types
 
@@ -269,17 +296,33 @@ The Anthropic provider calls `CleanSchemaForProvider("anthropic", ...)` when con
 
 ## 7. Providers from Database
 
-Providers are loaded from the `llm_providers` table in addition to the config file. Database providers override config providers with the same name.
+Providers are loaded from the `llm_providers` table in addition to the config file. Database providers override config providers with the same name. Each row carries a declaration — `wire_api`, `auth_kind`, `exec_path`, `settings_version` — and the gateway dispatches on that declaration rather than on `provider_type`.
 
 ### Loading Flow
 
 ```mermaid
 flowchart TD
-    START["Gateway Startup"] --> CFG["Step 1: Register providers from config<br/>(Anthropic, OpenAI, etc.)"]
-    CFG --> DB["Step 2: Register providers from DB<br/>SELECT * FROM llm_providers<br/>Decrypt API keys"]
-    DB --> OVERRIDE["DB providers override<br/>config providers with same name"]
+    START["Gateway Startup"] --> CFG["Step 1: Build config providers<br/>wire.Config + wire.Build"]
+    CFG --> DB["Step 2: Load enabled rows<br/>SELECT * FROM llm_providers<br/>Decrypt API keys"]
+    DB --> LOOKUP{"wire.Lookup(row.wire_api)?"}
+    LOOKUP -->|No| SKIP["Log provider.wire_api.unknown<br/>skip the row"]
+    LOOKUP -->|Yes| BUILD["wire.Build(cfg)<br/>brand defaults + registry"]
+    BUILD --> OVERRIDE["registerForTenant overrides<br/>a config provider with the same name"]
     OVERRIDE --> READY["Provider Registry ready"]
 ```
+
+### Declaration Columns
+
+| Column | Meaning |
+|---|---|
+| `wire_api` | Declared wire protocol; the only dispatch key. One of the eight values in §1. |
+| `auth_kind` | Declared credential shape: `api_key`, `oauth_browser`, `oauth_device`, `service_account`, `cli_delegated`, `none`. |
+| `exec_path` | Executable for `cli-delegated` rows (Claude CLI / ACP). `api_base` is the one-release dual-read fallback (`cmd/gateway_providers.go:588-593`). |
+| `settings_version` | Versions the `settings` JSONB. This build writes and understands version `1` (`internal/store/provider_store.go:155-159`). |
+
+Deriving beats defaulting. Before any row is written, `NormalizeProviderDeclaration` fills an empty `wire_api` from the row's brand and an empty `auth_kind` from the wire descriptor, defaults `settings_version`, and validates all three (`internal/store/provider_store.go:206-231`). An empty `wire_api` means "the caller did not say" — never "OpenAI-compatible" — and a `provider_type` with no brand is rejected instead of silently downgraded (`internal/store/provider_store.go:200-213`). Both SQL stores call it on create (`internal/store/pg/providers.go:43`, `internal/store/sqlitestore/providers.go:42`); dynamic updates validate only the keys present, and repointing `provider_type` to a known brand without stating `wire_api`/`auth_kind` fills both from that brand (`internal/store/provider_store.go:262-291`).
+
+`llm_models` and `provider_quirks` are covered below; the durable cooldown tables are in "### Durable Provider Health".
 
 ### API Key Encryption
 
@@ -303,6 +346,32 @@ flowchart LR
 - **Hex**: 64 characters (32 bytes decoded)
 - **Base64**: 44 characters (32 bytes decoded)
 - **Raw**: 32 characters (32 bytes direct)
+
+### Model Catalogue (`llm_models`)
+
+Each provider's models live in `llm_models` rows, keyed `UNIQUE (provider_id, model_id)`. Scope is inherited through `provider_id`, so there is no second tenant column to keep in sync (`migrations/000098_provider_declaration.up.sql`). A row carries the context window (`context_window`), the output cap (`max_tokens`), the request-budget clamp (`max_context_window`), costs (`cost_input`, `cost_output`, `cost_cache_read`, `cost_cache_write`), `modalities`, `capabilities`, `reasoning`, `tokenizer`, `compat`, provenance (`source`, `authoritative`, `fetched_at`, `static_fingerprint`), and `enabled` (`internal/store/provider_store.go:355-380`).
+
+Two sources feed the catalogue: the bundled snapshot GoClaw ships (`discovery.Bundled(providerType)`) and live discovery against the provider's upstream. `source` is `bundled`, `discovered` or `operator` (`internal/store/provider_store.go:557-561`), and each model in the capability DTO repeats the provider's `stale` flag.
+
+`catalog.Service` is the writer: `Sync` seeds the bundled snapshot (idempotent — an operator row is never touched, a discovered row is never downgraded) and, only when `Options.Fetch` is set, refreshes from the upstream and merges (`internal/providers/catalog/service.go:167-243`). Discovery is explicit, so `Fetch: false` — the mode the capability DTO uses — makes no network call (`internal/http/provider_capabilities.go:84-89`). A discovery failure is never fatal: it is reported in `Result.Err` / `Result.ErrorClass` with `Stale=true` and the previous rows intact, while the returned error is reserved for store failures (`internal/providers/catalog/service.go:167-171`).
+
+Cache reuse is governed by a fingerprint over the base URL, the wire API, the authority flag and the operator-owned model ids, plus a 10-minute TTL (`DefaultTTL`) and a 30-second in-process fetch floor (`DefaultMinInterval`) (`internal/providers/catalog/service.go:83-84`, `:187`, `:449-455`, `:407-429`). `CacheState` reports `Tracked`/`Matches`/`Expired`/`Fetched` without touching the network, and `CacheState.Stale()` is `Tracked && (!Matches || Expired)` — "known (fingerprint changed) or presumed (TTL expired) not to describe the current upstream" (`internal/providers/catalog/service.go:486-497`). The DTO's `last_refreshed_at` is `CacheState.Fetched`.
+
+Per-model capabilities are consumed by the request path, not just displayed: `tool_calling=false` withholds the tool surface (`internal/agent/loop_tool_filter.go:152-160`), `vision=false` strips image blocks (`internal/pipeline/final_request_guard.go:48-50`), `stream_with_tools=false` downgrades a tool-carrying request to non-streaming (`internal/agent/loop_pipeline_callbacks.go:892-899`), `cache_control` gates prompt-cache breakpoints (`internal/agent/loop_pipeline_callbacks.go:452-454`), and `max_context_window` clamps the request budget down, never up (`internal/pipeline/final_request_guard.go:103-105`). §15 covers the resolver and the wire shape.
+
+### Compatibility as Data
+
+Provider compatibility is declared, not sniffed from a provider name or URL. `provider_quirks` rows replace the old sniffing: a `NULL` `tenant_id` is a bundled/global rule shipped with the binary, a tenant row overrides it, and a matching row with `enabled=false` suppresses the bundled rule (`migrations/000098_provider_declaration.up.sql`; row shape `internal/store/provider_store.go:383-393`). `internal/providers/compat` resolves one `Resolved` request-shaping fragment from four fixed layers — endpoint family, gateway/auth overlay (bundled seeds then operator rows), per-model `llm_models.compat`, and request context (`internal/providers/compat/compat.go:11-39`). `Resolve` runs once per provider and once per catalogue model when the provider is built, so the request path only reads the result; `ResolveCount()` instruments that invariant (`internal/providers/compat/compat.go:130-135`, `:163-181`). Five bundled seeds cover the families GoClaw wires today: `openai-native`, `ollama`, `together`, `fireworks`, `dashscope` (`internal/providers/compat/quirks.go:84-128`).
+
+Tool-call dialects are data too. Some models emit tool calls as in-band text (Qwen3, DeepSeek-V3, Kimi-K2, GLM, Hermes/XML, harmony); `internal/providers/dialect` registers one converter per family, and selection is `GOCLAW_TOOL_DIALECT` (global escape hatch) → `llm_models.compat.tool_dialect` → the per-wire default, where an empty selection means the wire carries tool calls natively (`internal/providers/dialect/dialect.go:14-16`, `:84-106`; registered names `internal/providers/dialect/converters.go:10-17`).
+
+### Durable Provider Health
+
+Cooldown is durable across restarts. `provider_health` keeps at most one row per *failed* provider — `consecutive_failures`, `cooldown_until`, `last_error_class`, `last_probe_at` — and `provider_error_counts` is the error-class histogram keyed `(provider_id, error_class)` (`migrations/000100_provider_health.up.sql:18-32`). A missing row means "never failed", so a fresh provider reads as a zero-value health (`internal/store/pg/providers.go:482-490`). Before this, cooldown lived only in the in-memory `CooldownTracker` map, so every gateway restart forgot a cooling provider and retried the failing endpoint immediately.
+
+`providers.MaxCooldown` is one hour and clamps both the in-memory deadline and the persisted one; it bites only on the overload-escalation path, since the longest flat per-reason cooldown is 1h (`internal/providers/cooldown.go:78-87`, `:113-120`, `:172-176`). The tracker keeps the hot state and hydrates from the store on first use per key, and the runtime path writes failures, probe stamps and successes through `providers.CooldownStore`, adapted onto `store.ProviderStore` by `internal/providerresolve/agent_provider.go:224-246`.
+
+There is no background prober — the active probe is only ever triggered by an explicit request, so an idle gateway never burns tokens (`internal/http/providers.go:998-999`).
 
 ---
 
@@ -345,7 +414,7 @@ Wraps the OpenAI-compatible provider with a critical override: when tools are pr
 
 - **Default model**: `qwen3-max`
 - **Thinking support**: Custom budget mapping (low=4,096, medium=16,384, high=32,768)
-- **Known limitation**: No simultaneous streaming + tools
+- **Known limitation**: No simultaneous streaming + tools. The brand table's `Constructor` field selects this wrapper, and the wrapper's `Capabilities()` declares `StreamWithTools: false`, so the request path honours it without a name check (`internal/providers/wire/build.go:127-151`, `internal/providers/dashscope.go:59-65`).
 
 ### Bailian Coding
 
@@ -353,7 +422,7 @@ Standard OpenAI-compatible provider targeting the Alibaba Coding API.
 
 - **Default model**: `qwen3.5-plus`
 - **Base URL**: `https://coding-intl.dashscope.aliyuncs.com/v1`
-- **Catalog source**: hardcoded because the Coding API does not expose a standard `/v1/models` endpoint
+- **Catalog source**: the bundled snapshot, served as the catalogue because the Coding API does not expose a standard `/v1/models` endpoint — `discovery.ResolveType` returns `static` for `bailian` (`internal/providers/discovery/discovery.go:148-151`)
 
 | Model | Display name | Capabilities |
 |-------|--------------|--------------|
@@ -418,9 +487,13 @@ Example config.json:
 
 Database-based provider registration:
 
-- `provider_type = "acp"`
-- `api_base = "claude"` (binary name)
+- `provider_type = "acp"` (brand label; it selects the ACP subprocess contract)
+- `wire_api = "cli-delegated"`
+- `auth_kind = "cli_delegated"`
+- `exec_path = "claude"` (binary name or absolute path)
 - `settings = { "args": [...], "idle_ttl": "5m", "perm_mode": "approve-all", "work_dir": "..." }`
+
+The row is built by `wire.Build` with `wire.CLIDelegated`; the brand table's `CLIKind` decides that this is the ACP subprocess contract rather than Claude CLI, so the registration call site does not choose between them (`cmd/gateway_providers.go:504-517`, `internal/providers/wire/build.go:255-299`). The executor may be `claude`, `codex`, `gemini` or an absolute path, and must resolve via `exec.LookPath` or the row is skipped (`cmd/gateway_providers.go:555-566`).
 
 ### Session Management
 
@@ -561,7 +634,7 @@ ClaudeCLIProvider can be configured in `config.json`:
 }
 ```
 
-Or via database `llm_providers` table with `provider_type = "claude_cli"`. For database providers, `api_base` is the CLI executable selector (`"claude"` or an absolute binary path), not an HTTP base URL, so provider URL SSRF opt-ins do not apply to Claude CLI.
+Or via the database `llm_providers` table, which declares `provider_type = "claude_cli"`, `wire_api = "cli-delegated"`, `auth_kind = "cli_delegated"`, and the CLI executable in `exec_path` (`api_base` is the one-release fallback). For `cli-delegated` rows this path is an executable selector (`"claude"` or an absolute binary path), not an HTTP base URL, so provider URL SSRF opt-ins do not apply to Claude CLI. The row is built by `wire.Build` with `wire.CLIDelegated`, and the brand table's `CLIKind = "claude_cli"` selects the Claude CLI subprocess contract; only `"claude"` or an absolute path is accepted, and the binary must resolve via `exec.LookPath` (`cmd/gateway_providers.go:519-547`, `internal/providers/wire/build.go:264-282`).
 
 ### Session Management
 
@@ -671,7 +744,7 @@ Tracks prompt, completion, and total tokens. `CacheCreationTokens` and `CacheRea
 
 ### Provider-Level Defaults + Agent Overrides
 
-Multiple authenticated `chatgpt_oauth` providers can coexist in one tenant. Each provider name is one OpenAI Codex OAuth alias. Pool membership is authoritative at the provider layer: one alias owns the reusable pool, while member aliases stay leaf accounts.
+Multiple authenticated `chatgpt_oauth` providers can coexist in one tenant. Each provider name is one OpenAI Codex OAuth alias. Such rows declare `wire_api = "openai-codex-responses"` and `auth_kind = "oauth_browser"`, and the transport requires a `TokenSource` (the OAuth credential layer) rather than a static key — a missing token source fails the build with "openai-codex-responses requires an OAuth credential" (`internal/providers/wire/build.go:162-180`). Pool membership is authoritative at the provider layer: one alias owns the reusable pool, while member aliases stay leaf accounts.
 
 Provider default example:
 
@@ -748,7 +821,7 @@ GoClaw v3 Wave 2 adds composable request middleware, error classification, per-m
 
 **Error Classification** — Maps provider errors to 9 canonical reasons: `FailoverAuth`, `FailoverAuthPermanent`, `FailoverRateLimit`, `FailoverOverloaded`, `FailoverBilling`, `FailoverFormat`, `FailoverModelNotFound`, `FailoverTimeout`, `FailoverUnknown`. `DefaultClassifier` pattern-matches body strings (OpenAI, Anthropic pre-registered). Detects context overflow (triggers auto-compaction).
 
-**Cooldown Tracking** — `CooldownTracker` in-memory state machine. Per-reason durations: 30s (rate limit), 60s→120s escalated (overloaded), 10m (auth), 1h (permanent auth/model not found), 15s (timeout), 5m (billing). Auto-decay 24h TTL; probe interval ≥30s.
+**Cooldown Tracking** — `CooldownTracker` keeps per-`provider:model` state and is durable since phase 5: the in-memory map is the fast path, and `provider_health` is read back on first use of a key and written through on every failure, probe and success, so a restart no longer forgets an active cooldown. Per-reason durations: 30s (rate limit, unknown), 60s doubled after 5 consecutive overloaded failures (overloaded), 15s (timeout), 5m (billing, format), 10m (auth), 1h (permanent auth, model not found). Every deadline is clamped to `providers.MaxCooldown` (1h), which bites only on the overload-escalation path. Auto-decay 24h TTL; probe interval ≥30s (`internal/providers/cooldown.go:54-87`). See "### Durable Provider Health" in §7.
 
 **2-Tier Failover** — `RunWithFailover[T]`: Tier 1 rotates API profiles for transient errors (≤5 rotations); Tier 2 falls back to next model for permanent errors. Returns all attempts with classifications. Exhausted → `FailoverSummaryError`.
 
@@ -762,12 +835,94 @@ GoClaw v3 Wave 2 adds composable request middleware, error classification, per-m
 
 | Module | Path | Purpose |
 |---|---|---|
-| Provider implementations | `internal/providers/` | Anthropic, OpenAI-compatible, Claude CLI, Codex, ACP, DashScope providers; retry logic; schema cleaning; model registry; embedding providers |
-| Resilience middleware | `internal/providers/` | `middleware*.go`, `error_classify.go`, `cooldown.go`, `failover.go` — request middleware, error classification, 2-tier failover |
+| Provider implementations | `internal/providers/` | Anthropic, OpenAI-compatible, Claude CLI, Codex, ACP, DashScope transports; retry logic; schema cleaning; model registry; embedding providers |
+| Resilience middleware | `internal/providers/` | `middleware*.go`, `error_classify.go`, `cooldown.go`, `failover.go` — request middleware, error classification, durable cooldown, 2-tier failover |
 | Provider interface & types | `internal/providers/types.go` | `Provider` interface, `ChatRequest`, `ChatResponse`, `Message`, `ToolCall`, `Usage` |
-| Gateway wiring | `cmd/gateway_providers.go` | Provider registration from config and database at startup |
+| Wire dispatch registry | `internal/providers/wire/` | `Descriptor`/`Register`/`Lookup`/`Build`, the eight `wire_api` values, and the brand table (`brand.go`) that supplies vendor defaults |
+| Model catalogue | `internal/providers/catalog/`, `internal/providers/discovery/` | `llm_models` seeding, fingerprint/TTL cache, refresh and merge; bundled snapshot vs upstream discovery |
+| Compatibility and dialects | `internal/providers/compat/`, `internal/providers/dialect/` | Declared quirks and endpoint families; in-band tool-call converters |
+| Capability DTO and health routes | `internal/http/provider_capabilities.go`, `internal/http/providers.go` | `GET /v1/providers/capabilities`, `GET /v1/providers/quirks`, `/v1/providers/{id}/health` |
+| Provider CLI | `cmd/providers_cmd.go` | `goclaw providers …` subcommands; an HTTP client of the running gateway |
+| Gateway wiring | `cmd/gateway_providers.go` | Config and DB provider registration through `wire.Build` at startup |
 
 Use `grep` or your editor's symbol search for specific files.
+
+---
+
+## 15. Provider Capability DTO
+
+`GET /v1/providers/capabilities[?id=<provider id or name>]` is the single shape the web UI, desktop UI and CLI build a provider/model picker from. It answers `{"providers":[...]}` with read-level auth, is a cache read that never touches the network, and omits disabled providers so it can never list a provider the request path could not run (`internal/http/provider_capabilities.go:92-115`).
+
+Per provider the DTO carries exactly these keys — a test pins the key set and fails if a transport-detail key ever appears (`internal/http/provider_capabilities_test.go:88-91`):
+
+`id`, `provider_id`, `label`, `wire_api`, `auth_kind`, `model_source`, `default_model_id`, `models`, `stale`, `last_refreshed_at`.
+
+| Field | Meaning |
+|---|---|
+| `id` | Provider name (the registry key) |
+| `provider_id` | The `llm_providers.id` UUID |
+| `label` | `display_name` when set, else `name` |
+| `wire_api`, `auth_kind` | The row's declaration |
+| `model_source` | `bundled` or `discovered` |
+| `default_model_id` | `<provider>/<model>`, only when the catalogue actually holds the brand's declared default |
+| `stale` | `catalog.CacheState.Stale()` |
+| `last_refreshed_at` | The newest catalogue fetch (`CacheState.Fetched`), omitted when none happened |
+
+Transport, credential and compat internals are deliberately absent: `api_base`, `exec_path`, the credential, the `settings` blob and the compat object are not even representable in the response struct (`internal/http/provider_capabilities.go:60-79`).
+
+Each `models[]` entry has `id`, `label`, `context_window`, `max_tokens`, `thinking_levels`, `default_thinking_level`, `capabilities`, `cost` and `stale` (`internal/http/provider_capabilities.go:37-56`). The model `id` is `<provider>/<model>` — the same identity `GET /v1/models` and `chat.send` use — and each model repeats the provider's `stale` flag so a row is self-describing. `cost` is `{input, output, cache_read, cache_write, source}` per 1M tokens, where `source` is `row` (the catalogue row declares it) or `pricing_catalog` (resolved from the synced OpenRouter catalog because the row left cost null) (`internal/http/provider_models_gateway.go:102-109`).
+
+Capabilities are resolved with the same function the request path uses — `providers.ResolveModelCapabilities` — over the provider's declared shape, so the picker cannot disagree with what will actually run. The declared shape is the live transport's `Capabilities()` when the row is registered, otherwise the wire descriptor's `SupportsTools`/`SupportsStream`/`SupportsStreamWithTools` (`internal/http/provider_capabilities.go:206-232`; `internal/providers/wire/descriptor.go:133-141`). A flag is true only because a declaration says so: nothing is inferred from the provider name, the base URL or the model id (`internal/http/provider_capabilities.go:15-25`).
+
+---
+
+## 16. OpenAI-Compatible HTTP Endpoint
+
+`POST /v1/chat/completions` runs an agent through an OpenAI-shaped surface. It is registered on the gateway mux and the handler rejects any other method with 405; the caller must be authenticated and hold at least the Operator role (401/403 otherwise), and an enabled rate limiter answers 429 with `Retry-After: 60` (`internal/gateway/server.go:218`, `internal/http/chat_completions.go:171-204`).
+
+### Request handling
+
+| Aspect | Behaviour |
+|---|---|
+| `messages` | Required. The whole transcript is replayed: a trailing `user` message is the run's input turn; a trailing `tool` message continues an existing tool exchange with **no fabricated user turn** (`internal/http/chat_completions.go:214-237`, `:372-400`). |
+| `temperature`, `max_tokens` | Honoured per request via `RunRequest.Temperature`/`MaxTokens`; the agent's own configuration is never modified (`internal/http/chat_completions.go:78-80`, `:357-362`). |
+| `tools` | Passthrough. They replace the agent's tool surface, and the model's calls come back to the caller as OpenAI `tool_calls` with `finish_reason: "tool_calls"` — never executed server-side. Text the model produced alongside its calls is returned too, in the same turn (`internal/http/chat_completions.go:82-86`, `:434-443`; guards at `internal/pipeline/think_stage.go:193-201` and `internal/pipeline/tool_stage.go:44-51`). |
+| `tool_choice` | Accepted as the strings `"auto"`, `"none"`, `"required"`, or OpenAI's object form naming a function (`{"type":"function","function":{"name":"…"}}`); anything else is refused. The pipeline puts the value on `RunRequest.ToolChoice` (`any`), so the OpenAI-compatible builder writes it straight into the body — the provider is the authority on whether the named function exists. An Anthropic-backed agent gets the translated member (`auto`→`auto`, `required`→`any`, named function→`tool`+`name`) and `none` withholds the tool list, since Anthropic's `tool_choice` has no `none` member (`internal/http/chat_completions.go:748-781`, `internal/agent/loop_pipeline_callbacks.go:417-419`, `internal/providers/openai_request.go:246-250`, `internal/providers/anthropic_request.go:198-223`, `:264-290`). |
+| `model` | `goclaw:<agent>` / `agent:<agent>` select the agent — and so does any other value that is not a resolvable `<provider>/<model>` reference, so a caller passing a placeholder keeps its previous meaning. A resolvable reference (prefix names a provider the tenant can reach) is a per-request override that also pins that provider; `X-GoClaw-Model` always overrides and wins over the body, bare or composite, a bare value being a model id for the run's provider (`internal/http/chat_completions.go:300-325`, `:688-712`, `internal/providers/model_ref.go`). |
+| `stream_options.include_usage` | When true, a final usage chunk with no choices is sent after the content (`internal/http/chat_completions.go:96-98`, `:622-624`). |
+
+Rejected with the OpenAI-shaped error envelope `{"error":{"message":...,"type":"invalid_request_error"}}` (`internal/http/chat_completions.go:675-682`): an empty `messages` list; a last message that is neither `user` (with non-empty content) nor `tool` — which is how a trailing `system`/`assistant` is refused; `n > 1`; any `stop` sequence; a non-`function` tool type; invalid tool parameters JSON; and a malformed `tool_choice` — an unsupported string, or an object whose `type` is not `function` or that has no `function.name` (`internal/http/chat_completions.go:215-263`, `:748-781`).
+
+### Streaming
+
+Streaming emits real SSE deltas as the run produces them: the handler subscribes to the run's event broadcast (`protocol.EventAgent` filtered by `RunID`) and forwards `ChatEventChunk` as content deltas and `ChatEventThinking` as `reasoning_content` deltas. The bus callback only appends to a mutex-guarded queue and signals, so it never blocks the run's goroutine or the bus lock, and a slow client delays its own deltas without ever losing one (`internal/http/chat_completions.go:490-545`). After the run returns:
+
+- `finish_reason` comes from the provider (`final.result.FinishReason`) through `normalizeFinishReason`, which passes through `length`, `tool_calls`, `stop`, `content_filter` and maps anything else (including unset) to `stop` (`internal/http/chat_completions.go:618-619`, `:782-791`);
+- tool calls are streamed in OpenAI's indexed delta shape — name on the first delta, arguments JSON on the second — and the turn ends with `finish_reason: "tool_calls"` (`internal/http/chat_completions.go:591-608`);
+- any text the client is still missing (no publisher wired, or a file URL that only becomes signable once the whole text is known) is sent as a tail chunk when the delivered text is a prefix of the final answer (`internal/http/chat_completions.go:610-620`).
+
+Non-streaming answers with one assistant message and the same finish-reason mapping (`internal/http/chat_completions.go:423-465`).
+
+`chat.send` carries the same overrides over WebSocket: it accepts `model` and `provider`, splits a `<provider>/<model>` value only when the prefix names a reachable provider, and rejects a reference whose prefix names one provider while `provider` names another (`internal/gateway/methods/chat.go:148-149`, `:369-388`). Assistant turns in `chat.history` carry `model` (`<provider>/<model>`) and `provider`, stamped by the finalize stage (`internal/providers/types.go:179-184`, `internal/pipeline/finalize_stage.go:104-110`).
+
+---
+
+## 17. Provider CLI
+
+`goclaw providers` manages providers through the running gateway over HTTP — the CLI never talks to the database directly (`cmd/providers_cmd.go:675-679`). Subcommands: `list`, `add`, `update <id>`, `delete <id>`, `verify <id>`, `models`, `quirks`, `capabilities [id]`, `health [id]` (`cmd/providers_cmd.go:24-32`).
+
+| Command | Talks to | Notes |
+|---|---|---|
+| `providers list [--json] [--models]` | `GET /v1/providers` | `--models` also lists each provider's models |
+| `providers update <id>` / `delete <id> [--force]` | `PUT`/`DELETE /v1/providers/{id}` | interactive update; delete without `--force` asks for confirmation |
+| `providers verify <id> [--model <alias>]` | `POST /v1/providers/{id}/verify` | connectivity ping, or a small chat request when `--model` is given |
+| `providers models list --provider <id\|name> [--json] [--refresh]` | `GET /v1/providers/{id}/models` | `--refresh` re-fetches the catalogue from the upstream first |
+| `providers models refresh --provider <id\|name> [--json]` | `GET /v1/providers/{id}/models?refresh=true` | always re-fetches |
+| `providers quirks list --wire-api <wire_api> [--json]` | `GET /v1/providers/quirks?wire_api=…` | prints the declared quirks and their fragment keys for one wire API |
+| `providers capabilities [id] [--json] [--models]` | `GET /v1/providers/capabilities[?id=…]` | prints the §15 DTO; `--models` adds every model with capabilities, context window and cost |
+| `providers health [id] [--json] [--reset <id\|name>] [--probe <id\|name>] [--model <m>]` | `GET`/`POST /v1/providers/{id}/health` | `--reset` clears persisted cooldown/failure state; `--probe` actively probes and records the outcome; `--model` picks the probe's model |
+
+`--provider` and `--wire-api` are required flags on their commands (`cmd/providers_cmd.go:370-373`, `:391-393`, `:487-489`). `providers health --json` always prints an array of health objects (`cmd/providers_cmd.go:719`).
 
 ---
 

@@ -542,6 +542,11 @@
       "global": "Global (all contexts)"
     }
   },
+  "catalogue": {
+    "stale": "The model catalogue is out of date.",
+    "loadFailed": "Failed to load the model catalogue.",
+    "retry": "Retry"
+  },
   "toast": {
     "created": "Agent created",
     "createFailed": "Failed to create agent",

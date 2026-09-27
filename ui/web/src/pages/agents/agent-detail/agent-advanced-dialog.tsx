@@ -22,7 +22,7 @@ import {
 } from "./config-sections";
 import { WorkspaceSection } from "./general-sections";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { useProviderCapability } from "@/pages/providers/hooks/use-provider-capabilities";
 import {
   getChatGPTOAuthProviderRouting,
   getProviderReasoningDefaults,
@@ -42,14 +42,18 @@ export function AgentAdvancedDialog({ open, onOpenChange, agent, onUpdate }: Age
   const { providers, loading: providersLoading, refresh: refreshProviders } = useProviders();
   const providerByName = new Map(providers.map((provider) => [provider.name, provider]));
   const currentProvider = providerByName.get(agent.provider);
-  const { models: providerModels, loading: providerModelsLoading } = useProviderModels(
-    currentProvider?.id,
-  );
+  // The current model's reasoning capability comes from the capability
+  // catalogue, whose per-model thinking levels are the same declaration the
+  // request path resolves.
+  const { models: providerModels, loading: providerModelsLoading } = useProviderCapability(agent.provider);
   const providerRoutingDefaults = getChatGPTOAuthProviderRouting(currentProvider?.settings);
   const providerReasoningDefaults = getProviderReasoningDefaults(currentProvider?.settings);
-  const currentModelCapability = providerModels.find(
-    (entry) => entry.id === agent.model || agent.model.endsWith(`/${entry.id}`),
-  )?.reasoning ?? null;
+  const capabilityModel = providerModels.find(
+    (entry) => entry.id === agent.model || entry.id.endsWith(`/${agent.model}`),
+  );
+  const currentModelCapability = capabilityModel?.thinking_levels?.length
+    ? { levels: capabilityModel.thinking_levels, default_effort: capabilityModel.default_thinking_level }
+    : null;
   const expertReasoningAvailable = Boolean(currentModelCapability?.levels?.length);
 
   const init = deriveState(agent, currentProvider);

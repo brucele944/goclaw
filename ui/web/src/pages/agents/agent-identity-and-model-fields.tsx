@@ -12,17 +12,22 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { ProviderCatalogueStatus } from "@/components/shared/model-catalogue-status";
 import { slugify } from "@/lib/slug";
 import type { AgentCreateFormData } from "@/schemas/agent.schema";
 import type { ProviderData } from "@/pages/providers/hooks/use-providers";
-import type { ModelInfo } from "@/pages/providers/hooks/use-provider-models";
+import type { ModelSelectOption } from "@/types/provider";
 
 interface AgentIdentityAndModelFieldsProps {
   form: UseFormReturn<AgentCreateFormData>;
   enabledProviders: ProviderData[];
   poolOwnerNames?: Set<string>;
-  models: ModelInfo[];
+  /** Model options built from the provider's capability catalogue: bare value, qualified label. */
+  modelOptions: ModelSelectOption[];
   modelsLoading: boolean;
+  /** Provider name/id the options came from — used by the catalogue status line. */
+  catalogueProvider: string;
+  catalogueProviderId?: string;
   verifying: boolean;
   verifyResult: { valid: boolean; error?: string } | null;
   onProviderChange: (value: string) => void;
@@ -37,8 +42,10 @@ export function AgentIdentityAndModelFields({
   form,
   enabledProviders,
   poolOwnerNames,
-  models,
+  modelOptions,
   modelsLoading,
+  catalogueProvider,
+  catalogueProviderId,
   verifying,
   verifyResult,
   onProviderChange,
@@ -147,7 +154,8 @@ export function AgentIdentityAndModelFields({
                   <Combobox
                     value={field.value}
                     onChange={(v) => setValue("model", v, { shouldValidate: true })}
-                    options={models.map((m) => ({ value: m.id, label: m.name ?? m.id }))}
+                    options={modelOptions}
+                    allowCustom
                     placeholder={modelsLoading ? t("create.loadingModels") : t("create.enterOrSelectModel")}
                   />
                 )}
@@ -174,8 +182,11 @@ export function AgentIdentityAndModelFields({
                 : verifyResult.error || t("create.verificationFailed")}
             </p>
           )}
-          {!verifyResult && provider && !modelsLoading && models.length === 0 && (
+          {!verifyResult && provider && !modelsLoading && modelOptions.length === 0 && (
             <p className="text-xs text-muted-foreground">{t("create.noModelsHint")}</p>
+          )}
+          {provider && (
+            <ProviderCatalogueStatus provider={catalogueProvider} providerId={catalogueProviderId} />
           )}
         </div>
       </div>

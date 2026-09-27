@@ -35,6 +35,10 @@ export interface Message {
   is_error?: boolean;
   media_refs?: { id: string; mime_type: string; kind: string; path?: string; prompt?: string }[];
   created_at?: string; // ISO 8601 timestamp from server; absent for older messages
+  /** Model that answered this assistant turn (bare id or "<provider>/<model>"). */
+  model?: string;
+  /** Provider name that answered this assistant turn. */
+  provider?: string;
 }
 
 export interface ToolCall {

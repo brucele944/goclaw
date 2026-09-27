@@ -1,4 +1,5 @@
 import { Bot, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { MessageContent } from "./message-content";
 import { ThinkingBlock } from "./thinking-block";
 import { ToolCallCard } from "./tool-call-card";
@@ -6,6 +7,7 @@ import { BlockReplyBubble } from "./block-reply-bubble";
 import { MediaGallery } from "./media-gallery";
 import { useUiStore } from "@/stores/use-ui-store";
 import { resolveTimezone } from "@/lib/format";
+import { qualifyModelIdentity } from "@/types/provider";
 import type { ChatMessage } from "@/types/chat";
 
 interface MessageBubbleProps {
@@ -13,6 +15,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
+  const { t } = useTranslation("chat");
   const timezone = useUiStore((s) => s.timezone);
   const isUser = message.role === "user";
   const isTool = message.role === "tool";
@@ -22,6 +25,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   if (message.isBlockReply) return <BlockReplyBubble message={message} />;
 
   const isAssistant = message.role === "assistant";
+  // Which model answered this turn. chat.history reports the model and provider
+  // separately, so a bare model id is qualified here the same way the pickers
+  // qualify it — one identity everywhere it is displayed.
+  const answeredBy = isAssistant
+    ? qualifyModelIdentity(message.provider ?? "", message.model ?? "") || (message.provider ?? "").trim()
+    : "";
   const hasThinking = isAssistant && !!message.thinking;
   const hasToolDetails = isAssistant && message.toolDetails && message.toolDetails.length > 0;
   const hasToolCalls = isAssistant && message.tool_calls && message.tool_calls.length > 0;
@@ -49,6 +58,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {hasToolDetails && message.toolDetails!.map((entry) => (
             <ToolCallCard key={entry.toolCallId} entry={entry} compact />
           ))}
+          {answeredBy && (
+            <div className="px-2 py-1 text-2xs text-muted-foreground">
+              <span className="font-mono" title={t("turnModel.tooltip", { model: answeredBy })}>
+                {answeredBy}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         /* Normal message bubble — assistant uses full width, user capped at 85% */
@@ -75,13 +91,25 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <MediaGallery items={message.mediaItems} />
             </div>
           )}
-          {message.timestamp && (
-            <div className="mt-1 text-2xs text-muted-foreground">
-              {new Intl.DateTimeFormat([], {
-                timeZone: resolveTimezone(timezone),
-                hour: "numeric",
-                minute: "2-digit",
-              }).format(new Date(message.timestamp))}
+          {(message.timestamp || answeredBy) && (
+            <div className="mt-1 flex items-center gap-2 text-2xs text-muted-foreground">
+              {message.timestamp && (
+                <span>
+                  {new Intl.DateTimeFormat([], {
+                    timeZone: resolveTimezone(timezone),
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }).format(new Date(message.timestamp))}
+                </span>
+              )}
+              {answeredBy && (
+                <span
+                  className="min-w-0 truncate font-mono"
+                  title={t("turnModel.tooltip", { model: answeredBy })}
+                >
+                  {answeredBy}
+                </span>
+              )}
             </div>
           )}
         </div>

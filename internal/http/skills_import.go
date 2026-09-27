@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -277,9 +278,10 @@ func (h *SkillsHandler) doSkillsImport(ctx context.Context, r io.Reader, userID 
 			_, err := h.db.ExecContext(ctx,
 				`INSERT INTO skills (id, name, slug, description, owner_id, visibility, version, status,
 				 is_system, file_path, file_size, tenant_id, created_at, updated_at)
-				 VALUES ($1,$2,$3,$4,$5,$6,$7,'active',false,$8,0,$9,NOW(),NOW())`,
+				 VALUES ($1,$2,$3,$4,$5,$6,$7,'active',false,$8,0,$9,$10,$11)`,
 				skillID, meta.Name, slug, meta.Description,
 				userID, visibility, version, skillFilePath, tid,
+				time.Now().UTC(), time.Now().UTC(),
 			)
 			if err != nil {
 				slog.Warn("skills.import: insert skill", "slug", slug, "error", err)

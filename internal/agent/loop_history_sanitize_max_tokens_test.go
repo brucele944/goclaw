@@ -27,6 +27,10 @@ type nopSessionStore struct {
 	setLastTokens    int
 	setLastMsgCount  int
 
+	// recorded collects every message persisted through AddMessage, so a test can
+	// assert what a run wrote to the session (and how it was labelled).
+	recorded []providers.Message
+
 	// Configurable/recording fields for compaction-count and truncation tests.
 	// Guarded by mu because maybeSummarize mutates them from a background goroutine.
 	mu               sync.Mutex
@@ -44,7 +48,11 @@ func (n *nopSessionStore) GetOrCreate(_ context.Context, _ string) *store.Sessio
 	return &store.SessionData{}
 }
 func (n *nopSessionStore) Get(_ context.Context, _ string) *store.SessionData          { return nil }
-func (n *nopSessionStore) AddMessage(_ context.Context, _ string, _ providers.Message) {}
+func (n *nopSessionStore) AddMessage(_ context.Context, _ string, msg providers.Message) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	n.recorded = append(n.recorded, msg)
+}
 func (n *nopSessionStore) GetHistory(_ context.Context, _ string) []providers.Message {
 	n.mu.Lock()
 	defer n.mu.Unlock()

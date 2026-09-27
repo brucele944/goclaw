@@ -1,6 +1,6 @@
 # 18 - ACP Provider (Agent Client Protocol)
 
-The ACP provider enables GoClaw to orchestrate external coding agents (Claude Code, Codex CLI, Gemini CLI, Kiro, or any ACP-compatible agent) as subprocesses via JSON-RPC 2.0 over stdio. One provider covers all ACP agents through config-driven agent registry.
+The ACP provider enables GoClaw to orchestrate external coding agents (Claude Code, Codex CLI, Gemini CLI, Kiro, or any ACP-compatible agent) as subprocesses via JSON-RPC 2.0 over stdio. One provider type — `acp` — covers all of them: the brand table declares it as wire API `cli-delegated` with CLI kind `acp` (`internal/providers/wire/brand.go`), and the agent binary is part of the provider declaration (`providers.acp.binary` in the config file, or the row's `exec_path` column).
 
 > **References:** [ACP Spec](https://agentclientprotocol.com/) · [ACP Schema](https://github.com/agentclientprotocol/agent-client-protocol/blob/main/schema/schema.json) · Issue [#189](https://github.com/nextlevelbuilder/goclaw/issues/189) · PR [#190](https://github.com/nextlevelbuilder/goclaw/pull/190)
 
@@ -32,6 +32,7 @@ flowchart TD
 **Key principles:**
 - GoClaw is an ACP **client** — it spawns and controls agent subprocesses
 - Each subprocess is a long-lived OS process communicating via stdin/stdout
+- One subprocess per provider declaration (pool key = binary + args) serves every conversation; each GoClaw conversation gets its own ACP session on it
 - Security enforced at the tool bridge layer: workspace sandboxing, deny patterns, permission modes
 
 ---
@@ -40,7 +41,7 @@ flowchart TD
 
 ### Transport
 
-Messages are **newline-delimited JSON** on stdin/stdout. Each message is a complete JSON object followed by `\n`. The `Conn` type (`jsonrpc.go`, 217 lines) handles bidirectional communication.
+Messages are **newline-delimited JSON** on stdin/stdout. Each message is a complete JSON object followed by `\n`. The `Conn` type (`jsonrpc.go`, 219 lines) handles bidirectional communication.
 
 ```
 GoClaw (Client)                     Agent (Server)
@@ -193,17 +194,19 @@ type ToolCallUpdate struct {
 
 ## 5. Process Pool
 
-`ProcessPool` (`process.go`, 237 lines) manages subprocess lifecycle.
+`ProcessPool` (`process.go`, 327 lines) manages subprocess lifecycle. One process is shared across conversations: the pool key is the agent binary plus its spawn args (`ACPProvider.poolKey`), and each GoClaw conversation multiplexes its own ACP session over that process.
 
 ### Spawn Flow
 
 ```
-GetOrSpawn(sessionKey)
+GetOrSpawn(ctx, poolKey)              // poolKey = binary + args
+  ├→ Acquire per-key spawn mutex (sync.Map of mutexes)
   ├→ Check cached process (sync.Map)
-  │   └→ Found + alive → return
-  ├→ Acquire per-key spawn mutex (prevent thundering herd)
+  │   ├→ Found, not exited → return
+  │   └→ Found, exited → drop it, spawn a replacement
   └→ spawn():
-      ├→ exec.Command(binary, args...)
+      ├→ exec.CommandContext(binary, args...)
+      ├→ cmd.Dir = workDir
       ├→ cmd.Env = filterACPEnv(os.Environ())  // strip secrets
       ├→ Create stdin/stdout pipes
       ├→ cmd.Stderr = limitedWriter(4KB)
@@ -211,10 +214,11 @@ GetOrSpawn(sessionKey)
       ├→ NewConn(stdin, stdout, toolBridge.Handle, notifyHandler)
       ├→ conn.Start()  // begin readLoop
       ├→ Initialize()  // ACP handshake
-      ├→ NewSession()  // create session
-      ├→ Monitor exit in background goroutine
+      ├→ Monitor exit in background goroutine (logs collected stderr)
       └→ Store in pool
 ```
+
+`spawn()` does **not** create a session: `session/new` (or `session/load`) is issued per conversation by `ACPProvider.resolveSession`, which keeps a `goclawSessionKey → ACP session ID` map and a per-key mutex.
 
 ### Idle Reaping
 
@@ -222,25 +226,26 @@ Every 30 seconds, the reaper checks all processes:
 
 ```go
 for each process in pool:
-    if process.inUse > 0: skip          // active prompt running
+    if proc.inUse.Load() > 0: skip        // active prompt running
     if time.Since(lastActive) > idleTTL:
-        process.cmd.Process.Kill()       // SIGKILL
+        proc.cancel()                     // cancels the process context, killing cmd
         remove from pool
 ```
 
 ### Crash Recovery
 
-If a process exits unexpectedly (detected via `<-proc.exited` channel), the next `GetOrSpawn` call automatically spawns a replacement. The active prompt is lost — caller receives an error.
+If a process exits unexpectedly, the goroutine watching `cmd.Wait()` closes `proc.exited` and the connection's read loop closes `Conn.done`, so an in-flight `Call` fails with `connection closed`. The next `GetOrSpawn` sees the exited process, drops it, and spawns a replacement; `resolveSession` then restores the conversation's ACP session with `session/load` when the agent advertised the `LoadSession` capability, and otherwise creates a new session.
 
 ### Concurrency Controls
 
 | Mechanism | Purpose |
 |-----------|---------|
-| `sync.Map` for processes | Lock-free concurrent access |
-| Per-key spawn mutex | Prevent duplicate spawns for same session |
-| `inUse` atomic flag | Reaper skips active processes |
+| `sync.Map` for processes | Lock-free access, keyed by pool key (binary + args) |
+| Per-key spawn mutex | Prevent duplicate spawns for the same pool key |
+| `inUse` atomic counter | Reaper skips processes with an active prompt |
 | `lastActive` timestamp | Tracks idle time for reaping |
-| Session-level mutex in ACPProvider | Serializes prompts per session |
+| Per-conversation session mutex (`ACPProvider.sessionMu`) | Serializes ACP session create/restore for one GoClaw session |
+| Session reaper (`ACPProvider.sessionReaper`) | Every 5 minutes, cancels and drops sessions idle for more than 30 minutes |
 
 ---
 
@@ -295,17 +300,17 @@ Symlink resolution prevents `../../etc/passwd` attacks even when symlinks point 
 
 ### Security Layers
 
-**1. Binary Allowlist (63 binaries):**
+**1. Binary Allowlist (64 binaries):**
 ```
-sh, bash, zsh, fish, node, npm, npx, pnpm, yarn, bun, deno,
-python, python3, pip, pip3, uv, ruby, gem, go, cargo, rustc,
-java, javac, mvn, gradle, dotnet, git, gh, docker, kubectl,
-make, cmake, gcc, g++, clang, curl, wget, jq, yq, tar, zip,
-unzip, gzip, cat, head, tail, less, grep, rg, find, ls, mv,
-cp, mkdir, rm, chmod, touch, sed, awk, sort, wc, diff, tee
+sh, bash, zsh, fish, node, python, python3, ruby, perl, go,
+cargo, rustc, gcc, g++, make, git, ls, cat, head, tail, grep,
+rg, find, wc, sort, uniq, diff, patch, mkdir, cp, mv, touch,
+echo, printf, env, which, whoami, npm, npx, pnpm, yarn, bun,
+pip, pip3, uv, pipx, docker, kubectl, curl, wget, jq, yq, tar,
+gzip, unzip, sed, awk, xargs, tee, tr, cut, test, true, false
 ```
 
-**2. Deny Patterns:** Regex patterns from GoClaw's `DefaultDenyPatterns` are applied to the full command string (binary + args).
+**2. Deny Patterns:** The patterns supplied at construction — `tools.ResolveDenyPatterns(shellDenyGroups)`, i.e. the shell deny groups resolved from config (with no overrides this is exactly `tools.DefaultDenyPatterns()`) — are applied to the full command string (binary + args).
 
 **3. Working Directory Sandbox:** Terminal `cwd` validated against workspace boundary.
 
@@ -328,21 +333,25 @@ Used for both stdout and stderr capture. Prevents unbounded memory growth from v
 
 ## 8. Environment Filtering
 
-Before spawning any agent subprocess, `filterACPEnv()` strips sensitive environment variables:
+Before spawning any agent subprocess, `filterACPEnv()` strips sensitive environment variables. Keys are upper-cased before matching, and an explicitly allowed key wins over the prefix rules.
 
-**Prefix-based (12 prefixes):**
+**Prefix-based (24 prefixes):**
 ```
-GOCLAW_, CLAUDE_, ANTHROPIC_, OPENAI_, DATABASE_, AWS_,
-GOOGLE_, AZURE_, GITHUB_, DOCKER_, STRIPE_, SSH_
+GOCLAW, CLAUDE, ANTHROPIC, OPENAI, DATABASE, POSTGRES, MYSQL,
+REDIS, MONGO, AWS_, AZURE_, GOOGLE_, GCP_, GITHUB_, GH_,
+GITLAB_, BITBUCKET_, DOCKER_, REGISTRY_, STRIPE_, TWILIO_,
+SENDGRID_, SSH_, GPG_
 ```
 
-**Exact-match (15 keys):**
+**Exact-match (13 keys):**
 ```
-DB_DSN, PGPASSWORD, PGUSER, PGHOST, PGDATABASE, PGPORT,
-REDIS_URL, MONGO_URI, NPM_TOKEN, SENTRY_AUTH_TOKEN,
-SENTRY_DSN, DATADOG_API_KEY, TWILIO_AUTH_TOKEN,
-SENDGRID_API_KEY, SLACK_TOKEN
+DB_DSN, PGPASSWORD, PGUSER, PGHOST, NPM_TOKEN,
+NPM_CONFIG_TOKEN, HOMEBREW_GITHUB_API_TOKEN, CODECOV_TOKEN,
+COVERALLS_REPO_TOKEN, SENTRY_DSN, SENTRY_AUTH_TOKEN,
+SECRET_KEY, JWT_SECRET
 ```
+
+**Allowed passthrough (4 keys):** `GOOGLE_API_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, `GOOGLE_CLOUD_PROJECT`, `GCP_PROJECT` — they match the `GOOGLE_`/`GCP_` prefixes but the Google/Gemini agent needs them.
 
 This prevents credential leakage to untrusted agent binaries.
 
@@ -356,48 +365,82 @@ This prevents credential leakage to untrusted agent binaries.
 {
   "providers": {
     "acp": {
-      "binary": "claude",        // agent binary (must be in PATH)
+      "binary": "claude",        // agent binary name or path (must resolve via exec.LookPath)
       "args": ["--profile", "goclaw"],  // optional spawn args
-      "model": "claude",         // default model name for routing
+      "model": "claude",         // default model/agent name reported by the provider
       "work_dir": "/workspace",  // base workspace directory
       "idle_ttl": "5m",          // process idle timeout
-      "perm_mode": "approve-all" // "approve-all" | "approve-reads" | "deny-all"
+      "perm_mode": "approve-all" // "approve-all" (default) | "approve-reads" | "deny-all"
     }
   }
 }
 ```
 
+The config path registers the provider under the fixed name `acp`, checks `exec.LookPath(binary)` only (no binary allowlist), defaults `idle_ttl` to 5m, and defaults `work_dir` to `<data dir>/acp-workspaces`.
+
 ### Database Registration
 
-Create via Providers API or Web UI:
+Create via Providers API or Web UI. An ACP row is a declaration, not a credential: it names the wire protocol, the auth shape and the agent executable, and carries no API key.
 
 | Field | Value |
 |-------|-------|
-| `provider_type` | `"acp"` |
-| `api_base` | Binary name or absolute path (`"claude"`, `"/usr/local/bin/codex"`) |
+| `provider_type` | `"acp"` — the brand label |
+| `wire_api` | `"cli-delegated"` — derived from the brand when the row does not state it (`store.NormalizeProviderDeclaration`) |
+| `auth_kind` | `"cli_delegated"` — derived from the wire protocol (subprocess transports authenticate by delegation) |
+| `exec_path` | Agent binary name or absolute path (`"claude"`, `"/usr/local/bin/codex"`) |
+| `api_base` | Legacy location of the same value; still read as a one-release fallback when `exec_path` is empty (`cliExecPath`) |
 | `settings` | `{"args": [...], "idle_ttl": "5m", "perm_mode": "approve-all", "work_dir": "..."}` |
+| `settings_version` | `1` (`store.CurrentSettingsVersion`) |
 
-Binary validation: Only `claude`, `codex`, `gemini`, or absolute paths are accepted for DB-based registration. Verified via `exec.LookPath()`.
+Binary validation for DB rows: only `claude`, `codex`, `gemini`, or an absolute path is accepted, and the value must resolve via `exec.LookPath()`. A row that fails either check is logged (`security.acp: invalid binary path from DB`, `acp: binary not found, skipping`) and skipped — registration continues without it. The Providers API verify endpoint applies the same allowlist.
+
+Malformed `settings` JSON is logged and treated as defaults. `idle_ttl` defaults to 5m, `perm_mode` to `approve-all` (the tool-bridge default), and `work_dir` to `<data dir>/acp-workspaces` where the data dir is `GOCLAW_DATA_DIR` or `~/.goclaw/data`.
 
 ### Gateway Wiring
 
-```go
-// Config-based: resolved at startup
-registerACPFromConfig(registry, cfg.Providers.ACP)
+Both paths assemble a `wire.CLISettings` and hand it to the wire registry, which owns the ACP-vs-Claude-CLI decision via the brand's CLI kind:
 
-// DB-based: resolved from llm_providers table
-registerACPFromDB(registry, providerData)
+```go
+// Config-based: cmd/gateway_providers.go (registerACPFromConfig)
+registerConfigProvider(registry, wire.Config{
+    API:          wire.CLIDelegated,
+    Source:       wire.SourceConfig,
+    Name:         "acp",
+    ProviderType: store.ProviderACP,
+    CLI: &wire.CLISettings{Path: cfg.Binary, Model: cfg.Model, Args: cfg.Args, ...},
+})
+
+// DB-based: cmd/gateway_providers.go (registerACPFromDB)
+prov, err := wire.Build(wire.Config{
+    API:          wire.CLIDelegated,
+    Source:       wire.SourceDB,
+    Name:         p.Name,
+    ProviderType: p.ProviderType,
+    CLI:          cli, // built by acpCLISettings(p, shellDenyPatterns)
+})
 ```
 
-Both paths:
-1. Verify binary exists via `exec.LookPath`
-2. Parse `IdleTTL` duration
-3. Resolve `WorkDir` (default: `~/.goclaw/acp-workspaces`)
-4. Create `NewACPProvider(binary, args, workDir, idleTTL, denyPatterns, opts...)`
+`wire.Build` → `buildCLIDelegated` (`internal/providers/wire/build.go`) then constructs the provider for CLI kind `acp`:
+
+```go
+providers.NewACPProvider(cli.Path, cli.Args, cli.WorkDir, cli.IdleTTL, cli.DenyPatterns,
+    providers.WithACPName(cli.Name),
+    providers.WithACPModel(cli.Model),
+    providers.WithACPPermMode(cli.PermMode))
+```
+
+| | Config path | DB path |
+|---|---|---|
+| Registered name | `acp` | the row's `name` |
+| Default model | `providers.acp.model` (empty → `claude`) | the row's `name` |
+| Binary check | `exec.LookPath` only | allowlist (`claude`/`codex`/`gemini`/absolute) + `exec.LookPath` |
+| Deny patterns | resolved shell deny groups from config | resolved shell deny groups from config |
+
+Deny patterns are `tools.ResolveDenyPatterns(shellDenyGroups)` — the configured shell deny groups, defaults included.
 
 ### Live Reload
 
-DB-based providers support live reload via pubsub. When a provider is created/updated/deleted in the Web UI, a `cache.invalidate` event triggers re-registration without gateway restart.
+Provider create/update/delete publishes a provider-kind cache invalidation (`protocol.EventCacheInvalidate` with `bus.CacheKindProvider`). The gateway subscriber (`cmd/gateway_managed.go`) resolves the provider by name, ignores rows whose `provider_type` is not `acp`, unregisters the previous instance (closing its `ProcessPool`, which cancels the subprocess), and re-registers from the row when it is still enabled. The Providers API skips in-memory registration for ACP rows on purpose ("ACP providers are registered via gateway_providers.go on startup or restart"), so this bus path is what makes a Web UI change take effect without a gateway restart.
 
 ---
 
@@ -409,10 +452,10 @@ DB-based providers support live reload via pubsub. When a provider is created/up
 func (p *ACPProvider) Chat(ctx, req) → *ChatResponse
 ```
 
-1. Lock session mutex
-2. `GetOrSpawn` process
+1. `GetOrSpawn(ctx, poolKey)` — the shared process (pool key = binary + args)
+2. Resolve the ACP session for this GoClaw session (`resolveSession`: per-session mutex, `session/load` when the agent supports it, else `session/new`)
 3. `Prompt(content, onUpdate)` — blocks until complete
-4. Collect all text deltas into `strings.Builder`
+4. Collect text deltas from each `SessionUpdate` into a `strings.Builder`
 5. Return `ChatResponse{Content: text, FinishReason: mapped}`
 
 ### ChatStream
@@ -421,9 +464,9 @@ func (p *ACPProvider) Chat(ctx, req) → *ChatResponse
 func (p *ACPProvider) ChatStream(ctx, req, onChunk) → *ChatResponse
 ```
 
-1. Lock session mutex
-2. Set up cancel listener (`session/cancel` on context cancellation)
-3. `GetOrSpawn` process
+1. `GetOrSpawn(ctx, poolKey)` — the shared process
+2. Resolve the ACP session for this GoClaw session
+3. Set up cancel listener (`session/cancel` on context cancellation)
 4. `Prompt(content, onUpdate)` with callback:
    - Extract text blocks from each `SessionUpdate`
    - Emit `StreamChunk{Content: delta}` via `onChunk`
@@ -453,17 +496,21 @@ func (p *ACPProvider) ChatStream(ctx, req, onChunk) → *ChatResponse
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `internal/providers/acp_provider.go` | 227 | Provider interface: Chat, ChatStream, content extraction |
-| `internal/providers/acp/types.go` | 189 | ACP protocol types: Initialize, Session, ContentBlock |
-| `internal/providers/acp/jsonrpc.go` | 217 | Bidirectional JSON-RPC 2.0 over stdio |
-| `internal/providers/acp/process.go` | 237 | Subprocess pool: spawn, reap, crash recovery |
-| `internal/providers/acp/session.go` | 71 | Session lifecycle: init → new → prompt → cancel |
+| `internal/providers/acp_provider.go` | 382 | Provider interface: Chat, ChatStream, session routing, session reaper |
+| `internal/providers/acp/types.go` | 208 | ACP protocol types: Initialize, Session, ContentBlock |
+| `internal/providers/acp/jsonrpc.go` | 219 | Bidirectional JSON-RPC 2.0 over stdio |
+| `internal/providers/acp/process.go` | 327 | Process pool: spawn (initialize handshake), reap, crash recovery |
+| `internal/providers/acp/session.go` | 110 | Session lifecycle: initialize → new/load → prompt → cancel |
 | `internal/providers/acp/tool_bridge.go` | 204 | Agent→client request handler with sandbox |
 | `internal/providers/acp/terminal.go` | 212 | Terminal subprocess lifecycle + cappedBuffer |
-| `internal/providers/acp/helpers.go` | 81 | Environment filtering, limitedWriter |
+| `internal/providers/acp/helpers.go` | 114 | Environment filtering, session context, limitedWriter |
+| `internal/providers/acp/sysproc_linux.go` | 11 | Linux process attributes (`Pdeathsig`) |
+| `internal/providers/acp/sysproc_other.go` | 9 | Non-Linux `sysProcAttr()` stub |
+| `internal/providers/wire/brand.go` | — | `acp` brand: wire API `cli-delegated`, CLI kind `acp` |
+| `internal/providers/wire/build.go` | — | `buildCLIDelegated`: constructs `NewACPProvider` from `wire.CLISettings` |
 | `internal/config/config_channels.go` | — | `ACPConfig` struct definition |
-| `internal/store/provider_store.go` | — | `ProviderACP = "acp"` constant |
-| `cmd/gateway_providers.go` | — | Config + DB registration wiring |
+| `internal/store/provider_store.go` | — | `ProviderACP = "acp"` constant + declaration validation/defaults |
+| `cmd/gateway_providers.go` | — | Config + DB registration wiring (`registerACPFromConfig`, `registerACPFromDB`, `acpCLISettings`) |
 
 ---
 

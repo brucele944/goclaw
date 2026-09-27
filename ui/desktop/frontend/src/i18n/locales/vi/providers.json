@@ -29,6 +29,7 @@
     "advanced": "Nâng cao"
   },
   "form": {
+    "transportAuth": "Giao thức & Xác thực",
     "createTitle": "Thêm provider",
     "editTitle": "Chỉnh sửa provider",
     "name": "Tên *",
@@ -166,6 +167,29 @@
     "verify": "Kiểm tra Embedding",
     "verifyFailed": "Kiểm tra embedding thất bại",
     "dimensionsMismatch": "{{count}} chiều — không khớp yêu cầu 1536"
+  },
+  "meta": {
+    "wireApi": "Giao thức",
+    "authKind": "Xác thực",
+    "modelSource": "Model",
+    "staleCatalogue": "Danh sách model đã cũ"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI Completions",
+    "anthropicMessages": "Anthropic Messages",
+    "cliDelegated": "CLI Delegated"
+  },
+  "authKind": {
+    "apiKey": "Khóa API",
+    "oauthBrowser": "OAuth (trình duyệt)",
+    "serviceAccount": "Tài khoản dịch vụ",
+    "cliDelegated": "CLI Delegated",
+    "none": "Không"
+  },
+  "modelSource": {
+    "bundled": "Đi kèm",
+    "discovered": "Tự phát hiện",
+    "stale": "Đã cũ"
   },
   "toast": {
     "created": "Đã tạo provider",

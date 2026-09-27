@@ -12,8 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import type { AgentData } from "@/types/agent";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { useProviderCapability } from "@/pages/providers/hooks/use-provider-capabilities";
 import { useProviderVerify } from "@/pages/providers/hooks/use-provider-verify";
+import { buildCapabilityModelOptions } from "@/types/provider";
 import { getChatGPTOAuthPoolOwnership } from "@/pages/providers/provider-utils";
 import { useAgentPresets } from "./agent-presets";
 import { agentCreateSchema, type AgentCreateFormData } from "@/schemas/agent.schema";
@@ -71,7 +72,10 @@ export function AgentCreateDialog({ open, onOpenChange, onCreate }: AgentCreateD
     [enabledProviders, provider],
   );
   const selectedProviderId = selectedProvider?.id;
-  const { models, loading: modelsLoading } = useProviderModels(selectedProviderId);
+  // Model identity (and the stale/refresh affordance) comes from the capability
+  // catalogue; the agent's `model` field stores the bare id the transport sends.
+  const { models: catalogueModels, loading: catalogueLoading } = useProviderCapability(provider);
+  const modelOptions = useMemo(() => buildCapabilityModelOptions(provider, catalogueModels), [provider, catalogueModels]);
   const { verify, verifying, result: verifyResult, reset: resetVerify } = useProviderVerify();
 
   useEffect(() => { resetVerify(); }, [provider, model, resetVerify]);
@@ -140,8 +144,10 @@ export function AgentCreateDialog({ open, onOpenChange, onCreate }: AgentCreateD
             form={form}
             enabledProviders={enabledProviders}
             poolOwnerNames={poolOwnerNames}
-            models={models}
-            modelsLoading={modelsLoading}
+            modelOptions={modelOptions}
+            modelsLoading={catalogueLoading}
+            catalogueProvider={provider}
+            catalogueProviderId={selectedProviderId}
             verifying={verifying}
             verifyResult={verifyResult}
             onProviderChange={handleProviderChange}

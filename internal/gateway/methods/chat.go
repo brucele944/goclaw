@@ -361,6 +361,33 @@ func (m *ChatMethods) dispatchChatSends(requests []chatSendRequest) {
 	loop := primary.loop
 	hasMedia := len(params.parseMedia()) > 0
 
+	// "<provider>/<model>" is the identity the capability DTO and the UIs hand
+	// out, so a composite reference pins the provider as well. The prefix is only
+	// treated as a provider when it names one this tenant can actually reach — a
+	// vendor model id that contains a slash (openrouter's "openai/gpt-5.5") stays
+	// a model id.
+	if params.Model != "" {
+		providerKnown := func(name string) bool {
+			if m.providerReg == nil {
+				return false
+			}
+			_, err := m.providerReg.GetForTenant(store.TenantIDFromContext(primary.ctx), name)
+			return err == nil
+		}
+		providerName, modelID, hasProvider := providers.SplitModelRef(params.Model, providerKnown)
+		switch {
+		case hasProvider && params.Provider != "" && params.Provider != providerName:
+			sendChatError(requests, protocol.ErrInvalidRequest,
+				i18n.T(store.LocaleFromContext(primary.ctx), i18n.MsgModelProviderMismatch, params.Model, providerName, params.Provider))
+			return
+		case hasProvider:
+			params.Model = modelID
+			if params.Provider == "" {
+				params.Provider = providerName
+			}
+		}
+	}
+
 	// Per-request model/provider override (chat.send `model`/`provider`).
 	// Resolved before any run state is built so a bad provider name fails the
 	// request instead of starting a run on the wrong provider. An explicit

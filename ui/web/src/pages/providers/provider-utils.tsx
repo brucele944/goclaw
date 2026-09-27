@@ -1,5 +1,7 @@
 import { AlertTriangle, CircleSlash2, Key, Link2, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { PROVIDER_TYPES } from "@/constants/providers";
 import type { EffectiveChatGPTOAuthRoutingStrategy } from "@/types/agent";
 import { getChatGPTOAuthProviderRouting } from "@/types/provider";
@@ -22,6 +24,68 @@ export const PROVIDER_TYPE_BADGE: Record<string, { label: string; variant: Badge
     { label: pt.label.replace(/ \(.*\)$/, ""), variant: SPECIAL_VARIANTS[pt.value] ?? "secondary" },
   ]),
 );
+
+/**
+ * i18n keys for the transport families of `llm_providers.wire_api`.
+ *
+ * A value missing here is not an error: it is a transport this build does not
+ * know yet and the raw value is rendered instead, so a gateway that adds one
+ * stays readable without a UI release.
+ */
+const WIRE_API_LABEL_KEY: Record<string, string> = {
+  "openai-completions": "wireApi.openaiCompletions",
+  "anthropic-messages": "wireApi.anthropicMessages",
+  "cli-delegated": "wireApi.cliDelegated",
+};
+
+/** i18n keys for `llm_providers.auth_kind`; unknown values fall back to the raw value. */
+const AUTH_KIND_LABEL_KEY: Record<string, string> = {
+  api_key: "authKind.apiKey",
+  oauth_browser: "authKind.oauthBrowser",
+  service_account: "authKind.serviceAccount",
+  cli_delegated: "authKind.cliDelegated",
+  none: "authKind.none",
+};
+
+/**
+ * The dispatch identity of a provider, shown next to its (legacy) provider_type:
+ * which wire protocol it speaks and which credential ladder it uses. Renders
+ * nothing when the gateway predates those columns.
+ */
+export function ProviderWireMeta({
+  provider,
+  className,
+}: {
+  provider: Pick<ProviderData, "wire_api" | "auth_kind">;
+  className?: string;
+}) {
+  const { t } = useTranslation("providers");
+  const wireApi = provider.wire_api?.trim() ?? "";
+  const authKind = provider.auth_kind?.trim() ?? "";
+  if (!wireApi && !authKind) return null;
+  return (
+    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+      {wireApi && (
+        <Badge
+          variant="secondary"
+          className="text-2xs font-mono"
+          title={`${t("detail.wireApi")}: ${wireApi}`}
+        >
+          {WIRE_API_LABEL_KEY[wireApi] ? t(WIRE_API_LABEL_KEY[wireApi]) : wireApi}
+        </Badge>
+      )}
+      {authKind && (
+        <Badge
+          variant="outline"
+          className="text-2xs"
+          title={`${t("detail.authKind")}: ${authKind}`}
+        >
+          {AUTH_KIND_LABEL_KEY[authKind] ? t(AUTH_KIND_LABEL_KEY[authKind]) : authKind}
+        </Badge>
+      )}
+    </div>
+  );
+}
 
 export interface ChatGPTOAuthPoolOwnership {
   membersByOwner: Map<string, string[]>;

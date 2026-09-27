@@ -542,6 +542,11 @@
       "global": "Toàn cục"
     }
   },
+  "catalogue": {
+    "stale": "Danh sách model đã cũ.",
+    "loadFailed": "Không tải được danh sách model.",
+    "retry": "Thử lại"
+  },
   "toast": {
     "created": "Đã tạo agent",
     "createFailed": "Không thể tạo agent",

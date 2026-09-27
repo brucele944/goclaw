@@ -111,9 +111,9 @@ func TestChatSendModelOverrideReachesLoop(t *testing.T) {
 	client := gateway.NewTestClient(permissions.RoleAdmin, store.MasterTenantID, "user-1")
 
 	m.handleSend(ctx, client, sendChatParams(t, map[string]any{
-		"message": "hello",
-		"agentId": "override-agent",
-		"model":   "override-model",
+		"message":  "hello",
+		"agentId":  "override-agent",
+		"model":    "override-model",
 		"provider": "alt-provider",
 	}))
 
@@ -152,6 +152,72 @@ func TestChatSendModelOnlyOverrideReachesLoop(t *testing.T) {
 	}
 }
 
+// TestChatSendCompositeModelRefPinsProvider — a "<provider>/<model>" model value
+// (the identity the capability DTO and the pickers hand out) pins the provider
+// too, so a caller does not have to send the two fields separately.
+func TestChatSendCompositeModelRefPinsProvider(t *testing.T) {
+	m, ag := newOverrideChatMethods(t)
+	ctx := store.WithTenantID(context.Background(), store.MasterTenantID)
+	client := gateway.NewTestClient(permissions.RoleAdmin, store.MasterTenantID, "user-1")
+
+	m.handleSend(ctx, client, sendChatParams(t, map[string]any{
+		"message": "hello",
+		"agentId": "override-agent",
+		"model":   "alt-provider/composite-model",
+	}))
+
+	req := awaitChatRunRequest(t, ag)
+	if req.ModelOverride != "composite-model" {
+		t.Fatalf("ModelOverride = %q, want the model half of the reference", req.ModelOverride)
+	}
+	if req.ProviderOverride == nil || req.ProviderOverride.Name() != "alt-provider" {
+		t.Fatalf("ProviderOverride = %v, want the provider half resolved through the registry", req.ProviderOverride)
+	}
+}
+
+// TestChatSendCompositeModelRefConflictingProviderIsRejected — a model reference
+// that names one provider while `provider` names another is a caller mistake, and
+// running on either one would be a silent misroute.
+func TestChatSendCompositeModelRefConflictingProviderIsRejected(t *testing.T) {
+	m, ag := newOverrideChatMethods(t)
+	ctx := store.WithTenantID(context.Background(), store.MasterTenantID)
+	client, frames := gateway.NewCapturingTestClient(permissions.RoleAdmin, store.MasterTenantID, "user-1", 4)
+
+	m.handleSend(ctx, client, sendChatParams(t, map[string]any{
+		"message":  "hello",
+		"agentId":  "override-agent",
+		"model":    "alt-provider/composite-model",
+		"provider": "agent-provider",
+	}))
+
+	select {
+	case raw := <-frames:
+		var resp protocol.ResponseFrame
+		if err := json.Unmarshal(raw, &resp); err != nil {
+			t.Fatalf("unmarshal response: %v", err)
+		}
+		if resp.OK {
+			t.Fatalf("response ok=true, want an error for the conflicting provider: %s", raw)
+		}
+		if resp.Error == nil || !strings.Contains(resp.Error.Message, "alt-provider") {
+			t.Fatalf("error = %+v, want the conflicting provider named", resp.Error)
+		}
+		// The message names the provider the reference carries AND the one that was
+		// requested; a placeholder/format mismatch here shipped as "%!s(MISSING)".
+		if !strings.Contains(resp.Error.Message, "agent-provider") || strings.Contains(resp.Error.Message, "%!") {
+			t.Fatalf("error = %q, want both provider names and no format placeholder markers", resp.Error.Message)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("chat.send did not answer with an error frame")
+	}
+
+	select {
+	case req := <-ag.requests:
+		t.Fatalf("agent loop ran despite the conflicting provider: %+v", req)
+	default:
+	}
+}
+
 // TestChatSendUnknownProviderIsRejected — a provider name nobody registered must
 // fail the request instead of silently running on the agent's own provider.
 func TestChatSendUnknownProviderIsRejected(t *testing.T) {
@@ -160,8 +226,8 @@ func TestChatSendUnknownProviderIsRejected(t *testing.T) {
 	client, frames := gateway.NewCapturingTestClient(permissions.RoleAdmin, store.MasterTenantID, "user-1", 4)
 
 	m.handleSend(ctx, client, sendChatParams(t, map[string]any{
-		"message": "hello",
-		"agentId": "override-agent",
+		"message":  "hello",
+		"agentId":  "override-agent",
 		"provider": "nope",
 	}))
 

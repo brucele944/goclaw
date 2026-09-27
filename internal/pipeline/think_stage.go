@@ -190,6 +190,18 @@ func (s *ThinkStage) Execute(ctx context.Context, state *RunState) error {
 	state.Think.TruncRetries = 0    // reset on success
 	state.Think.OverflowRetries = 0 // reset on success
 
+	// Client-owned tools (OpenAI-compatible passthrough): the caller declared the
+	// tools and executes them, so the model's calls are handed back and the run
+	// ends here instead of being dispatched. The assistant message is deliberately
+	// not appended — the caller owns the transcript and will send the tool results
+	// back on its next request.
+	if len(state.Input.ClientTools) > 0 {
+		state.Observe.FinalToolCalls = resp.ToolCalls
+		state.Observe.FinalFinishReason = resp.FinishReason
+		s.result = BreakLoop
+		return nil
+	}
+
 	// 7. Uniquify tool call IDs (OpenAI returns 400 on duplicates across iterations).
 	// Skip if raw content present (Anthropic thinking passback) to avoid desync.
 	if len(resp.ToolCalls) > 0 && resp.RawAssistantContent == nil && s.deps.UniqueToolCallIDs != nil {
@@ -217,6 +229,7 @@ func (s *ThinkStage) Execute(ctx context.Context, state *RunState) error {
 			return nil // Continue to next iteration for a real answer
 		}
 		s.result = BreakLoop
+		state.Observe.FinalFinishReason = resp.FinishReason
 		return nil
 	}
 

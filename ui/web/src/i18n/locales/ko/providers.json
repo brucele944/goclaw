@@ -254,7 +254,9 @@
     "poolActivityTopAgentsTitle": "이 풀을 사용하는 상위 에이전트",
     "poolActivityRequests": "요청",
     "poolActivityEmpty": "아직 활동 없음",
-    "poolActivityEmptyDesc": "에이전트가 이 풀을 통해 요청 라우팅을 시작하면 풀 활동이 여기에 표시됩니다."
+    "poolActivityEmptyDesc": "에이전트가 이 풀을 통해 요청 라우팅을 시작하면 풀 활동이 여기에 표시됩니다.",
+    "wireApi": "전송 프로토콜",
+    "authKind": "인증 방식"
   },
   "embedding": {
     "enable": "임베딩 활성화",
@@ -352,5 +354,25 @@
     "failedCreate": "공급자 생성 실패",
     "failedUpdate": "공급자 업데이트 실패",
     "failedDelete": "공급자 삭제 실패"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI 채팅 완성",
+    "anthropicMessages": "Anthropic messages",
+    "cliDelegated": "CLI 위임"
+  },
+  "authKind": {
+    "apiKey": "API 키",
+    "oauthBrowser": "OAuth(브라우저)",
+    "serviceAccount": "서비스 계정",
+    "cliDelegated": "CLI 위임",
+    "none": "자격 증명 없음"
+  },
+  "catalogue": {
+    "stale": "모델 목록이 오래되었을 수 있습니다",
+    "empty": "발견된 모델이 없습니다",
+    "notListed": "이 제공자는 모델 카탈로그에 없습니다",
+    "error": "모델을 불러오지 못했습니다: {{message}}",
+    "refresh": "새로 고침",
+    "refreshing": "새로 고치는 중"
   }
 }

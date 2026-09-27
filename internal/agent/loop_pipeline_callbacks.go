@@ -235,6 +235,15 @@ func (l *Loop) makeBuildFilteredTools(req *RunRequest) func(state *pipeline.RunS
 		cacheValid     bool
 	)
 	return func(state *pipeline.RunState) ([]providers.ToolDefinition, error) {
+		// Client-owned tools (OpenAI-compatible passthrough): the caller defines the
+		// tool surface for this run, so it replaces the agent's registry tools
+		// rather than merging with them — those calls are never executed here
+		// (ThinkStage hands them back to the caller). Constant for the run, so it
+		// bypasses the per-run cache.
+		if len(req.ClientTools) > 0 {
+			return req.ClientTools, nil
+		}
+
 		maxIter := l.maxIterations
 		if req.MaxIterations > 0 && req.MaxIterations < maxIter {
 			maxIter = req.MaxIterations
@@ -396,6 +405,18 @@ func (l *Loop) makeCallLLM(req *RunRequest, emitRun func(AgentEvent)) func(ctx c
 			chatReq.Options = make(map[string]any)
 		}
 		chatReq.Options[providers.OptTemperature] = config.DefaultTemperature
+		// A stateless API caller may set these per request. Applied after the
+		// default so the caller wins, and only when set, so an agent's own
+		// configuration is untouched otherwise.
+		if req.Temperature != nil {
+			chatReq.Options[providers.OptTemperature] = *req.Temperature
+		}
+		if req.MaxTokens != nil && *req.MaxTokens > 0 {
+			chatReq.Options[providers.OptMaxTokens] = *req.MaxTokens
+		}
+		if req.ToolChoice != nil {
+			chatReq.Options[providers.OptToolChoice] = req.ToolChoice
+		}
 		chatReq.Options[providers.OptSessionKey] = req.SessionKey
 		chatReq.Options[providers.OptAgentID] = l.agentUUID.String()
 		chatReq.Options[providers.OptUserID] = req.UserID

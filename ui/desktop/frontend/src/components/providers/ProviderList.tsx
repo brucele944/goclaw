@@ -1,17 +1,41 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProviders } from '../../hooks/use-providers'
+import { useProviderCapabilities } from '../../hooks/use-provider-capabilities'
 import { ProviderRow } from './ProviderRow'
 import { ProviderFormDialog } from './ProviderFormDialog'
 import { ConfirmDialog } from '../common/ConfirmDialog'
-import type { ProviderData, ProviderInput } from '../../types/provider'
+import type { ProviderCapability, ProviderData, ProviderInput } from '../../types/provider'
 
 export function ProviderList() {
   const { t } = useTranslation(['providers', 'common'])
   const { providers, loading, createProvider, updateProvider, deleteProvider } = useProviders()
+  const { capabilities } = useProviderCapabilities()
   const [formOpen, setFormOpen] = useState(false)
   const [editingProvider, setEditingProvider] = useState<ProviderData | null>(null)
   const [deletingProvider, setDeletingProvider] = useState<ProviderData | null>(null)
+
+  // `/v1/providers` carries the CRUD fields; capabilities add wire_api / auth_kind /
+  // model_source / catalogue. Merge by provider_id (uuid) or provider name.
+  const rows = useMemo(() => {
+    const byKey = new Map<string, ProviderCapability>()
+    for (const c of capabilities) {
+      byKey.set(c.id, c)
+      if (c.provider_id) byKey.set(c.provider_id, c)
+    }
+    return providers.map((p) => {
+      const cap = byKey.get(p.id) ?? byKey.get(p.name)
+      if (!cap) return p
+      return {
+        ...p,
+        wire_api: p.wire_api ?? cap.wire_api,
+        auth_kind: p.auth_kind ?? cap.auth_kind,
+        model_source: p.model_source ?? cap.model_source,
+        default_model_id: p.default_model_id ?? cap.default_model_id,
+        models: p.models ?? cap.models,
+      }
+    })
+  }, [providers, capabilities])
 
   const handleEdit = (provider: ProviderData) => {
     setEditingProvider(provider)
@@ -55,11 +79,11 @@ export function ProviderList() {
           </button>
         </div>
 
-        {providers.length === 0 ? (
+        {rows.length === 0 ? (
           <p className="text-xs text-text-muted py-4 text-center">{t('providers:emptyTitle')}</p>
         ) : (
           <div className="space-y-1.5">
-            {providers.map((p) => (
+            {rows.map((p) => (
               <ProviderRow key={p.id} provider={p} onEdit={handleEdit} onDelete={setDeletingProvider} />
             ))}
           </div>

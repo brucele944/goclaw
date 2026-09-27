@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { PROVIDER_TYPES } from "@/constants/providers";
 import { toast } from "@/stores/use-toast-store";
 import { useProviders } from "../hooks/use-providers";
-import { useProviderModels } from "../hooks/use-provider-models";
+import { useProviderCapability } from "../hooks/use-provider-capabilities";
 import { useProviderVerify } from "../hooks/use-provider-verify";
 import { ProviderOAuthAccountSection } from "./provider-oauth-account-section";
 import { ProviderReasoningSection } from "./provider-reasoning-section";
@@ -37,6 +37,7 @@ import { useChatGPTOAuthProviderQuotas } from "../hooks/use-chatgpt-oauth-provid
 import { ChatGPTOAuthRoutingSection } from "@/pages/agents/agent-detail/config-sections";
 import { useProviderCodexPoolActivity } from "../hooks/use-provider-codex-pool-activity";
 import { toPoolEntries } from "@/adapters/provider-pool.adapter";
+import { ProviderWireMeta } from "../provider-utils";
 import {
   NO_API_KEY_TYPES,
   NO_EMBEDDING_TYPES,
@@ -57,9 +58,29 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
   const { t } = useTranslation("providers");
   const { t: tc } = useTranslation("common");
   const { providers } = useProviders();
-  const { models: providerModels, reasoningDefaults: providerReasoningDefaults } = useProviderModels(provider.id);
+  // The model list (and its reasoning capability) comes from the capability
+  // catalogue, so the preview shows the same "<provider>/<model>" identity the
+  // request path uses.
+  const { models: capabilityModels } = useProviderCapability(provider.name);
+  const providerModels = useMemo(
+    () =>
+      capabilityModels.map((model) => ({
+        id: model.id,
+        name: model.label && model.label !== model.id ? `${model.label} (${model.id})` : model.id,
+        reasoning: model.thinking_levels?.length
+          ? { levels: model.thinking_levels, default_effort: model.default_thinking_level }
+          : undefined,
+      })),
+    [capabilityModels],
+  );
   const { statuses } = useChatGPTOAuthProviderStatuses(providers);
-
+  // The provider's saved reasoning policy lives in its settings (the capability
+  // catalogue carries per-model thinking levels instead), so it is read here
+  // once for both the initial form state and the sync-from-provider effect.
+  const providerReasoningDefaults = useMemo(
+    () => getProviderReasoningDefaults(provider.settings),
+    [provider.settings],
+  );
   const typeInfo = PROVIDER_TYPES.find((pt) => pt.value === provider.provider_type);
   const typeLabel = typeInfo?.label ?? provider.provider_type;
   const showApiKey = !NO_API_KEY_TYPES.has(provider.provider_type);
@@ -91,7 +112,7 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
 
   // --- Form state ---
   const initialRouting = getChatGPTOAuthProviderRouting(provider.settings);
-  const initialReasoningDefaults = getProviderReasoningDefaults(provider.settings) ?? providerReasoningDefaults ?? null;
+  const initialReasoningDefaults = providerReasoningDefaults;
   const initialReasoningEffort = initialReasoningDefaults?.effort ?? "off";
   const initialReasoningFallback = initialReasoningDefaults?.fallback ?? "downgrade";
 
@@ -142,7 +163,7 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
     const nextID = provider.id;
     const es = getEmbeddingSettings(provider.settings);
     const routing = getChatGPTOAuthProviderRouting(provider.settings);
-    const reasoning = getProviderReasoningDefaults(provider.settings) ?? providerReasoningDefaults;
+    const reasoning = providerReasoningDefaults;
     const syncFromProvider = () => {
       setEmbEnabled(es?.enabled ?? false); setEmbModel(es?.model ?? ""); setEmbApiBase(es?.api_base ?? "");
       setPoolRouting({ strategy: routing?.strategy ?? "priority_order", extra_provider_names: routing?.extraProviderNames ?? [] });
@@ -227,7 +248,10 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
         </div>
         <div className="space-y-2">
           <Label>{t("detail.providerType")}</Label>
-          <div className="flex items-center gap-2"><Badge variant="outline">{typeLabel}</Badge></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{typeLabel}</Badge>
+            <ProviderWireMeta provider={provider} />
+          </div>
         </div>
         <div className="space-y-2">
           <Label>{isOAuth ? t("form.oauthAlias") : t("form.name")}</Label>

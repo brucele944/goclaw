@@ -29,6 +29,7 @@
     "advanced": "Дополнительно"
   },
   "form": {
+    "transportAuth": "Транспорт и аутентификация",
     "createTitle": "Добавить провайдера",
     "editTitle": "Редактировать провайдера",
     "name": "Имя *",
@@ -166,6 +167,29 @@
     "verify": "Проверить эмбеддинги",
     "verifyFailed": "Проверка эмбеддингов не удалась",
     "dimensionsMismatch": "{{count}} измерений — не соответствует требуемым 1536"
+  },
+  "meta": {
+    "wireApi": "Транспорт",
+    "authKind": "Аутентификация",
+    "modelSource": "Модели",
+    "staleCatalogue": "Список моделей устарел"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI Completions",
+    "anthropicMessages": "Anthropic Messages",
+    "cliDelegated": "CLI Delegated"
+  },
+  "authKind": {
+    "apiKey": "API-ключ",
+    "oauthBrowser": "OAuth (браузер)",
+    "serviceAccount": "Сервисный аккаунт",
+    "cliDelegated": "CLI-делегирование",
+    "none": "Нет"
+  },
+  "modelSource": {
+    "bundled": "Встроенный",
+    "discovered": "Обнаруженный",
+    "stale": "Устаревший"
   },
   "toast": {
     "created": "Провайдер создан",

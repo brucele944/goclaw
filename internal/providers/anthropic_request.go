@@ -192,26 +192,35 @@ func (p *AnthropicProvider) buildRequestBody(model string, req ChatRequest, stre
 		body["system"] = systemBlocks
 	}
 
-	// Translate tools to Anthropic format
+	// Translate tools to Anthropic format. A caller-declared tool_choice of "none"
+	// is enforced by withholding the tool list: Anthropic has no "none" member in
+	// its tool_choice schema, and a model that cannot see the tools cannot call
+	// them.
 	if len(req.Tools) > 0 {
-		var tools []map[string]any
-		for _, t := range req.Tools {
-			if t.Type != "function" || t.Function == nil {
-				continue
+		choice, includeTools := anthropicToolChoice(req.Options[OptToolChoice])
+		if includeTools {
+			var tools []map[string]any
+			for _, t := range req.Tools {
+				if t.Type != "function" || t.Function == nil {
+					continue
+				}
+				cleanedParams := CleanSchemaForProvider("anthropic", t.Function.Parameters)
+				tool := map[string]any{
+					"name":         t.Function.Name,
+					"description":  t.Function.Description,
+					"input_schema": cleanedParams,
+				}
+				tools = append(tools, tool)
 			}
-			cleanedParams := CleanSchemaForProvider("anthropic", t.Function.Parameters)
-			tool := map[string]any{
-				"name":         t.Function.Name,
-				"description":  t.Function.Description,
-				"input_schema": cleanedParams,
+			// Add cache_control breakpoint to the last tool (caches tool definitions prefix).
+			if len(tools) > 0 {
+				tools[len(tools)-1]["cache_control"] = map[string]any{"type": "ephemeral"}
 			}
-			tools = append(tools, tool)
+			body["tools"] = tools
+			if choice != nil {
+				body["tool_choice"] = choice
+			}
 		}
-		// Add cache_control breakpoint to the last tool (caches tool definitions prefix).
-		if len(tools) > 0 {
-			tools[len(tools)-1]["cache_control"] = map[string]any{"type": "ephemeral"}
-		}
-		body["tools"] = tools
 	}
 
 	// Merge options
@@ -245,6 +254,41 @@ func (p *AnthropicProvider) buildRequestBody(model string, req ChatRequest, stre
 // anthropicSkipsTemperature reports whether the Messages API rejects sampling
 // parameters for this model. Claude Opus/Sonnet 4.6+ return HTTP 400 when
 // temperature (and top_p/top_k) are included; omit them entirely.
+// anthropicToolChoice translates the OpenAI-shaped tool_choice value the request
+// path carries into Anthropic's schema. It returns the translated value (nil when
+// the provider's own default applies) and whether the tool list should be sent at
+// all; "none" withholds the tools because Anthropic's tool_choice has no "none"
+// member. An unrecognised value — the HTTP surface validates the strings, so this
+// is an internal caller — falls back to the provider default rather than being
+// forwarded as an invalid member.
+func anthropicToolChoice(value any) (choice map[string]any, includeTools bool) {
+	switch v := value.(type) {
+	case nil:
+		return nil, true
+	case string:
+		switch v {
+		case "auto":
+			return map[string]any{"type": "auto"}, true
+		case "required", "any":
+			return map[string]any{"type": "any"}, true
+		case "none":
+			return nil, false
+		}
+		return nil, true
+	case map[string]any:
+		if v["type"] != "function" {
+			return nil, true
+		}
+		fn, _ := v["function"].(map[string]any)
+		name, _ := fn["name"].(string)
+		if name == "" {
+			return nil, true
+		}
+		return map[string]any{"type": "tool", "name": name}, true
+	}
+	return nil, true
+}
+
 func anthropicSkipsTemperature(model string) bool {
 	m := strings.ToLower(model)
 	for _, family := range []string{"claude-opus-", "claude-sonnet-"} {

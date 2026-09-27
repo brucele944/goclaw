@@ -8,6 +8,10 @@ export interface RawHistoryMessage {
   content?: string
   thinking?: string
   timestamp?: number
+  /** Resolved model identity (`<provider>/<model>`) for assistant turns. */
+  model?: string
+  /** Resolved provider name for assistant turns. */
+  provider?: string
   tool_call_id?: string
   is_error?: boolean
   tool_calls?: Array<{
@@ -54,6 +58,8 @@ export function mapHistoryMessages(raw: RawHistoryMessage[]): ChatMessage[] {
     content: m.content ?? '',
     timestamp: m.timestamp ?? Date.now(),
     thinkingText: m.thinking,
+    model: m.model,
+    provider: m.provider,
     toolCalls: m.tool_calls?.map((tc): ToolCall => {
       const toolResult = toolResultMap.get(tc.id)
       return {

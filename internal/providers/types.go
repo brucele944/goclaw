@@ -176,6 +176,13 @@ type Message struct {
 	// Anthropic requires thinking blocks to be passed back exactly as received.
 	RawAssistantContent json.RawMessage `json:"-"`
 
+	// Model/Provider record which model produced an assistant turn: Model is the
+	// `<provider>/<model>` identity the capability DTO and the UIs use, Provider is
+	// the serving provider name. Reported to clients on chat.history so a transcript
+	// can show which model answered each turn. Empty on every non-assistant message.
+	Model    string `json:"model,omitempty"`
+	Provider string `json:"provider,omitempty"`
+
 	// CreatedAt records when this message was added to the session.
 	// Pointer type so that older messages (stored before this field existed) deserialize as nil,
 	// allowing the frontend to fall back to synthetic timestamps.

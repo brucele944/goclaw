@@ -29,6 +29,7 @@
     "advanced": "高级"
   },
   "form": {
+    "transportAuth": "传输协议与认证",
     "createTitle": "添加Provider",
     "editTitle": "编辑Provider",
     "name": "名称 *",
@@ -166,6 +167,29 @@
     "verify": "验证Embedding",
     "verifyFailed": "Embedding验证失败",
     "dimensionsMismatch": "{{count}}维 — 不符合要求的1536"
+  },
+  "meta": {
+    "wireApi": "传输协议",
+    "authKind": "认证方式",
+    "modelSource": "模型来源",
+    "staleCatalogue": "模型列表已过期"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI Completions",
+    "anthropicMessages": "Anthropic Messages",
+    "cliDelegated": "CLI Delegated"
+  },
+  "authKind": {
+    "apiKey": "API 密钥",
+    "oauthBrowser": "OAuth（浏览器）",
+    "serviceAccount": "服务账号",
+    "cliDelegated": "CLI 委托",
+    "none": "无"
+  },
+  "modelSource": {
+    "bundled": "内置",
+    "discovered": "自动发现",
+    "stale": "已过期"
   },
   "toast": {
     "created": "Provider已创建",

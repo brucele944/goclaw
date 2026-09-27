@@ -126,6 +126,54 @@ func TestThinkStage_WithToolCalls_ReturnsContinue(t *testing.T) {
 	}
 }
 
+// TestThinkStage_ClientTools_HandsCallsBackToCaller — a run whose tools belong to
+// the caller (OpenAI-compatible passthrough) must end at the model's tool calls
+// and return them instead of dispatching them: the caller executes its own tools
+// and sends the results back on a later request.
+func TestThinkStage_ClientTools_HandsCallsBackToCaller(t *testing.T) {
+	t.Parallel()
+	deps := &PipelineDeps{
+		Config: PipelineConfig{MaxIterations: 10, MaxTokens: 1000},
+		CallLLM: func(_ context.Context, _ *RunState, _ providers.ChatRequest) (*providers.ChatResponse, error) {
+			return &providers.ChatResponse{
+				FinishReason: "tool_calls",
+				ToolCalls: []providers.ToolCall{{
+					ID:        "call_1",
+					Name:      "get_weather",
+					Arguments: map[string]any{"city": "Hanoi"},
+				}},
+			}, nil
+		},
+	}
+	stage := NewThinkStage(deps)
+	state := defaultState()
+	state.Input.ClientTools = []providers.ToolDefinition{{
+		Type:     "function",
+		Function: &providers.ToolFunctionSchema{Name: "get_weather"},
+	}}
+
+	if err := stage.Execute(context.Background(), state); err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if stage.Result() != BreakLoop {
+		t.Errorf("Result() = %v, want BreakLoop (the run ends at the caller's tool call)", stage.Result())
+	}
+	if len(state.Observe.FinalToolCalls) != 1 {
+		t.Fatalf("FinalToolCalls = %+v, want the model's single call", state.Observe.FinalToolCalls)
+	}
+	if got := state.Observe.FinalToolCalls[0].Name; got != "get_weather" {
+		t.Errorf("FinalToolCalls[0].Name = %q, want get_weather", got)
+	}
+	if state.Observe.FinalFinishReason != "tool_calls" {
+		t.Errorf("FinalFinishReason = %q, want tool_calls", state.Observe.FinalFinishReason)
+	}
+	// No assistant turn is appended: its tool results would never arrive from this
+	// side, and the caller owns the transcript.
+	if pending := state.Messages.Pending(); len(pending) != 0 {
+		t.Errorf("pending = %+v, want empty", pending)
+	}
+}
+
 func TestThinkStage_EmptyToolCallContent_DoesNotEmitTemplateAnnouncement(t *testing.T) {
 	t.Parallel()
 	var gotContent, gotSource string

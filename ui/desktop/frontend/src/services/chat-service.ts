@@ -8,6 +8,10 @@ export interface ChatSendParams {
   agentId: string
   sessionKey: string
   stream: boolean
+  /** Per-request model override: `<provider>/<model>` or a bare model id. Omit to use the agent model. */
+  model?: string
+  /** Per-request provider override. */
+  provider?: string
   media?: { path: string; filename: string }[]
 }
 

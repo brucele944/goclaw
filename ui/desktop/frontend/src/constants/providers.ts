@@ -32,3 +32,30 @@ export const PROVIDER_TYPES: ProviderTypeInfo[] = [
   { value: 'claude_cli', label: 'Claude CLI (Local)', apiBase: '', needsKey: false },
   { value: 'acp', label: 'ACP Agent (Subprocess)', apiBase: '', needsKey: false },
 ]
+
+// --- Provider subsystem rework: transport / auth / catalogue labels ---
+// Values map to i18n keys in the `providers` namespace; unknown values fall back
+// to the raw gateway value (see ProviderMetaChips).
+
+/** `wire_api` (transport family) → key suffix. */
+export const WIRE_API_LABEL_KEYS: Record<string, string> = {
+  'openai-completions': 'wireApi.openaiCompletions',
+  'anthropic-messages': 'wireApi.anthropicMessages',
+  'cli-delegated': 'wireApi.cliDelegated',
+}
+
+/** `auth_kind` (credential kind) → key suffix. */
+export const AUTH_KIND_LABEL_KEYS: Record<string, string> = {
+  api_key: 'authKind.apiKey',
+  oauth_browser: 'authKind.oauthBrowser',
+  service_account: 'authKind.serviceAccount',
+  cli_delegated: 'authKind.cliDelegated',
+  none: 'authKind.none',
+}
+
+/** `model_source` (catalogue origin) → key suffix. */
+export const MODEL_SOURCE_LABEL_KEYS: Record<string, string> = {
+  bundled: 'modelSource.bundled',
+  discovered: 'modelSource.discovered',
+  stale: 'modelSource.stale',
+}

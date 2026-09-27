@@ -30,5 +30,15 @@
     "title": "Chọn agent",
     "description": "Chọn agent để bắt đầu trò chuyện"
   },
-  "imageGenDownloadName": "generated-{{timestamp}}.png"
+  "imageGenDownloadName": "generated-{{timestamp}}.png",
+  "modelSelector": {
+    "label": "Model cho lượt này",
+    "agentDefault": "Theo agent",
+    "stale": "Danh sách model có thể đã lỗi thời — bấm để làm mới",
+    "unavailable": "Không tải được danh sách model: {{message}} — bấm để thử lại",
+    "empty": "Không có model nào — bấm để thử lại"
+  },
+  "turnModel": {
+    "tooltip": "Trả lời bởi {{model}}"
+  }
 }

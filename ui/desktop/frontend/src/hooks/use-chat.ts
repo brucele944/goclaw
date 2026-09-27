@@ -3,6 +3,7 @@ import { getWsClient } from '../lib/ws'
 import { chatService } from '../services/chat-service'
 import { useChatMessageStore } from '../stores/chat-message-store'
 import { useChatActivityStore } from '../stores/chat-activity-store'
+import { useChatModelStore } from '../stores/chat-model-store'
 import { useSessionStore } from '../stores/session-store'
 import { toFileUrl } from './chat-file-helpers'
 import { useStreamBatcher } from './use-stream-batcher'
@@ -136,8 +137,18 @@ export function useChat() {
         if (media.length === 0) media = undefined
       }
 
+      // Per-request model override from the chat top bar; empty = agent model.
+      const modelOverride = useChatModelStore.getState().modelOverride.trim()
+
       try {
-        await chatService.send({ message: text, agentId, sessionKey, stream: true, ...(media && { media }) })
+        await chatService.send({
+          message: text,
+          agentId,
+          sessionKey,
+          stream: true,
+          ...(modelOverride && { model: modelOverride }),
+          ...(media && { media }),
+        })
       } catch (err) { console.error('chat.send failed:', err) }
     },
     [ws, activeSessionKey, addUserMessage],

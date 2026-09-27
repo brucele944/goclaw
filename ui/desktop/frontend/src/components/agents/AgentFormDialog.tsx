@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
-import { useProviders } from '../../hooks/use-providers'
+import { useProviderCapabilities } from '../../hooks/use-provider-capabilities'
+import { isCatalogueStale, modelOptionsFor, providerOptionsFrom } from '../../api/provider-capabilities'
 import { getApiClient } from '../../lib/api'
 import { slugify } from '../../lib/slug'
 import { AgentPresetSelector } from './agent-preset-selector'
@@ -20,7 +21,7 @@ interface AgentFormDialogProps {
 export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFormDialogProps) {
   const isEditing = !!agent
   const { t } = useTranslation(['agents', 'desktop', 'common'])
-  const { providers } = useProviders()
+  const { capabilities, isLoading: catalogueLoading, error: catalogueError, refetch: refetchCatalogue } = useProviderCapabilities()
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<AgentFormData>({
     resolver: zodResolver(agentFormSchema),
@@ -29,8 +30,6 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
   })
 
   // UI-only state (not form data)
-  const [models, setModels] = useState<string[]>([])
-  const [modelsLoading, setModelsLoading] = useState(false)
   const [verifyResult, setVerifyResult] = useState<{ valid: boolean; error?: string } | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -51,7 +50,6 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
     setSubmitError('')
     setSelectedPresetKey('')
     setVerifyResult(isEditing ? { valid: true } : null)
-    setModels([])
   }, [open, agent, isEditing, reset])
 
   const providerName = watch('providerName')
@@ -65,28 +63,21 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
     setValue('agentKey', derived)
   }, [displayName, selectedPresetKey, isEditing, setValue])
 
-  const selectedProvider = useMemo(() => providers.find((p) => p.name === providerName), [providers, providerName])
+  // Provider identity in agent configs is the provider name (`capabilities[].id`).
+  const capability = useMemo(() => capabilities.find((c) => c.id === providerName), [capabilities, providerName])
+  const providerRef = capability?.provider_id ?? capability?.id
 
-  // Load models when provider changes
-  const loadModels = useCallback(async (providerId: string) => {
-    setModelsLoading(true)
-    try {
-      const res = await getApiClient().get<{ models: Array<{ id: string }> }>(`/v1/providers/${providerId}/models`)
-      setModels((res.models ?? []).map((m) => m.id))
-    } catch { setModels([]) } finally { setModelsLoading(false) }
-  }, [])
-
-  useEffect(() => { if (selectedProvider?.id) loadModels(selectedProvider.id) }, [selectedProvider?.id, loadModels])
   useEffect(() => { if (!isEditing) setVerifyResult(null) }, [providerName, model, isEditing])
 
-  const providerOptions = useMemo(() => providers.filter((p) => p.enabled).map((p) => ({ value: p.name, label: p.display_name || p.name })), [providers])
-  const modelOptions = useMemo(() => models.map((m) => ({ value: m, label: m })), [models])
+  const providerOptions = useMemo(() => providerOptionsFrom(capabilities), [capabilities])
+  const modelOptions = useMemo(() => modelOptionsFor(capability), [capability])
+  const catalogueStale = isCatalogueStale(capability)
 
   const handleVerify = async () => {
-    if (!selectedProvider?.id || !model.trim()) return
+    if (!providerRef || !model.trim()) return
     setVerifying(true)
     try {
-      const res = await getApiClient().post<{ valid: boolean; error?: string }>(`/v1/providers/${selectedProvider.id}/verify`, { model: model.trim() })
+      const res = await getApiClient().post<{ valid: boolean; error?: string }>(`/v1/providers/${providerRef}/verify`, { model: model.trim() })
       setVerifyResult({ valid: res.valid, error: res.error })
     } catch (err) {
       setVerifyResult({ valid: false, error: err instanceof Error ? err.message : 'Verification failed' })
@@ -146,7 +137,10 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
               errors={errors}
               providerOptions={providerOptions}
               modelOptions={modelOptions}
-              modelsLoading={modelsLoading}
+              modelsLoading={catalogueLoading}
+              catalogueStale={catalogueStale}
+              catalogueError={catalogueError}
+              onRetryCatalogue={() => { void refetchCatalogue() }}
               verifyResult={verifyResult}
               onAgentKeyChange={(val) => { setSelectedPresetKey(''); setValue('agentKey', val, { shouldValidate: true }) }}
             />
@@ -178,7 +172,7 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
           <div>{verifyResult && !verifyResult.valid && <span className="text-[11px] text-error">{verifyResult.error}</span>}</div>
           <div className="flex items-center gap-2">
             <button onClick={() => onOpenChange(false)} className="px-3 py-1.5 text-xs border border-border rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors">{t('agents:create.cancel')}</button>
-            {!isEditing && selectedProvider?.id && model.trim() && !verifyResult?.valid && (
+            {!isEditing && providerRef && model.trim() && !verifyResult?.valid && (
               <button onClick={handleVerify} disabled={verifying} className="border border-border rounded-lg px-3 py-1.5 text-xs text-text-secondary hover:bg-surface-tertiary transition-colors disabled:opacity-50 flex items-center gap-1.5">
                 {verifying ? (<><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>{t('desktop:agent.verifying')}</>) : t('desktop:agent.verifyModel')}
               </button>

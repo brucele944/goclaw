@@ -542,6 +542,11 @@
       "global": "全局"
     }
   },
+  "catalogue": {
+    "stale": "模型列表已过期。",
+    "loadFailed": "模型列表加载失败。",
+    "retry": "重试"
+  },
   "toast": {
     "created": "代理已创建",
     "createFailed": "创建代理失败",

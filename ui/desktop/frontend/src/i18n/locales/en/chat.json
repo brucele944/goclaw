@@ -19,6 +19,13 @@
   },
   "forwardedFrom": "Forwarded from",
   "replyingTo": "Replying to",
+  "modelOverride": {
+    "label": "Model for this request",
+    "placeholder": "Agent default model",
+    "reset": "Reset to agent model",
+    "stale": "Model list is stale — click to retry",
+    "loadFailed": "Failed to load models — click to retry"
+  },
   "error": {
     "notConnected": "Not connected. Please wait for the connection to be established."
   }

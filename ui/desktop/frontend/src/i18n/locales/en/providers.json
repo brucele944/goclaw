@@ -29,6 +29,7 @@
     "advanced": "Advanced"
   },
   "form": {
+    "transportAuth": "Transport & Authentication",
     "createTitle": "Add Provider",
     "editTitle": "Edit Provider",
     "name": "Name *",
@@ -166,6 +167,29 @@
     "verify": "Verify Embedding",
     "verifyFailed": "Embedding verification failed",
     "dimensionsMismatch": "{{count}} dimensions — does not match required 1536"
+  },
+  "meta": {
+    "wireApi": "Transport",
+    "authKind": "Authentication",
+    "modelSource": "Models",
+    "staleCatalogue": "Model list is stale"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI Completions",
+    "anthropicMessages": "Anthropic Messages",
+    "cliDelegated": "CLI Delegated"
+  },
+  "authKind": {
+    "apiKey": "API Key",
+    "oauthBrowser": "OAuth (browser)",
+    "serviceAccount": "Service Account",
+    "cliDelegated": "CLI Delegated",
+    "none": "None"
+  },
+  "modelSource": {
+    "bundled": "Bundled",
+    "discovered": "Discovered",
+    "stale": "Stale"
   },
   "toast": {
     "created": "Provider created",

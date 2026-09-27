@@ -19,6 +19,10 @@ export interface ChatMessage {
   toolCalls?: ToolCall[]
   media?: { type: string; url: string }[]
   usage?: { inputTokens: number; outputTokens: number }
+  /** Resolved model identity (`<provider>/<model>`) reported by chat.history. */
+  model?: string
+  /** Resolved provider name reported by chat.history. */
+  provider?: string
 }
 
 interface ChatMessageState {

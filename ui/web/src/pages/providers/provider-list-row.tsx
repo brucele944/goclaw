@@ -9,7 +9,7 @@ import { getProviderReasoningDefaults } from "@/types/provider";
 import type { ChatGPTOAuthProviderQuota } from "./hooks/use-chatgpt-oauth-provider-quotas";
 import type { ChatGPTOAuthAvailability } from "./hooks/use-chatgpt-oauth-provider-statuses";
 import type { ProviderData } from "./hooks/use-providers";
-import { PROVIDER_TYPE_BADGE, ProviderApiKeyBadge } from "./provider-utils";
+import { PROVIDER_TYPE_BADGE, ProviderApiKeyBadge, ProviderWireMeta } from "./provider-utils";
 
 interface ProviderOAuthPoolSummary {
   availability: ChatGPTOAuthAvailability;
@@ -196,10 +196,11 @@ export function ProviderListRow({
         )}
       </div>
 
-      <div className="hidden shrink-0 sm:block">
+      <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
         <Badge variant={typeBadge.variant} className="text-xs-plus">
           {typeBadge.label}
         </Badge>
+        <ProviderWireMeta provider={provider} />
       </div>
 
       <div className="hidden shrink-0 md:block">

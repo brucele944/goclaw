@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { InfoTip } from "@/pages/setup/info-tip";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { ProviderCatalogueStatus } from "@/components/shared/model-catalogue-status";
+import { useProviderCapability } from "@/pages/providers/hooks/use-provider-capabilities";
 import { useProviderVerify } from "@/pages/providers/hooks/use-provider-verify";
+import { buildCapabilityModelOptions } from "@/types/provider";
 import type { ProviderData } from "@/types/provider";
 
 const VERIFY_TIMEOUT_SECS = 30;
@@ -23,7 +25,10 @@ interface StepModelProps {
 
 export function StepModel({ provider, onComplete, onBack, initialModel }: StepModelProps) {
   const { t } = useTranslation("setup");
-  const { models, loading: modelsLoading } = useProviderModels(provider.id);
+  // Model identity comes from the capability catalogue; the setup step stores
+  // and verifies the bare model id the provider's request sends upstream.
+  const { models, loading: modelsLoading } = useProviderCapability(provider.name);
+  const modelOptions = useMemo(() => buildCapabilityModelOptions(provider.name, models), [provider.name, models]);
   const { verify, verifying, result: verifyResult, reset: resetVerify } = useProviderVerify();
 
   const [model, setModel] = useState(initialModel ?? "");
@@ -100,14 +105,16 @@ export function StepModel({ provider, onComplete, onBack, initialModel }: StepMo
             <Combobox
               value={model}
               onChange={setModel}
-              options={models.map((m) => ({ value: m.id, label: m.name || m.id }))}
+              options={modelOptions}
+              allowCustom
               placeholder={modelsLoading ? t("model.loadingModels") : t("model.selectModel")}
             />
-            {!modelsLoading && models.length === 0 && (
+            {!modelsLoading && modelOptions.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 {t("model.noModelsHint")}
               </p>
             )}
+            <ProviderCatalogueStatus provider={provider.name} providerId={provider.id} />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

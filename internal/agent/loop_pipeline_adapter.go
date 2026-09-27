@@ -271,6 +271,7 @@ func convertRunInput(req *RunRequest) *pipeline.RunInput {
 		WorkspaceChannel:           req.WorkspaceChannel,
 		WorkspaceChatID:            req.WorkspaceChatID,
 		TeamWorkspace:              req.TeamWorkspace,
+		ClientTools:                req.ClientTools,
 	}
 }
 
@@ -307,6 +308,8 @@ func convertRunResult(pr *pipeline.RunResult) *RunResult {
 		LastBlockReply: pr.LastBlockReply,
 		LoopKilled:     pr.LoopKilled,
 		Calls:          pr.Calls,
+		ToolCalls:      pr.FinalToolCalls,
+		FinishReason:   pr.FinishReason,
 	}
 }
 

@@ -94,6 +94,14 @@ type ObserveState struct {
 	// Post-model-response hook blocking.
 	BlockedByHook       bool   // true if post_model_response hook blocked delivery
 	HookRejectionReason string // rejection reason from hook, injected as user message
+
+	// FinalToolCalls holds the model's tool calls for a passthrough run (the
+	// caller declared the tools and executes them). Set by ThinkStage, which ends
+	// the run instead of dispatching them.
+	FinalToolCalls []providers.ToolCall
+	// FinalFinishReason is the provider finish reason of the response that ended
+	// the run ("stop", "tool_calls", "length").
+	FinalFinishReason string
 }
 
 // CompactState: owned by CheckpointStage + MemoryFlushStage.
@@ -130,4 +138,10 @@ type RunResult struct {
 	BlockReplies   int
 	LastBlockReply string
 	Calls          []providers.CallUsage
+
+	// FinalToolCalls holds the model's tool calls for a passthrough run (client-
+	// owned tools the caller executes). FinishReason is the provider finish reason
+	// of the response that ended the run.
+	FinalToolCalls []providers.ToolCall
+	FinishReason   string
 }

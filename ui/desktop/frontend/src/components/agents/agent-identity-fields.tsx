@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Combobox } from '../common/Combobox'
 import { Switch } from '../common/Switch'
+import { CatalogueNotice } from './CatalogueNotice'
 import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from 'react-hook-form'
 import type { AgentFormData } from '../../schemas/agent.schema'
 
@@ -13,13 +14,18 @@ interface AgentIdentityFieldsProps {
   providerOptions: { value: string; label: string }[]
   modelOptions: { value: string; label: string }[]
   modelsLoading: boolean
+  catalogueStale: boolean
+  catalogueError: string | null
+  onRetryCatalogue: () => void
   verifyResult: { valid: boolean; error?: string } | null
   onAgentKeyChange: (val: string) => void
 }
 
 export function AgentIdentityFields({
   isEditing, register, watch, setValue, errors,
-  providerOptions, modelOptions, modelsLoading, verifyResult,
+  providerOptions, modelOptions, modelsLoading,
+  catalogueStale, catalogueError, onRetryCatalogue,
+  verifyResult,
   onAgentKeyChange,
 }: AgentIdentityFieldsProps) {
   const { t } = useTranslation(['agents', 'desktop', 'common'])
@@ -59,7 +65,8 @@ export function AgentIdentityFields({
       {/* Model */}
       <div className="space-y-1">
         <label className="text-xs font-medium text-text-secondary">{t('common:model')}</label>
-        <Combobox value={model} onChange={(v) => setValue('model', v, { shouldValidate: true })} options={modelOptions} placeholder={modelsLoading ? t('agents:create.loadingModels') : t('agents:create.enterOrSelectModel')} allowCustom />
+        <Combobox value={model} onChange={(v) => setValue('model', v, { shouldValidate: true })} options={modelOptions} placeholder={modelsLoading ? t('agents:create.loadingModels') : t('agents:create.enterOrSelectModel')} loading={modelsLoading} allowCustom />
+        <CatalogueNotice stale={catalogueStale} error={catalogueError} onRetry={onRetryCatalogue} />
         {verifyResult && !verifyResult.valid && <p className="text-xs text-error">{verifyResult.error || t('desktop:agent.verifyFailed')}</p>}
         {verifyResult?.valid && !isEditing && <p className="text-xs text-success">{t('desktop:agent.verified')}</p>}
       </div>

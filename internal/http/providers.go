@@ -184,6 +184,10 @@ func (h *ProvidersHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/providers/{id}/models", h.readAuth(h.handleListProviderModels))
 	// Provider quirks listing (read-only)
 	mux.HandleFunc("GET /v1/providers/quirks", h.readAuth(h.handleListQuirks))
+	// Capability DTO: the single shape every UI surface builds its provider/model
+	// picker from (provider declaration + per-model capabilities, no transport
+	// detail).
+	mux.HandleFunc("GET /v1/providers/capabilities", h.readAuth(h.handleListProviderCapabilities))
 
 
 	// Gateway-scoped model catalogue (OpenAI shape), tenant-scoped and read-only.

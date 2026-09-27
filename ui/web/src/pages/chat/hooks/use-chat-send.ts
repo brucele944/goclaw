@@ -3,12 +3,19 @@ import { useTranslation } from "react-i18next";
 import { useWs, useHttp } from "@/hooks/use-ws";
 import { Methods } from "@/api/protocol";
 import type { ChatMessage } from "@/types/chat";
+import { splitModelIdentity } from "@/types/provider";
 import type { AttachedFile } from "@/components/chat/chat-input";
 
 interface UseChatSendOptions {
   agentId: string;
   onMessageAdded: (msg: ChatMessage, sessionKey?: string) => void;
   onExpectRun: () => void;
+  /**
+   * Per-request model override identity ("<provider>/<model>") from the chat
+   * header selector. Empty means "no override" — the agent's own model applies,
+   * so the `model` field is omitted from chat.send entirely.
+   */
+  modelOverride?: string;
 }
 
 interface MediaUploadResponse {
@@ -25,6 +32,7 @@ export function useChatSend({
   agentId,
   onMessageAdded,
   onExpectRun,
+  modelOverride,
 }: UseChatSendOptions) {
   const { t } = useTranslation("chat");
   const ws = useWs();
@@ -45,6 +53,9 @@ export function useChatSend({
       const trimmed = message.trim();
       setError(null);
       setSending(true);
+
+      const override = modelOverride?.trim() ?? "";
+      const overrideProvider = splitModelIdentity(override).provider;
 
       // Build optimistic display: show message + file names
       let displayContent = trimmed;
@@ -87,6 +98,12 @@ export function useChatSend({
             message: trimmed,
             stream: true,
             ...(mediaItems && { media: mediaItems }),
+            // Per-request override. `model` is the DTO identity
+            // ("<provider>/<model>"), and its provider half is sent alongside so
+            // the gateway does not have to re-resolve the prefix. No override =
+            // neither field is sent, and the agent's own model answers.
+            ...(override && { model: override }),
+            ...(overrideProvider && { provider: overrideProvider }),
           },
           600_000,
         );
@@ -102,7 +119,7 @@ export function useChatSend({
         setSending(false);
       }
     },
-    [ws, http, agentId, onMessageAdded, onExpectRun],
+    [ws, http, agentId, onMessageAdded, onExpectRun, modelOverride],
   );
 
   const abort = useCallback(

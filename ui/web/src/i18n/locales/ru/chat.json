@@ -30,5 +30,15 @@
     "title": "Выберите агента",
     "description": "Выберите агента, чтобы начать общение"
   },
-  "imageGenDownloadName": "generated-{{timestamp}}.png"
+  "imageGenDownloadName": "generated-{{timestamp}}.png",
+  "modelSelector": {
+    "label": "Модель для этого запроса",
+    "agentDefault": "По умолчанию агента",
+    "stale": "Список моделей может быть устаревшим — нажмите, чтобы обновить",
+    "unavailable": "Список моделей недоступен: {{message}} — нажмите, чтобы повторить",
+    "empty": "Нет доступных моделей — нажмите, чтобы повторить"
+  },
+  "turnModel": {
+    "tooltip": "Ответила модель {{model}}"
+  }
 }

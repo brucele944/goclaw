@@ -111,6 +111,11 @@ const (
 	MsgProviderInvalidSettingsVersion = "error.invalid_settings_version"  // "unsupported settings_version %d; this build supports up to version %d"
 	MsgProviderNotFound               = "error.provider_not_found"        // "provider not found: %s"
 	MsgProviderModelNotFound          = "error.provider_model_not_found"  // "model %q not found for provider %s"
+	MsgModelProviderMismatch          = "error.model_provider_mismatch"   // "model %q names provider %s, but provider %s was requested"
+
+	// --- OpenAI-compatible /v1/chat/completions surface ---
+	MsgChatCompletionsInvalidParam = "error.chat_completions_invalid_param" // "invalid %s: %s"
+	MsgChatCompletionsLastRole     = "error.chat_completions_last_role"     // "the last message must have role \"user\", or \"tool\" when feeding a tool result back, got %q"
 
 	// --- Provider model catalogue / discovery (provider rework, phase 3) ---
 	MsgProviderModelsFailed    = "error.provider_models_failed"    // "failed to list models for provider %s"

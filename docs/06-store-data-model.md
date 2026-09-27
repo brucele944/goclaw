@@ -32,7 +32,7 @@ The `Stores` struct is the top-level container holding all PostgreSQL-backed sto
 | PairingStore | `PGPairingStore` | Browser pairing codes and paired device tracking |
 | SkillStore | `PGSkillStore` | SKILL.md definitions, BM25 search, agent/user grants |
 | AgentStore | `PGAgentStore` | Agent definitions, soft delete, RBAC sharing, access control |
-| ProviderStore | `PGProviderStore` | LLM provider configs, encrypted API keys, model listings |
+| ProviderStore | `PGProviderStore` | LLM provider configs with declared wire protocol / auth shape, encrypted API keys, per-model catalog declarations, declared compat quirks, durable provider health/cooldown state |
 | TracingStore | `PGTracingStore` | LLM call traces, spans, observability aggregation |
 | MCPServerStore | `PGMCPServerStore` | MCP server configs, transport (stdio/sse), tool grants |
 | CustomToolStore | `PGCustomToolStore` | Dynamic tool definitions, shell command templates, agent/global scoping |
@@ -83,6 +83,101 @@ Migration versions:
 
 - PostgreSQL: `000065_agent_model_fallback`.
 - SQLite: schema v33 to v34.
+
+---
+
+## Provider Declaration & Model Catalog Storage
+
+Provider behaviour is declared as data instead of being switched on in Go. `llm_providers.provider_type` is now only the brand label: the transport the request path dispatches on is `llm_providers.wire_api`, resolved through the wire dispatch registry (`internal/providers/wire` — `Register`/`Lookup`/`Build`). A row whose `wire_api` has no registered descriptor is logged as `provider.wire_api.unknown` and skipped at startup; no default transport is assumed.
+
+### `llm_providers` declaration columns
+
+Added by migration `000098_provider_declaration` (the base row, including `provider_type`, `api_base`, `api_key`, `enabled`, and `settings`, comes from `000001_init_schema`):
+
+| Column | Type | Default | Meaning |
+|--------|------|---------|---------|
+| `wire_api` | `VARCHAR(40)` | `openai-completions` | Wire protocol the wire layer dispatches on |
+| `auth_kind` | `VARCHAR(30)` | `api_key` | Credential shape the credential layer must satisfy |
+| `exec_path` | `TEXT` (nullable) | NULL | Executable path for `cli-delegated` providers |
+| `settings` | `JSONB` (SQLite `TEXT`) | `'{}'` | Provider-owned settings blob |
+| `settings_version` | `INTEGER` | `1` | Schema version of the `settings` blob |
+
+`wire_api` values: `openai-completions`, `openai-responses`, `openai-codex-responses`, `anthropic-messages`, `google-generative-ai`, `google-vertex`, `ollama-native`, `cli-delegated`.
+`auth_kind` values: `api_key`, `oauth_browser`, `oauth_device`, `service_account`, `cli_delegated`, `none`.
+
+Both enums are owned by `internal/providers/wire` and re-exported by `internal/store` (`WireAPI*`/`AuthKind*` constants, `ValidWireAPIs`/`ValidAuthKinds`); the store validates the declaration, the wire layer dispatches it, so the two cannot drift. The store fills an empty `wire_api`/`auth_kind` from the provider type's declared brand before validating, so a row created through any surface gets its brand's transport rather than an OpenAI default.
+
+Migration `000098` backfills the two columns from the legacy `provider_type` values (e.g. `anthropic_native` → `anthropic-messages`, `chatgpt_oauth` → `openai-codex-responses`, `ollama` → `ollama-native` with `auth_kind = 'none'`, `claude_cli`/`acp` → `cli-delegated`) and copies `api_base` into `exec_path` for the CLI-delegated rows.
+
+### `llm_models`
+
+Per-provider model declarations, created by migration `000098`. Scope is inherited through `provider_id` — there is no tenant column, so a model row is visible exactly where its provider is visible.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID / TEXT | PK (UUID v7) |
+| `provider_id` | UUID / TEXT | FK → `llm_providers(id)` ON DELETE CASCADE |
+| `model_id` | TEXT | UNIQUE with `provider_id` |
+| `display_name` | TEXT, nullable | |
+| `wire_api` | VARCHAR(40), nullable | Per-model transport override |
+| `context_window`, `max_tokens`, `max_context_window` | INTEGER, nullable | Token limits |
+| `cost_input`, `cost_output`, `cost_cache_read`, `cost_cache_write` | NUMERIC(12,6), nullable | Per-token prices (`NULL` = unknown) |
+| `modalities` | JSONB / TEXT | NOT NULL, default `["text"]` |
+| `capabilities` | JSONB / TEXT | NOT NULL, default `{}` |
+| `reasoning` | JSONB / TEXT | NOT NULL, default `{}` |
+| `tokenizer` | TEXT, nullable | |
+| `compat` | JSONB / TEXT | NOT NULL, default `{}` |
+| `source` | TEXT | NOT NULL, default `bundled` |
+| `authoritative` | BOOLEAN | NOT NULL, default false |
+| `fetched_at` | TIMESTAMPTZ / TEXT, nullable | Last successful upstream fetch |
+| `static_fingerprint` | TEXT, nullable | Cache fingerprint for refresh |
+| `enabled` | BOOLEAN | NOT NULL, default true; operator toggle preserved across upserts |
+| `created_at`, `updated_at` | TIMESTAMPTZ / TEXT | NOT NULL |
+
+`source` is `bundled` (the snapshot shipped with the binary), `discovered` (written by an upstream model-list fetch), or `operator` (hand-authored; preserved by catalogue merges). `authoritative`, `static_fingerprint`, and `fetched_at` drive the refresh policy. Staleness is **not** a column: the catalogue service derives it (`Result.Stale`, `CacheState.Stale()`) from the fingerprint/TTL of the served rows.
+
+### `provider_quirks`
+
+Declared compatibility rules (JSONB `compat` fragments) that replace name/URL sniffing. Created by migration `000098`.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID / TEXT | PK (UUID v7) |
+| `tenant_id` | UUID / TEXT, **nullable** | `NULL` = bundled/global row shipped with the binary; a tenant row overrides it |
+| `wire_api` | VARCHAR(40) | NOT NULL; scopes the rule to one wire protocol (a bundled seed with an empty value is skipped, so stored rows always name a protocol) |
+| `endpoint_family` | TEXT, nullable | Scopes the rule to an endpoint family (empty = any) |
+| `model_pattern` | TEXT, nullable | Case-insensitive glob (`*` wildcard) matched against the model id (empty = any) |
+| `compat` | JSONB / TEXT | NOT NULL, default `{}` — the resolved compat fragment |
+| `note` | TEXT, nullable | Explains the rule for operators |
+| `source` | TEXT | NOT NULL, default `bundled`; values `bundled` or `operator` |
+| `enabled` | BOOLEAN | NOT NULL, default true |
+| `created_at`, `updated_at` | TIMESTAMPTZ / TEXT | NOT NULL |
+
+Reads are enabled-only and tenant-scoped: bundled rows (`tenant_id IS NULL`) plus the caller's tenant rows, tenant rows first.
+
+### `provider_health` / `provider_error_counts`
+
+Durable provider cooldown state, created by migration `000100`. When a provider fails, its consecutive-failure count, cooldown deadline, and last error class are persisted instead of living in an in-memory map, so a gateway restart remembers the cooldown.
+
+| Table | Primary Key | Columns |
+|-------|-------------|---------|
+| `provider_health` | `provider_id` (FK → `llm_providers(id)` CASCADE) | `consecutive_failures INTEGER NOT NULL DEFAULT 0`, `cooldown_until TIMESTAMPTZ` (nullable), `last_error_class TEXT NOT NULL DEFAULT ''`, `last_probe_at TIMESTAMPTZ` (nullable), `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` |
+| `provider_error_counts` | `(provider_id, error_class)` (FK → `llm_providers(id)` CASCADE) | `count INTEGER NOT NULL DEFAULT 0` |
+
+`provider_health` holds at most one row per *failed* provider — no row means "never failed", which is why the read path maps no-rows to a zero value. `provider_error_counts` is a separate table so an increment is a single upsert rather than a read-modify-write of a JSON blob. Error classes are normalized to a SQL-safe bucket (`[a-z0-9_]`, else `unknown`) before they become a histogram key.
+
+### `agents.model_roles`
+
+Added by migration `000099_agent_model_roles`: `model_roles JSONB NOT NULL DEFAULT '{}'` (SQLite `TEXT NOT NULL DEFAULT '{}'`), mapping a role name to a `"provider/model"` target, e.g. `{"coder":"openai/gpt-5"}`. An empty object means "no roles declared".
+
+Role names are validated on write (≤ 32 chars, `[A-Za-z0-9_.-]`; at most 32 entries), and the target is split on the first `/` so vendor-prefixed model ids survive. Malformed entries are dropped on read rather than failing the whole map. A role whose provider is not in the registry falls back to the agent primary instead of routing to an unregistered provider.
+
+Model selection precedence (highest first): explicit per-request override → agent role (`agents.model_roles`) → agent primary provider/model → provider default → global default.
+
+Migration versions:
+
+- PostgreSQL: `000098_provider_declaration`, `000099_agent_model_roles`, `000100_provider_health`.
+- SQLite: schema v60 → v61 (declaration columns + `llm_models` + `provider_quirks`), v61 → v62 (`agents.model_roles`), v62 → v63 (`provider_health` + `provider_error_counts`). Current `SchemaVersion` is **63**. Fresh SQLite databases get all of these inline from `schema.sql`; the versioned patches exist for databases created before each bump.
 
 ---
 
@@ -540,6 +635,9 @@ All tables use UUID v7 (time-ordered) as primary keys via `GenNewID()`.
 flowchart TD
     subgraph Providers
         LP["llm_providers"] --> LM["llm_models"]
+        LP --> PQ["provider_quirks"]
+        LP --> PH["provider_health"]
+        PH --> PEC["provider_error_counts"]
     end
 
     subgraph Agents
@@ -609,7 +707,11 @@ flowchart TD
 | `sessions` | Conversation history | `session_key` (UNIQUE), `messages` (JSONB), `summary`, token counts |
 | `memory_documents` | Memory docs | UNIQUE(agent_id, COALESCE(user_id, ''), path) |
 | `memory_chunks` | Chunked + embedded text | `embedding` (VECTOR), `tsv` (TSVECTOR) |
-| `llm_providers` | Provider configuration | `api_key` (AES-256-GCM encrypted) |
+| `llm_providers` | Provider configuration | `provider_type` (brand label), `wire_api` (transport), `auth_kind` (credential shape), `exec_path`, `settings` (JSONB) + `settings_version`, `api_key` (AES-256-GCM encrypted) |
+| `llm_models` | Per-provider model declarations | UNIQUE(provider_id, model_id), `context_window`, `max_tokens`, `cost_*` (NUMERIC), `capabilities`/`modalities`/`reasoning`/`compat` (JSONB), `source` (bundled/discovered/operator), `authoritative`, `static_fingerprint`, `fetched_at`, `enabled` |
+| `provider_quirks` | Declared compatibility rules | `tenant_id` (NULL = bundled/global), `wire_api`, `endpoint_family`, `model_pattern`, `compat` (JSONB), `enabled` |
+| `provider_health` | Durable provider cooldown state | PK `provider_id`, `consecutive_failures`, `cooldown_until`, `last_error_class`, `last_probe_at` |
+| `provider_error_counts` | Per-provider error-class histogram | PK(provider_id, error_class), `count` |
 | `traces` | LLM call traces | `agent_id`, `user_id`, `status`, `parent_trace_id`, aggregated token counts |
 | `spans` | Individual operations | `span_type` (llm_call, tool_call, agent, embedding), `parent_span_id` |
 | `skills` | Skill definitions | Content, metadata, grants |
@@ -626,6 +728,8 @@ flowchart TD
 | `000003_agent_teams` | `agent_teams`, `agent_team_members`, `team_tasks`, `team_messages` + `team_id` on agent_links |
 | `000004_teams_v2` | FTS on `team_tasks` (tsv column) + `delegation_history` table |
 | `000005_phase4` | Additional team and delegation features |
+
+Provider storage is added by `000098_provider_declaration`, `000099_agent_model_roles`, and `000100_provider_health` (PostgreSQL) — see *Provider Declaration & Model Catalog Storage* above for their columns and the matching SQLite schema versions (v60 → v63).
 
 ### Required PostgreSQL Extensions
 

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -27,6 +28,7 @@ func providersCmd() *cobra.Command {
 	cmd.AddCommand(providersVerifyCmd())
 	cmd.AddCommand(providersModelsCmd())
 	cmd.AddCommand(providersQuirksCmd())
+	cmd.AddCommand(providersCapabilitiesCmd())
 	cmd.AddCommand(providersHealthCmd())
 	return cmd
 }
@@ -539,6 +541,135 @@ func runProvidersQuirksList(wireAPI string, jsonOutput bool) {
 		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%v\t%s\t%s\n", q.WireAPI, family, pattern, q.Source, q.Enabled, keys, note)
 	}
 	tw.Flush()
+}
+
+// httpProviderCapability mirrors the gateway's capability DTO
+// (GET /v1/providers/capabilities). It is a read-only consumer: it declares no
+// field the endpoint does not serve, so a transport field cannot leak into CLI
+// output by adding itself here.
+type httpProviderCapability struct {
+	ID             string `json:"id"`
+	ProviderID     string `json:"provider_id"`
+	Label          string `json:"label"`
+	WireAPI        string `json:"wire_api"`
+	AuthKind       string `json:"auth_kind"`
+	ModelSource    string `json:"model_source"`
+	DefaultModelID string `json:"default_model_id"`
+	Stale          bool   `json:"stale"`
+	Models         []struct {
+		ID            string `json:"id"`
+		Label         string `json:"label"`
+		ContextWindow *int   `json:"context_window"`
+		MaxTokens     *int   `json:"max_tokens"`
+		Capabilities  struct {
+			ToolCalling     bool `json:"tool_calling"`
+			Vision          bool `json:"vision"`
+			StreamWithTools bool `json:"stream_with_tools"`
+			CacheControl    bool `json:"cache_control"`
+		} `json:"capabilities"`
+		Stale bool `json:"stale"`
+	} `json:"models"`
+}
+
+func providersCapabilitiesCmd() *cobra.Command {
+	var (
+		jsonOutput bool
+		showModels bool
+	)
+	cmd := &cobra.Command{
+		Use:   "capabilities [id]",
+		Short: "Show what each provider declares (wire_api, auth_kind, models, capabilities)",
+		Long: "Prints the declaration DTO the web and desktop pickers consume\n" +
+			"(GET /v1/providers/capabilities): wire_api, auth_kind, where the model list came from\n" +
+			"(bundled snapshot vs discovery), the default model, and with --models every model with\n" +
+			"its capabilities, context window and cost.\n" +
+			"A provider marked stale has a catalogue known not to describe the current upstream;\n" +
+			"refresh it with `goclaw providers models <id> --refresh`.",
+		Args: cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			requireRunningGatewayHTTP()
+			ref := ""
+			if len(args) > 0 {
+				ref = args[0]
+			}
+			runProvidersCapabilities(ref, jsonOutput, showModels)
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "output the capability DTO as JSON")
+	cmd.Flags().BoolVar(&showModels, "models", false, "also list every model with its capabilities")
+	return cmd
+}
+
+func runProvidersCapabilities(ref string, jsonOutput, showModels bool) {
+	path := "/v1/providers/capabilities"
+	if ref != "" {
+		path += "?id=" + url.QueryEscape(ref)
+	}
+	resp, err := gatewayHTTPGet(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	raw, _ := json.Marshal(resp["providers"])
+	var caps []httpProviderCapability
+	if err := json.Unmarshal(raw, &caps); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: parse capabilities: %v\n", err)
+		os.Exit(1)
+	}
+
+	if jsonOutput {
+		data, _ := json.MarshalIndent(caps, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	if len(caps) == 0 {
+		if ref != "" {
+			fmt.Fprintf(os.Stderr, "Error: no provider with id or name %q\n", ref)
+			os.Exit(1)
+		}
+		fmt.Println("No providers configured.")
+		return
+	}
+
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, "PROVIDER\tWIRE_API\tAUTH_KIND\tMODELS\tDEFAULT_MODEL\tSOURCE\tSTALE\n")
+	for _, p := range caps {
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%d\t%s\t%s\t%v\n",
+			p.ID, p.WireAPI, p.AuthKind, len(p.Models), orDash(p.DefaultModelID), p.ModelSource, p.Stale)
+	}
+	tw.Flush()
+
+	if !showModels {
+		return
+	}
+	for _, p := range caps {
+		fmt.Printf("\n── %s (%s) ──\n", p.Label, p.WireAPI)
+		mtw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintf(mtw, "MODEL\tCONTEXT\tMAX_TOKENS\tTOOLS\tVISION\tSTREAM+TOOLS\tCACHE\tSTALE\n")
+		for _, m := range p.Models {
+			fmt.Fprintf(mtw, "%s\t%s\t%s\t%v\t%v\t%v\t%v\t%v\n",
+				m.ID, intPtrOrDash(m.ContextWindow), intPtrOrDash(m.MaxTokens),
+				m.Capabilities.ToolCalling, m.Capabilities.Vision,
+				m.Capabilities.StreamWithTools, m.Capabilities.CacheControl, m.Stale)
+		}
+		mtw.Flush()
+	}
+}
+
+func intPtrOrDash(v *int) string {
+	if v == nil {
+		return "-"
+	}
+	return strconv.Itoa(*v)
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
 }
 
 // providersHealthCmd inspects and repairs provider health. Health lives in the

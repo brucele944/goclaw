@@ -59,6 +59,7 @@ type Server struct {
 	skillStore     store.SkillStore    // for the CRUD MCP server (/api/mcp/) skill tools
 	cronStore      store.CronStore     // for the CRUD MCP server (/api/mcp/) cron tools
 	msgBus         *bus.MessageBus     // for MCP bridge media delivery
+	providerReg    *providers.Registry // resolves a per-request `<provider>/<model>` model override
 	toolPolicy     *tools.PolicyEngine // for per-agent tool policy enforcement in MCP bridge
 
 	// Additional CRUD MCP server (/api/mcp/) dependencies — all optional, same
@@ -204,6 +205,10 @@ func (s *Server) BuildMux() *http.ServeMux {
 	// OpenAI-compatible chat completions
 	isManaged := s.agentStore != nil
 	chatHandler := httpapi.NewChatCompletionsHandler(s.agents, s.sessions, isManaged)
+	// Streamed deltas reach /v1/chat/completions through the same run event
+	// broadcast WS clients and channels consume.
+	chatHandler.SetEventPublisher(s.eventPub)
+	chatHandler.SetProviderRegistry(s.providerReg)
 	if s.rateLimiter.Enabled() {
 		chatHandler.SetRateLimiter(s.rateLimiter.Allow)
 	}
@@ -874,6 +879,12 @@ func (s *Server) SetAgentStore(as store.AgentStore) { s.agentStore = as }
 // SetMessageBus sets the message bus for MCP bridge media delivery.
 func (s *Server) SetMessageBus(mb *bus.MessageBus) { s.msgBus = mb }
 
+// SetProviderRegistry lets HTTP surfaces resolve a per-request `<provider>/<model>`
+// model override against the live provider registry, the same way the WS chat
+// method pins a `provider`. Without it a model value stays a bare model id for the
+// agent's own provider. Must be called before Start.
+func (s *Server) SetProviderRegistry(reg *providers.Registry) { s.providerReg = reg }
+
 // SetSkillStore sets the skill store, used by the CRUD MCP server (see
 // internal/mcp/crud_server.go) to expose skill listing/lookup tools.
 func (s *Server) SetSkillStore(ss store.SkillStore) { s.skillStore = ss }
@@ -1096,6 +1107,10 @@ func StartTestServer(s *Server, ctx context.Context) (addr string, start func())
 
 	isManaged := s.agentStore != nil
 	chatHandler := httpapi.NewChatCompletionsHandler(s.agents, s.sessions, isManaged)
+	// Streamed deltas reach /v1/chat/completions through the same run event
+	// broadcast WS clients and channels consume.
+	chatHandler.SetEventPublisher(s.eventPub)
+	chatHandler.SetProviderRegistry(s.providerReg)
 	if s.rateLimiter.Enabled() {
 		chatHandler.SetRateLimiter(s.rateLimiter.Allow)
 	}

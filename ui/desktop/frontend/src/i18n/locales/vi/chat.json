@@ -19,6 +19,13 @@
   "openSessions": "Mở phiên",
   "readOnly": "Chỉ đọc — phiên này thuộc về người dùng khác",
   "replyingTo": "Đang trả lời",
+  "modelOverride": {
+    "label": "Model cho yêu cầu này",
+    "placeholder": "Model mặc định của agent",
+    "reset": "Đặt lại về model của agent",
+    "stale": "Danh sách model đã cũ — nhấn để tải lại",
+    "loadFailed": "Không tải được danh sách model — nhấn để thử lại"
+  },
   "error": {
     "notConnected": "Chưa kết nối. Vui lòng chờ kết nối được thiết lập."
   }

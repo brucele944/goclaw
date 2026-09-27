@@ -27,6 +27,8 @@ export function ChatPage() {
 
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [files, setFiles] = useState<AttachedFile[]>([]);
+  /** Per-request model override ("<provider>/<model>"); "" = agent's own model. */
+  const [modelOverride, setModelOverride] = useState("");
 
   // sessionKey derived from URL — single source of truth, no separate state
   const sessionKey = urlSessionKey ?? "";
@@ -91,7 +93,14 @@ export function ChatPage() {
     agentId,
     onMessageAdded: handleMessageAdded,
     onExpectRun: expectRun,
+    modelOverride,
   });
+
+  // A model chosen for one agent must not silently apply to another: dropping
+  // the override restores the agent's own model.
+  useEffect(() => {
+    setModelOverride("");
+  }, [agentId]);
 
   const handleNewChat = useCallback(() => {
     navigate(`/chat/${encodeURIComponent(buildNewSessionKey())}`);
@@ -243,6 +252,8 @@ export function ChatPage() {
             onToggleTaskPanel={() => setTaskPanelOpen((v) => !v)}
             taskPanelOpen={taskPanelOpen}
             session={sessions.find((s) => s.key === sessionKey) ?? null}
+            modelOverride={modelOverride}
+            onModelOverrideChange={setModelOverride}
           />
         </div>
 

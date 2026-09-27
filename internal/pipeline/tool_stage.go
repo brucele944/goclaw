@@ -41,6 +41,15 @@ func (s *ToolStage) Result() StageResult { return s.result }
 func (s *ToolStage) Execute(ctx context.Context, state *RunState) error {
 	s.result = Continue
 
+	// Client-owned tools (OpenAI-compatible passthrough): the caller declared these
+	// tools and executes them, so nothing here may run — not even for a name that
+	// collides with a real agent tool. ThinkStage already handed the calls back and
+	// set BreakLoop; the guard is repeated here because BreakLoop deliberately lets
+	// the remaining stages of the iteration run.
+	if len(state.Input.ClientTools) > 0 {
+		return nil
+	}
+
 	resp := state.Think.LastResponse
 	if resp == nil || len(resp.ToolCalls) == 0 {
 		return nil // no tools — ThinkStage already set BreakLoop

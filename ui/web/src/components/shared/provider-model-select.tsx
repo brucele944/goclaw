@@ -11,9 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
-import { useProviderModels } from "@/pages/providers/hooks/use-provider-models";
+import { useProviderCapability, useProviderCatalogueRefresh } from "@/pages/providers/hooks/use-provider-capabilities";
 import { useProviderVerify } from "@/pages/providers/hooks/use-provider-verify";
 import { getChatGPTOAuthPoolOwnership } from "@/pages/providers/provider-utils";
+import { buildCapabilityModelOptions, qualifyModelIdentity } from "@/types/provider";
+import { ModelCatalogueStatus } from "./model-catalogue-status";
 import { InfoLabel } from "./info-label";
 
 interface ProviderModelSelectProps {
@@ -104,8 +106,35 @@ export function ProviderModelSelect({
     [enabledProviders, provider],
   );
   const selectedProviderId = selectedProvider?.id;
-  const { models, loading: modelsLoading } = useProviderModels(selectedProviderId);
+
+  // The model catalogue — and every model identity in it — comes from the
+  // gateway's capability DTO: ids are "<provider>/<model-id>".
+  const {
+    models: catalogueModels,
+    loading: catalogueLoading,
+    refreshing: catalogueRefreshing,
+    error: catalogueError,
+    notListed,
+    stale: providerCatalogueStale,
+  } = useProviderCapability(provider);
+  const {
+    refresh: refreshProviderCatalogue,
+    refreshing: catalogueRefreshRunning,
+    refreshError: catalogueRefreshError,
+  } = useProviderCatalogueRefresh();
   const { verify, verifying, result: verifyResult, reset: resetVerify } = useProviderVerify();
+
+  // Model identity is qualified in every surface the operator reads; the value
+  // handed back to a caller stays the bare model id, because config surfaces
+  // store the provider in its own field and the transport sends the model id
+  // verbatim upstream. The pair is the same identity either way.
+  const selectedIdentity = qualifyModelIdentity(provider, model);
+  const catalogueIsStale = providerCatalogueStale || catalogueModels.some((m) => m.stale);
+
+  const modelOptions = useMemo(
+    () => buildCapabilityModelOptions(provider, catalogueModels, { modelFilter, extraModels }),
+    [catalogueModels, provider, modelFilter, extraModels],
+  );
 
   const hasSavedValues = savedProvider !== undefined && savedModel !== undefined;
   const llmChanged = hasSavedValues && (provider !== savedProvider || model !== savedModel);
@@ -179,24 +208,8 @@ export function ProviderModelSelect({
             <Combobox
               value={model}
               onChange={onModelChange}
-              options={(() => {
-                let list = modelFilter
-                  ? models.filter((m) => {
-                      const id = m.id.toLowerCase();
-                      const name = (m.name ?? "").toLowerCase();
-                      const f = modelFilter.toLowerCase();
-                      return id.includes(f) || name.includes(f);
-                    })
-                  : models;
-                // Prepend extra models, dedup by id
-                if (extraModels?.length) {
-                  const apiIds = new Set(list.map((m) => m.id));
-                  const extras = extraModels.filter((m) => !apiIds.has(m.id));
-                  list = [...extras, ...list];
-                }
-                return list.map((m) => ({ value: m.id, label: m.name }));
-              })()}
-              placeholder={modelsLoading ? t("loadingModels") : (modelPlaceholder ?? t("enterOrSelectModel"))}
+              options={modelOptions}
+              placeholder={catalogueLoading ? t("loadingModels") : (modelPlaceholder ?? t("enterOrSelectModel"))}
               allowCustom
               customLabel={t("useCustomModel")}
               disabled={disabled}
@@ -215,6 +228,22 @@ export function ProviderModelSelect({
             </Button>
           )}
         </div>
+        {selectedIdentity && (
+          <span
+            className="block truncate font-mono text-xs text-muted-foreground"
+            title={selectedIdentity}
+          >
+            {selectedIdentity}
+          </span>
+        )}
+        <ModelCatalogueStatus
+          stale={catalogueIsStale}
+          error={catalogueError ?? catalogueRefreshError}
+          notListed={notListed}
+          empty={!catalogueLoading && modelOptions.length === 0}
+          refreshing={catalogueRefreshing || catalogueRefreshRunning}
+          onRefresh={() => void refreshProviderCatalogue(selectedProviderId ? [selectedProviderId] : [])}
+        />
         {shouldShowVerify && verifyResult && (
           <p className={`text-xs ${verifyResult.valid ? "text-success" : "text-destructive"}`}>
             {verifyResult.valid ? t("modelVerified") : verifyResult.error || t("verificationFailed")}

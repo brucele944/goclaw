@@ -19,6 +19,13 @@
   "openSessions": "打开Session",
   "readOnly": "只读 — 此Session属于其他用户",
   "replyingTo": "回复",
+  "modelOverride": {
+    "label": "本次请求使用的模型",
+    "placeholder": "Agent 默认模型",
+    "reset": "重置为 Agent 模型",
+    "stale": "模型列表已过期 — 点击重试",
+    "loadFailed": "模型列表加载失败 — 点击重试"
+  },
   "error": {
     "notConnected": "未连接。请等待连接建立。"
   }

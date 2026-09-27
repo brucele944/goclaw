@@ -127,6 +127,111 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   → global default. An undeclared role, or one whose provider is not in the registry,
   degrades to the agent primary instead of routing to a provider the operator did not name.
 
+- **Declared capabilities reach the clients, and `/v1/chat/completions` is a real
+  OpenAI surface.** `GET /v1/providers/capabilities` serves the declaration DTO the UIs
+  build their pickers from — per provider `wire_api`, `auth_kind`, where its model list came
+  from (`bundled` snapshot vs `discovered`), `default_model_id`, `stale`/`last_refreshed_at`,
+  and per model the context window, output cap, thinking levels, capabilities, cost and
+  per-model staleness — and carries no transport, credential or compat internals (a test
+  pins the key set). `goclaw providers capabilities [id] [--json] [--models]` renders the
+  same DTO, so the CLI cannot disagree with what the UI offers. The web and desktop UIs now
+  source their model pickers from that catalogue instead of a per-provider models call:
+  provider rows and detail pages show `wire_api`/`auth_kind` next to the brand
+  `provider_type`, a degraded (stale/failed) catalogue is shown with a refresh affordance
+  rather than as an empty list, and the chat header carries a per-request model selector
+  whose value is the `<provider>/<model>` identity.
+  `POST /v1/chat/completions` now behaves like the API it advertises: streamed responses
+  forward the model's real deltas as they are produced (the same run-event broadcast the WS
+  clients and channels consume) instead of one buffered chunk, closing with the provider's
+  `finish_reason` and, on `stream_options.include_usage`, a usage chunk; `temperature`,
+  `max_tokens` (clamped by the provider layer) and `tool_choice` apply to that run only;
+  the whole `messages` transcript is replayed so a stateless caller's conversation actually
+  reaches the model, and a transcript ending in a `role:"tool"` result continues from it
+  instead of being rejected or answered with a fabricated user turn. Caller-declared `tools`
+  are honoured as a passthrough: they replace the agent's tool surface for that run, the
+  model's calls come back as OpenAI `tool_calls` with `finish_reason:"tool_calls"` (streamed
+  in the indexed delta shape), and they are never executed here — not even when a declared
+  name collides with a real agent tool (both `ThinkStage` and `ToolStage` refuse to dispatch
+  a client-owned call). `tool_choice` is forwarded verbatim, including OpenAI's object form
+  that names a function. Parameters this endpoint cannot honour (`n>1`, `stop`, a malformed
+  `tool_choice` object, non-function tool types, a trailing `system`/`assistant` message)
+  fail with an OpenAI-shaped error envelope instead of silently changing behaviour.
+  A `model` of `<provider>/<model>` — or `X-GoClaw-Model` — is a per-request override whose
+  prefix pins the provider when it names a registered one, so a vendor model id containing a
+  `tool_choice` is translated for an Anthropic-backed agent (`auto`/`required`/named function map to
+  Anthropic's `auto`/`any`/`tool`, and `none` withholds the tool list) instead of being silently
+  dropped, a tool-calling turn still returns the text the model produced with its calls, and the SSE
+  tap queues deltas without loss, so a slow client delays its own stream rather than truncating it.
+  slash (`openrouter`'s `openai/gpt-5.5`) still works, while a `model` value that is neither an
+  agent form nor a resolvable reference keeps selecting the agent exactly as before (a caller
+  passing a placeholder is not silently re-routed); the same split now applies to
+  `chat.send`, where a reference naming one provider while `provider` names another is
+  rejected rather than misrouted. Assistant turns record the model that produced them
+  (`model` as the `<provider>/<model>` identity plus `provider`), so `chat.history` and the
+  session surfaces can show it per turn.
+
+### Added
+
+- **Behavior UX sidecar delivery overrides** — Adds sidecar-generated Quick
+  Acknowledgement and Intermediate Replies with provider/model, timeout, token,
+  and char caps. Effective config resolves Channel > Agent > Workspace, with
+  agent overrides stored in `other_config.delivery_behavior`.
+
+- **Built-in skill `workspace-organizing`** — closes #71. Discipline skill that
+  teaches agents to keep personal, team, and delegate workspaces tidy.
+  Enforces a purpose-based folder convention with two modes: flat
+  (`notes/`, `data/`, `outputs/`, `scripts/`, `archive/`) for ad-hoc work
+  and project (`projects/<slug>/{docs,assets,source,reports,research}/`)
+  for named multi-file work. Per-agent namespacing under
+  `shared/<agent_key>/` prevents collisions in team workspaces. Integrates
+  pre-write discovery via `vault_search`, `memory_search`, and
+  `knowledge_graph_search` to surface related files before writing and
+  avoid duplicates; documents Vault scope mirroring and id-routing rules.
+- **Bitrix24 channel 2-way media (file) transfer** — Inbound media downloads via
+  `imbot.v2.File.download` (one-time authenticated URL) with MIME preservation for
+  images, PDFs, audio, and video. Outbound uploads via `imbot.v2.File.upload` (base64).
+  Shared `media_max_mb` config knob (default 20 MB) caps both directions. Requires
+  `imbot` OAuth scope (no `disk` scope needed). Inbound handled by new
+  `internal/channels/bitrix24/download.go`; outbound by `send_media.go`. New
+  `BaseChannel.HandleMessageMedia()` method centralizes media-aware message handling.
+  See `docs/05-channels-messaging.md` § 16 (Bitrix24) for configuration.
+
+- **Skill agent manage grants** — Adds per-agent skill edit/delete grants with
+  backend checks, HTTP/WS support, SQLite and PostgreSQL schema updates, and web
+  dashboard controls for granting and revoking manage access.
+
+- **Packages Update Flow (Phase 2a: pip + npm)** — closes #900 (Phase 2a). Extends
+  Phase 1 update infrastructure to pip and npm package sources. `/v1/packages/updates`
+  now returns mixed-source results with an `availability: {github, pip, npm}` map.
+  Multi-source UI with per-source filter pills; unavailable sources (binary not on PATH
+  or Lite edition) hidden automatically. apk deferred to Phase 2b.
+  See `docs/packages-pip-npm.md` for command matrix, runbook, and min versions.
+
+- **Packages Update Flow (Phase 1: GitHub binaries)** — closes #900. Proactive
+  "N updates available" badge + per-row `[Update]` + `[Update All]` on the
+  Runtime & Packages page. Backend endpoints under `/v1/packages/updates*`
+  (master-scope). ETag-aware polling (304 responses don't burn rate limit),
+  stale-while-revalidate cache, atomic two-phase `.bak` swap with rollback.
+  Pre-release detection via regex + GitHub API flag; semver ordering via
+  `golang.org/x/mod/semver`; non-semver tags use string-inequality fallback
+  with downgrade protection. WebSocket events `package.update.*` for owner
+  clients. See `docs/packages-github.md` § "Updating Installed Packages".
+
+### Changed
+
+- **Behavior UX simplification** — Retires user-facing Tool Status Messages and
+  deterministic tool-status channel text. Show Reasoning remains separate for
+  debugging/testing, while Quick Acknowledgement and Intermediate Replies are
+  delivery-only sidecar messages. Legacy `block_reply` config remains readable
+  as an inherited Intermediate Replies default but is no longer exposed as a
+  separate Web UI control.
+
+- **ChatGPT Subscription (OAuth)** — default model and backend-owned model catalog
+  now prefer `gpt-5.5`, with reasoning metadata and context-window defaults updated
+  for provider-first model selection.
+
+### Fixed
+
 - **SQLite (desktop/lite) startup and agent import: shared SQL relied on
   PostgreSQL-only defaults.** Three defect sites, all of the same shape — SQL
   written once for both dialects but only valid on PostgreSQL, where the failure

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Combobox } from '../common/Combobox'
 import { Switch } from '../common/Switch'
+import { ProviderMetaChips } from './ProviderMetaChips'
 import { PROVIDER_TYPES } from '../../constants/providers'
 import { slugify } from '../../lib/slug'
 import { providerFormSchema, type ProviderFormData } from '../../schemas/provider.schema'
@@ -92,6 +93,14 @@ export function ProviderFormDialog({ open, onOpenChange, provider, onSubmit }: P
           />
           {errors.providerType && <p className="text-xs text-error">{errors.providerType.message}</p>}
         </div>
+
+        {/* Transport / auth metadata — server-derived, read-only */}
+        {isEditing && provider && (
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-text-secondary">{t('providers:form.transportAuth')}</label>
+            <ProviderMetaChips provider={provider} />
+          </div>
+        )}
 
         {/* Display name */}
         <div className="space-y-1">

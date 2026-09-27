@@ -54,7 +54,7 @@ func (s *FinalizeStage) Execute(ctx context.Context, state *RunState) error {
 	hasDeliverableOutput := len(state.Tool.MediaResults) > 0 ||
 		len(state.Input.ForwardMedia) > 0 ||
 		state.Input.ContentSuffix != ""
-	if state.Observe.FinalContent == "" && !isSilent && !hasDeliverableOutput {
+	if state.Observe.FinalContent == "" && !isSilent && !hasDeliverableOutput && len(state.Observe.FinalToolCalls) == 0 {
 		state.Observe.FinalContent = i18n.T(store.LocaleFromContext(ctx), i18n.MsgEmptyReplyFallback)
 	}
 
@@ -105,6 +105,8 @@ func (s *FinalizeStage) Execute(ctx context.Context, state *RunState) error {
 		Role:     "assistant",
 		Content:  state.Observe.FinalContent,
 		Thinking: state.Observe.FinalThinking,
+		Model:    modelIdentity(state.Provider, state.Model),
+		Provider: providerName(state.Provider),
 	}
 	for _, mr := range state.Tool.MediaResults {
 		kind := "document"

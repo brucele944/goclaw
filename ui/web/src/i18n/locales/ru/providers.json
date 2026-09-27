@@ -254,7 +254,9 @@
     "poolActivityTopAgentsTitle": "Топ агентов, использующих этот пул",
     "poolActivityRequests": "зап.",
     "poolActivityEmpty": "Активности пока нет",
-    "poolActivityEmptyDesc": "Активность пула появится здесь, как только агенты начнут маршрутизировать запросы через этот пул."
+    "poolActivityEmptyDesc": "Активность пула появится здесь, как только агенты начнут маршрутизировать запросы через этот пул.",
+    "wireApi": "Протокол передачи",
+    "authKind": "Аутентификация"
   },
   "embedding": {
     "enable": "Включить эмбеддинги",
@@ -384,5 +386,25 @@
     "failedCreate": "Не удалось создать провайдера",
     "failedUpdate": "Не удалось обновить провайдера",
     "failedDelete": "Не удалось удалить провайдера"
+  },
+  "wireApi": {
+    "openaiCompletions": "OpenAI chat completions",
+    "anthropicMessages": "Anthropic messages",
+    "cliDelegated": "CLI-делегирование"
+  },
+  "authKind": {
+    "apiKey": "API-ключ",
+    "oauthBrowser": "OAuth (браузер)",
+    "serviceAccount": "Сервисный аккаунт",
+    "cliDelegated": "CLI-делегирование",
+    "none": "Без учётных данных"
+  },
+  "catalogue": {
+    "stale": "Список моделей может быть устаревшим",
+    "empty": "Модели не обнаружены",
+    "notListed": "Провайдер отсутствует в каталоге моделей",
+    "error": "Не удалось загрузить модели: {{message}}",
+    "refresh": "Обновить",
+    "refreshing": "Обновление"
   }
 }

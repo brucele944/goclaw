@@ -88,6 +88,8 @@ func (rs *RunState) BuildResult() *RunResult {
 		BlockReplies:   rs.Observe.BlockReplies,
 		LastBlockReply: rs.Observe.LastBlockReply,
 		Calls:          rs.Calls,
+		FinalToolCalls: rs.Observe.FinalToolCalls,
+		FinishReason:   rs.Observe.FinalFinishReason,
 	}
 }
 
@@ -128,6 +130,11 @@ type RunInput struct {
 	WorkspaceChannel           string
 	WorkspaceChatID            string
 	TeamWorkspace              string
+
+	// ClientTools are caller-declared tool definitions for a passthrough run:
+	// they replace the agent's tool surface and the model's calls are returned to
+	// the caller instead of being executed. Empty = normal agent run.
+	ClientTools []providers.ToolDefinition
 }
 
 // MediaResult represents a media file produced during tool execution.
@@ -139,4 +146,24 @@ type MediaResult struct {
 	// Prompt is the generation prompt for AI-generated media (e.g. create_image).
 	// Empty for user-uploaded or non-generated files.
 	Prompt string
+}
+
+// providerName is the serving provider's name ("" when the run has no provider).
+func providerName(p providers.Provider) string {
+	if p == nil {
+		return ""
+	}
+	return p.Name()
+}
+
+// modelIdentity is the `<provider>/<model>` identity recorded on an assistant
+// turn — the same identity the capability DTO serves and the UIs select from, so a
+// transcript can show which model answered. Falls back to the bare model when the
+// provider is unknown.
+func modelIdentity(p providers.Provider, model string) string {
+	name := providerName(p)
+	if name == "" || model == "" {
+		return model
+	}
+	return name + "/" + model
 }

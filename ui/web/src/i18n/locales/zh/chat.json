@@ -30,5 +30,15 @@
     "title": "选择Agent",
     "description": "选择Agent开始对话"
   },
-  "imageGenDownloadName": "generated-{{timestamp}}.png"
+  "imageGenDownloadName": "generated-{{timestamp}}.png",
+  "modelSelector": {
+    "label": "本次请求的模型",
+    "agentDefault": "跟随智能体",
+    "stale": "模型列表可能已过期——点击刷新",
+    "unavailable": "无法获取模型列表：{{message}}——点击重试",
+    "empty": "没有可用模型——点击重试"
+  },
+  "turnModel": {
+    "tooltip": "由 {{model}} 回答"
+  }
 }

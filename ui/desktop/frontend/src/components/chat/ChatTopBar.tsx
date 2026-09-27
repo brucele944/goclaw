@@ -1,8 +1,67 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAgents } from '../../hooks/use-agents'
+import { useProviderCapabilities } from '../../hooks/use-provider-capabilities'
+import { isCatalogueStale, modelOptionsFor } from '../../api/provider-capabilities'
+import { useChatModelStore } from '../../stores/chat-model-store'
 import { useUiStore } from '../../stores/ui-store'
 import { LANGUAGES, getAllTimezones } from '../../lib/constants'
+import { Combobox } from '../common/Combobox'
+
+/**
+ * Per-request model override for `chat.send`. Value is a `<provider>/<model>`
+ * identity; clearing it sends no `model` so the agent's own model is used.
+ */
+function ModelOverridePicker() {
+  const { t } = useTranslation('chat')
+  const { capabilities, isLoading, error, refetch } = useProviderCapabilities()
+  const modelOverride = useChatModelStore((s) => s.modelOverride)
+  const setModelOverride = useChatModelStore((s) => s.setModelOverride)
+  const clearModelOverride = useChatModelStore((s) => s.clearModelOverride)
+
+  const options = useMemo(
+    () => capabilities.flatMap((c) => modelOptionsFor(c)),
+    [capabilities],
+  )
+  const stale = useMemo(() => capabilities.some((c) => isCatalogueStale(c)), [capabilities])
+
+  return (
+    <div className="wails-no-drag flex items-center gap-1 mr-1">
+      <div className="w-44" title={t('modelOverride.label')}>
+        <Combobox
+          value={modelOverride}
+          onChange={setModelOverride}
+          options={options}
+          placeholder={t('modelOverride.placeholder')}
+          loading={isLoading}
+        />
+      </div>
+      {modelOverride && (
+        <button
+          onClick={clearModelOverride}
+          title={t('modelOverride.reset')}
+          className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface-tertiary transition-colors"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+          </svg>
+        </button>
+      )}
+      {(stale || error) && (
+        <button
+          onClick={() => { void refetch() }}
+          title={stale ? t('modelOverride.stale') : t('modelOverride.loadFailed')}
+          className="w-6 h-6 flex items-center justify-center rounded text-warning hover:bg-warning/10 transition-colors"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 9v4" /><path d="M12 17h.01" />
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
 
 function LanguagePicker() {
   const locale = useUiStore((s) => s.locale)
@@ -170,6 +229,7 @@ export function ChatTopBar() {
 
       {/* Top right pickers */}
       <div className="flex items-center gap-1">
+        {selectedAgent && <ModelOverridePicker />}
         <TimezonePicker />
         <LanguagePicker />
       </div>

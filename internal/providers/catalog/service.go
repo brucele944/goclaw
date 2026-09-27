@@ -479,6 +479,42 @@ func cacheStateOf(rows []store.LLMModel, fingerprint string, ttl time.Duration, 
 	return state
 }
 
+// CacheState is what the cached catalogue says about one provider: whether the
+// rows carry a fingerprint (Tracked), whether that fingerprint still describes
+// the provider's current configuration (Matches), whether the newest fetch is
+// older than the TTL (Expired) and when that fetch happened.
+type CacheState struct {
+	Tracked bool
+	Matches bool
+	Expired bool
+	// Fetched is the newest catalogue fetch, when one happened.
+	Fetched *time.Time
+}
+
+// Stale reports whether the served rows are known (fingerprint changed) or
+// presumed (TTL expired) not to describe the current upstream.
+func (c CacheState) Stale() bool { return c.Tracked && (!c.Matches || c.Expired) }
+
+// CacheState reports the provider's catalogue cache state without touching the
+// network. It is the read-only counterpart of Sync: a UI can offer a refresh
+// based on it, and it never runs discovery, so it cannot amplify a listing
+// outage.
+func (s *Service) CacheState(ctx context.Context, p *store.LLMProviderData, ref discovery.ProviderRef) (CacheState, error) {
+	rows, err := s.store.ListModels(ctx, p.ID)
+	if err != nil {
+		return CacheState{}, err
+	}
+	fingerprint := Fingerprint(ref.BaseURL, p.WireAPI, AuthoritativeFromSettings(p.Settings), OperatorModelIDs(rows))
+	state := cacheStateOf(rows, fingerprint, DefaultTTL, time.Now().UTC())
+	out := CacheState{Tracked: state.tracked, Matches: state.matches, Expired: state.expired}
+	for i := range rows {
+		if at := rows[i].FetchedAt; at != nil && (out.Fetched == nil || at.After(*out.Fetched)) {
+			out.Fetched = at
+		}
+	}
+	return out, nil
+}
+
 // validRows keeps the rows a caller may serve: model rows scoped to the
 // provider, enabled only (a disabled row stays in the database so persisted ids
 // survive, but it is not part of the catalogue).

@@ -307,11 +307,16 @@ func (l *Loop) buildMessages(ctx context.Context, history []providers.Message, s
 		l.sessions.Save(ctx, sessionKey)
 	}
 
-	// Current user message
-	messages = append(messages, providers.Message{
-		Role:    "user",
-		Content: userMessage,
-	})
+	// Current user message. A continuation run (an OpenAI-compatible caller
+	// feeding tool results back) has no new user turn: the transcript it supplied
+	// already ends the conversation, and appending an empty user message would
+	// fabricate a prompt the model must answer.
+	if userMessage != "" {
+		messages = append(messages, providers.Message{
+			Role:    "user",
+			Content: userMessage,
+		})
+	}
 
 	return messages, hadBootstrap
 }

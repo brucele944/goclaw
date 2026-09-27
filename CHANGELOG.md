@@ -350,6 +350,43 @@ All notable changes to GoClaw are documented here. For full documentation, see [
      gateway binary with a hand-built archive: 11 import tables populated with
      the right values, versus only `agents` and `agent_context_files` before.
 
+- **`GET /v1/vault/documents/{id}` returned 500 instead of 404 for a missing
+  document.** The handler propagated the raw `sql.ErrNoRows` from the store as an
+  internal error; it now maps `sql.ErrNoRows` to a 404 `document not found`
+  response.
+
+- **SQLite (desktop/lite): bound `time.Time` values used a different text
+  encoding than the schema's own column defaults, corrupting time ordering.**
+  modernc.org/sqlite formats a bound `time.Time` with `time.Time.String()`
+  (`"2026-09-27 06:13:53.0844211 +0000 UTC"`, space-separated, sometimes with a
+  trailing monotonic reading), while every `created_at`/`updated_at` column
+  default writes `strftime('%Y-%m-%dT%H:%M:%fZ','now')`
+  (`"2026-09-27T06:43:39.231Z"`, `T`-separated). SQLite compares `TEXT`
+  lexically, so a row written by binding a `time.Time` sorted *before* any
+  row written by a column default on the same day (`' '` 0x20 < `'T'` 0x54)
+  regardless of which happened first — breaking `ORDER BY created_at` and
+  range filters (`created_at >= ?`) on every table populated by both write
+  paths (`agents`, `team_tasks`, `activity_logs`, and others) — including
+  `api_keys.expires_at`, which is compared against the matching `strftime`
+  form for the "not expired" filter, so an unnormalised nullable expiry could
+  reject a key that had not actually expired yet. The SQLite driver connection
+  now runs every bound argument through `driver.DefaultParameterConverter`
+  before checking the result: that resolves the `*time.Time` (AGENTS.md's
+  convention for every nullable timestamp column) and `sql.NullTime` shapes
+  down to a plain `time.Time` the same way `database/sql` itself would, so
+  the check catches pointers and `Valuer`s, not only a bare `time.Time`
+  argument. Matches are reformatted to the `T`-separated,
+  millisecond-precision, UTC encoding the DDL defaults use; the two
+  remaining SQL-side `datetime('now')` expressions (API key expiry, trace
+  span end time) were switched to the matching `strftime` form. Regression
+  tests `TestSQLiteBoundTimestampsMatchDDLDefaults` (bare `time.Time`) and
+  `TestSQLiteNullableTimestampMatchesDDLDefault` (`*time.Time`, through the
+  real `api_keys` store) fail without the fix and pass with it — the
+  nullable-timestamp test's before-fix failure is exactly the regression
+  above: a key expiring two hours from now is not found by `GetByHash`.
+  Rows written before this fix keep their original encoding; only new
+  writes are affected.
+
 - **Claude CLI provider failed every follow-up turn with `Session ID ... is already
   in use`** — `sessionFileExists` encoded the work directory into the Claude CLI's
   `~/.claude/projects/<encoded-path>` name with a narrow replacement set

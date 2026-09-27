@@ -2,6 +2,7 @@ package pg
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -595,7 +596,11 @@ func TestBuildSkillInfo(t *testing.T) {
 	if info.BaseDir != "/skills/test-skill/3" {
 		t.Errorf("BaseDir = %q", info.BaseDir)
 	}
-	if info.Path != "/skills/test-skill/3/SKILL.md" {
+	// info.BaseDir comes straight from fmt.Sprintf (always forward-slash, by
+	// design, in the no-override branch of buildSkillInfo) but info.Path goes
+	// through store.SkillMarkdownPath -> filepath.Join, which normalizes to
+	// the OS-native separator even when the input already used '/'.
+	if info.Path != filepath.Join(info.BaseDir, "SKILL.md") {
 		t.Errorf("Path = %q", info.Path)
 	}
 	if info.Description != "a skill" {
@@ -610,13 +615,21 @@ func TestBuildSkillInfo(t *testing.T) {
 }
 
 func TestBuildSkillInfo_FilePathOverridesBaseDir(t *testing.T) {
-	fp := "/custom/path/to/skill"
+	// buildSkillInfo routes a non-empty filePath through store.SkillBaseDir,
+	// which normalizes with path/filepath — OS-native on purpose, since every
+	// real caller persists FilePath via filepath.Join (grep confirms no
+	// caller ever stores a forward-slash-literal path on Windows). The
+	// expected value must go through the same normalization, not a hardcoded
+	// POSIX literal, or this fails on Windows despite correct behavior.
+	fp := filepath.Join("/custom", "path", "to", "skill")
 	info := buildSkillInfo("id", "n", "s", nil, 1, "/ignored", &fp)
-	if info.BaseDir != "/custom/path/to/skill" {
-		t.Errorf("BaseDir should honor filePath override: %q", info.BaseDir)
+	wantBaseDir := filepath.Clean(fp)
+	if info.BaseDir != wantBaseDir {
+		t.Errorf("BaseDir should honor filePath override: got %q, want %q", info.BaseDir, wantBaseDir)
 	}
-	if info.Path != "/custom/path/to/skill/SKILL.md" {
-		t.Errorf("Path = %q", info.Path)
+	wantPath := filepath.Join(wantBaseDir, "SKILL.md")
+	if info.Path != wantPath {
+		t.Errorf("Path = %q, want %q", info.Path, wantPath)
 	}
 	if info.Description != "" {
 		t.Errorf("nil desc should be empty: %q", info.Description)
@@ -624,13 +637,15 @@ func TestBuildSkillInfo_FilePathOverridesBaseDir(t *testing.T) {
 }
 
 func TestBuildSkillInfo_FilePathMayPointToSkillMarkdown(t *testing.T) {
-	fp := "/custom/path/to/skill/SKILL.md"
+	fp := filepath.Join("/custom", "path", "to", "skill", "SKILL.md")
 	info := buildSkillInfo("id", "n", "s", nil, 1, "/ignored", &fp)
-	if info.BaseDir != "/custom/path/to/skill" {
-		t.Errorf("BaseDir should normalize file path: %q", info.BaseDir)
+	wantBaseDir := filepath.Dir(filepath.Clean(fp))
+	if info.BaseDir != wantBaseDir {
+		t.Errorf("BaseDir should normalize file path: got %q, want %q", info.BaseDir, wantBaseDir)
 	}
-	if info.Path != "/custom/path/to/skill/SKILL.md" {
-		t.Errorf("Path = %q", info.Path)
+	wantPath := filepath.Join(wantBaseDir, "SKILL.md")
+	if info.Path != wantPath {
+		t.Errorf("Path = %q, want %q", info.Path, wantPath)
 	}
 }
 

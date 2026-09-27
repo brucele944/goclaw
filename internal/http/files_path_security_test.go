@@ -155,13 +155,13 @@ func TestFilesHandleServe_FileInsideWorkspace_WithToken_Serves(t *testing.T) {
 	}
 
 	// Build a valid signed token for this URL path
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(filePath), "/")
+	urlPath := fileURLPath(filePath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", h.handleServe)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft="+ft, nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft="+ft, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -180,13 +180,13 @@ func TestFilesHandleServe_FileOutsideAllDirs_WithToken_Returns404(t *testing.T) 
 	filePath := filepath.Join(outsideDir, "secret.txt")
 	_ = os.WriteFile(filePath, []byte("secret"), 0644)
 
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(filePath), "/")
+	urlPath := fileURLPath(filePath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", h.handleServe)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft="+ft, nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft="+ft, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -208,13 +208,13 @@ func TestFilesHandleServe_SignedSymlinkEscape_Returns404(t *testing.T) {
 		t.Skipf("symlink unavailable: %v", err)
 	}
 
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(linkPath), "/")
+	urlPath := fileURLPath(linkPath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", h.handleServe)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft="+ft, nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft="+ft, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -230,6 +230,16 @@ func TestFilesHandleServe_OpenThenSwapToSymlinkEscape_Returns404(t *testing.T) {
 	if err := os.WriteFile(secretPath, []byte("secret"), 0644); err != nil {
 		t.Fatal(err)
 	}
+
+	// Probe symlink support before relying on it in the swap hook below —
+	// os.Symlink requires elevated privileges or Developer Mode on Windows,
+	// same gap the sibling symlink-escape tests already skip around.
+	probeLink := filepath.Join(workspace, "probe-link.txt")
+	if err := os.Symlink(secretPath, probeLink); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	_ = os.Remove(probeLink)
+
 	filePath := filepath.Join(workspace, "race.txt")
 	if err := os.WriteFile(filePath, []byte("allowed"), 0644); err != nil {
 		t.Fatal(err)
@@ -243,13 +253,13 @@ func TestFilesHandleServe_OpenThenSwapToSymlinkEscape_Returns404(t *testing.T) {
 	}
 	defer func() { filesAfterOpenHookForTest = nil }()
 
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(filePath), "/")
+	urlPath := fileURLPath(filePath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", h.handleServe)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft="+ft, nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft="+ft, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -315,12 +325,12 @@ func TestFilesAuthMiddleware_InvalidFileToken_Returns401(t *testing.T) {
 	filePath := filepath.Join(workspace, "test.txt")
 	_ = os.WriteFile(filePath, []byte("x"), 0644)
 
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(filePath), "/")
+	urlPath := fileURLPath(filePath)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", wrapped)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft=invalid-token", nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft=invalid-token", nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 
@@ -344,13 +354,13 @@ func TestFilesAuthMiddleware_ValidFileToken_Passes(t *testing.T) {
 	filePath := filepath.Join(workspace, "test.txt")
 	_ = os.WriteFile(filePath, []byte("x"), 0644)
 
-	urlPath := "/v1/files/" + strings.TrimPrefix(filepath.Clean(filePath), "/")
+	urlPath := fileURLPath(filePath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/files/{path...}", wrapped)
 
-	req := httptest.NewRequest(http.MethodGet, urlPath+"?ft="+ft, nil)
+	req := httptest.NewRequest(http.MethodGet, escapedFileURL(urlPath)+"?ft="+ft, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 

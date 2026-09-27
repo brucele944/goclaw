@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -147,16 +147,16 @@ func (b *FsBridge) Stat(ctx context.Context, path string) (string, error) {
 
 // resolvePath resolves a path relative to the container workdir.
 // Validates that absolute paths stay within the workdir (defense in depth).
-func (b *FsBridge) resolvePath(path string) string {
-	workdir := filepath.Clean(b.workdir)
-	if path == "" || path == "." {
+func (b *FsBridge) resolvePath(p string) string {
+	workdir := path.Clean(b.workdir)
+	if p == "" || p == "." {
 		return workdir
 	}
 	var cleaned string
-	if strings.HasPrefix(path, "/") {
-		cleaned = filepath.Clean(path)
+	if strings.HasPrefix(p, "/") {
+		cleaned = path.Clean(p)
 	} else {
-		cleaned = filepath.Clean(filepath.Join(workdir, path))
+		cleaned = path.Clean(path.Join(workdir, p))
 	}
 	if cleaned == workdir || strings.HasPrefix(cleaned, workdir+"/") {
 		return cleaned
@@ -165,8 +165,8 @@ func (b *FsBridge) resolvePath(path string) string {
 }
 
 func fsBridgePathWithin(root, target string) bool {
-	root = filepath.Clean(root)
-	target = filepath.Clean(target)
+	root = path.Clean(root)
+	target = path.Clean(target)
 	if target == root {
 		return true
 	}
@@ -185,7 +185,7 @@ func (b *FsBridge) containerRealPath(ctx context.Context, path string) (string, 
 }
 
 func (b *FsBridge) containerRealWorkdir(ctx context.Context) (string, error) {
-	return b.containerRealPath(ctx, filepath.Clean(b.workdir))
+	return b.containerRealPath(ctx, path.Clean(b.workdir))
 }
 
 func (b *FsBridge) resolveExistingPath(ctx context.Context, resolved string) (string, error) {
@@ -223,7 +223,7 @@ func (b *FsBridge) validateParentBeforeCreate(ctx context.Context, dir string) e
 	if err != nil {
 		return err
 	}
-	current := filepath.Clean(dir)
+	current := path.Clean(dir)
 	for {
 		realParent, err := b.containerRealPath(ctx, current)
 		if err == nil {
@@ -232,7 +232,7 @@ func (b *FsBridge) validateParentBeforeCreate(ctx context.Context, dir string) e
 			}
 			return nil
 		}
-		next := filepath.Dir(current)
+		next := path.Dir(current)
 		if next == current {
 			return fmt.Errorf("path parent does not exist inside sandbox workdir")
 		}

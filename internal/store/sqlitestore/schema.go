@@ -247,6 +247,12 @@ CREATE INDEX IF NOT EXISTS idx_channel_message_archive_archived_at ON channel_me
 	ADD COLUMN root_agent_id TEXT REFERENCES agents(id) ON DELETE SET NULL;
 ` + sqliteSubagentRootAgentScopeMigrationBody,
 	// Version 57 → 58: restore custom skills previously converted by the bundled skill seeder.
+	// file_path is matched by both '/' and '\' suffix: real desktop file_path values are
+	// OS-native (filepath.Join), so on Windows this originally never matched ('%/' || version
+	// only), leaving file_path pointing at the pre-repair version directory while `version`
+	// itself was correctly decremented — a Windows desktop install that already ran this
+	// migration under the old pattern has that mismatch baked into its DB; this fix only
+	// covers installs that have not yet crossed version 58.
 	57: `UPDATE skills
 SET is_system = 0,
     visibility = 'private',
@@ -258,7 +264,7 @@ SET is_system = 0,
     ),
     version = CASE WHEN version > 1 THEN version - 1 ELSE 1 END,
     file_path = CASE
-        WHEN file_path LIKE '%/' || version THEN
+        WHEN file_path LIKE '%/' || version OR file_path LIKE '%\' || version THEN
             substr(file_path, 1, length(file_path) - length(CAST(version AS TEXT))) ||
             CAST(CASE WHEN version > 1 THEN version - 1 ELSE 1 END AS TEXT)
         ELSE file_path

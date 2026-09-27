@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,7 +68,7 @@ func (h *FilesHandler) handleSign(w http.ResponseWriter, r *http.Request) {
 	urlPath := fileURLPath(absPath)
 	ft := SignFileToken(urlPath, FileSigningKey(), FileTokenTTL)
 	writeJSON(w, http.StatusOK, map[string]string{
-		"url": urlPath + "?ft=" + ft,
+		"url": escapedFileURL(urlPath) + "?ft=" + ft,
 	})
 }
 
@@ -214,8 +215,32 @@ func absoluteFilePath(path string) string {
 	return filepath.Clean(string(filepath.Separator) + absPath)
 }
 
+// fileURLPath returns the canonical decoded "/v1/files/..." path for absPath.
+// This is the exact string signed by SignFileToken and reconstructed
+// server-side from r.PathValue("path") (net/http decodes %XX before handlers
+// see it), so it must always use '/' as the segment separator — the HTTP
+// path delimiter, regardless of absPath's OS-native separator. Using
+// filepath.Separator here (Windows '\\') produced a single opaque segment
+// containing literal backslashes instead of proper nested path segments.
 func fileURLPath(absPath string) string {
-	return "/v1/files/" + strings.TrimPrefix(filepath.Clean(absPath), string(filepath.Separator))
+	return "/v1/files/" + strings.TrimPrefix(filepath.ToSlash(filepath.Clean(absPath)), "/")
+}
+
+// escapedFileURL percent-encodes each segment of a fileURLPath result so it
+// can be embedded in an actual URL handed to a client. absPath (and hence
+// fileURLPath's output) can contain characters invalid in a raw URL, most
+// commonly a space in a Windows username (e.g. "C:/Users/Bruce Le/..."), or
+// other reserved characters in a filename. The unescaped canonical form
+// remains what's signed/verified, since http.Request always percent-decodes
+// before PathValue extraction — only the client-facing string needs escaping.
+func escapedFileURL(urlPath string) string {
+	const prefix = "/v1/files/"
+	rel := strings.TrimPrefix(urlPath, prefix)
+	segments := strings.Split(rel, "/")
+	for i, seg := range segments {
+		segments[i] = url.PathEscape(seg)
+	}
+	return prefix + strings.Join(segments, "/")
 }
 
 func hasDeniedFilePrefix(path string) bool {

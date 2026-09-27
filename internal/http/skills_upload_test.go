@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -1458,9 +1459,16 @@ func TestHandleUpload_NormalizesBackslashZipEntryPaths(t *testing.T) {
 	if _, err := os.Stat(wantPath); err != nil {
 		t.Fatalf("expected normalized path %s to exist: %v", wantPath, err)
 	}
-	flatPath := filepath.Join(info.BaseDir, `scripts\search.py`)
-	if _, err := os.Stat(flatPath); !os.IsNotExist(err) {
-		t.Fatalf("flat backslash path %s exists or stat failed unexpectedly: %v", flatPath, err)
+	// The "flat single file literally named scripts\search.py" mis-parse this
+	// guards against is filesystem-impossible on Windows: backslash is the
+	// native separator there, so filepath.Join would produce the identical
+	// (correctly nested) wantPath rather than a distinct flat name — Windows
+	// also rejects '\' as a literal filename component outright.
+	if runtime.GOOS != "windows" {
+		flatPath := filepath.Join(info.BaseDir, `scripts\search.py`)
+		if _, err := os.Stat(flatPath); !os.IsNotExist(err) {
+			t.Fatalf("flat backslash path %s exists or stat failed unexpectedly: %v", flatPath, err)
+		}
 	}
 }
 

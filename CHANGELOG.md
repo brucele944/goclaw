@@ -402,6 +402,40 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   `?`) but was verified by code symmetry and a clean build only — the
   integration Postgres container was not running this session.
 
+- **Schema migration 57→58 (restore custom skills misclassified by the
+  bundled skill seeder) never repaired `file_path` on Windows.** The repair
+  matched the trailing version segment with `file_path LIKE '%/' || version`,
+  hardcoding `/` as the separator. Real desktop `file_path` values are
+  OS-native (every caller persists them via `filepath.Join`), so on Windows
+  the pattern never matched: `version` was correctly decremented but
+  `file_path` kept pointing at the pre-repair version directory, leaving the
+  row internally inconsistent. The `LIKE` now matches either `/` or `\`
+  before the version suffix. Installs that already ran this migration under
+  the old pattern keep their stale `file_path` — this only fixes installs
+  that have not yet crossed schema version 58.
+
+- **`POST /v1/files/sign` returned a `url` that could not be requested as an
+  actual HTTP URL when the underlying path needed escaping** — most commonly
+  a space in a Windows username (`C:\Users\Jane Doe\...`), on any OS. Two
+  separate bugs in `fileURLPath`: it used `filepath.Separator` to build a
+  `/`-delimited URL path, so on Windows the whole path came out as one opaque
+  segment of literal backslashes instead of nested URL segments; and it never
+  percent-encoded the result, so a literal space broke request-line parsing
+  outright. The canonical (decoded) path — still what gets signed and what
+  `r.PathValue` reconstructs server-side — now always uses `/`
+  (`filepath.ToSlash`); a new `escapedFileURL` percent-encodes each segment
+  for the string actually returned to clients, leaving the signed value
+  unchanged.
+
+- **Docker sandbox path containment (`FsBridge.resolvePath`,
+  `fsBridgePathWithin`) used the OS-native `path/filepath` package on paths
+  that are always inside the Linux container, never the host.** On a Windows
+  host, `filepath.Clean("/workspace/agent-a")` rewrote the container path to
+  `\workspace\agent-a` — corrupting every path handed to `docker exec` and
+  breaking the workspace-escape check it exists to enforce. Switched to the
+  POSIX-only `path` package, which matches the container's filesystem
+  regardless of host OS.
+
 - **Claude CLI provider failed every follow-up turn with `Session ID ... is already
   in use`** — `sessionFileExists` encoded the work directory into the Claude CLI's
   `~/.claude/projects/<encoded-path>` name with a narrow replacement set

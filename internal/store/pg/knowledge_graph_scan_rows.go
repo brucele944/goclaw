@@ -18,11 +18,13 @@ type entityRow struct {
 	Name        string          `db:"name"`
 	EntityType  string          `db:"entity_type"`
 	Description string          `db:"description"`
-	Properties  json.RawMessage `db:"properties"`
+	Properties  ExportJSON      `db:"properties"`
 	SourceID    string          `db:"source_id"`
 	Confidence  float64         `db:"confidence"`
-	CreatedAt   time.Time       `db:"created_at"`
-	UpdatedAt   time.Time       `db:"updated_at"`
+	// pgTime: the export queries share this row with the SQLite/lite build, which
+	// returns the TEXT it stored instead of time.Time.
+	CreatedAt pgTime `db:"created_at"`
+	UpdatedAt pgTime `db:"updated_at"`
 }
 
 // toEntity converts an entityRow to store.Entity, unmarshaling properties and converting timestamps.
@@ -55,15 +57,15 @@ type scoredEntityRow struct {
 // entityTemporalRow extends entityRow with valid_from/valid_until for temporal queries.
 type entityTemporalRow struct {
 	entityRow
-	ValidFrom  *time.Time `db:"valid_from"`
-	ValidUntil *time.Time `db:"valid_until"`
+	ValidFrom  *pgTime `db:"valid_from"`
+	ValidUntil *pgTime `db:"valid_until"`
 }
 
 // toEntity converts an entityTemporalRow to store.Entity including temporal fields.
 func (r *entityTemporalRow) toEntity() store.Entity {
 	e := r.entityRow.toEntity()
-	e.ValidFrom = r.ValidFrom
-	e.ValidUntil = r.ValidUntil
+	e.ValidFrom = r.ValidFrom.TimePtr()
+	e.ValidUntil = r.ValidUntil.TimePtr()
 	return e
 }
 
@@ -76,8 +78,8 @@ type relationRow struct {
 	RelationType   string          `db:"relation_type"`
 	TargetEntityID string          `db:"target_entity_id"`
 	Confidence     float64         `db:"confidence"`
-	Properties     json.RawMessage `db:"properties"`
-	CreatedAt      time.Time       `db:"created_at"`
+	Properties     ExportJSON      `db:"properties"`
+	CreatedAt      pgTime          `db:"created_at"`
 }
 
 // toRelation converts a relationRow to store.Relation.
@@ -101,15 +103,15 @@ func (r *relationRow) toRelation() store.Relation {
 // relationExportRow extends relationRow with valid_from/valid_until for export queries.
 type relationExportRow struct {
 	relationRow
-	ValidFrom  *time.Time `db:"valid_from"`
-	ValidUntil *time.Time `db:"valid_until"`
+	ValidFrom  *pgTime `db:"valid_from"`
+	ValidUntil *pgTime `db:"valid_until"`
 }
 
 // toRelation converts a relationExportRow to store.Relation including temporal fields.
 func (r *relationExportRow) toRelation() store.Relation {
 	rel := r.relationRow.toRelation()
-	rel.ValidFrom = r.ValidFrom
-	rel.ValidUntil = r.ValidUntil
+	rel.ValidFrom = r.ValidFrom.TimePtr()
+	rel.ValidUntil = r.ValidUntil.TimePtr()
 	return rel
 }
 

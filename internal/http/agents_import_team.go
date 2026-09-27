@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -43,7 +44,7 @@ func (h *AgentsHandler) importTeamSection(ctx context.Context, ag *store.AgentDa
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		teamID, arc.teamMeta.Name, ag.ID,
 		arc.teamMeta.Description, arc.teamMeta.Status,
-		coalesceJSON(arc.teamMeta.Settings), userID, now, now, tid,
+		coalesceJSON(json.RawMessage(arc.teamMeta.Settings)), userID, now, now, tid,
 	)
 	if err != nil {
 		return fmt.Errorf("create team: %w", err)

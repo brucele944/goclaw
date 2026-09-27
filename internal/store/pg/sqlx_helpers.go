@@ -34,6 +34,20 @@ func SqlxDB() *sqlx.DB {
 	return pkgSqlxDB
 }
 
+// sqlxFor returns a *sqlx.DB for db with the package mapper configured. The
+// package handle is reused when it already wraps db (the PostgreSQL path, where
+// initSqlx set it up). Other backends — the SQLite/lite build never calls
+// initSqlx — get a wrapper over the same pool, so helpers that accept a *sql.DB
+// do not dereference a nil handle there.
+func sqlxFor(db *sql.DB) *sqlx.DB {
+	if pkgSqlxDB != nil && pkgSqlxDB.DB == db {
+		return pkgSqlxDB
+	}
+	sdb := sqlx.NewDb(db, "pgx")
+	sdb.Mapper = reflectx.NewMapperFunc("db", store.CamelToSnake)
+	return sdb
+}
+
 // sqlxTx wraps an existing *sql.Tx with sqlx, sharing the same mapper as pkgSqlxDB.
 // This allows using SelectContext/GetContext on transactions that were started with *sql.DB.
 func sqlxTx(tx *sql.Tx) *sqlx.Tx {

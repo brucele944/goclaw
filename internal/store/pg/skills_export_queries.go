@@ -3,10 +3,11 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"time"
 	"encoding/json"
+	"strings"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 )
@@ -53,30 +54,43 @@ func ExportCustomSkills(ctx context.Context, db *sql.DB) ([]CustomSkillExport, e
 // No IDs preserves the legacy custom-skills-only export unless IncludeSystem is true.
 // Explicit IDs may include system skills, while custom skills remain tenant-scoped.
 func ExportSkills(ctx context.Context, db *sql.DB, selection SkillExportSelection) ([]CustomSkillExport, error) {
-	tc, tcArgs, _, err := scopeClause(ctx, 1)
-	if err != nil {
-		return nil, err
-	}
-	where := " WHERE is_system = false" + tc
-	args := tcArgs
+	// The selection filter is an explicit positional IN list rather than
+	// pq.Array/ANY($1): the latter is PostgreSQL-only, while positional
+	// placeholders are accepted by both backends (the SQLite/lite build runs this
+	// through the same statement).
+	where := ""
+	args := []any{}
 	if len(selection.IDs) > 0 {
+		placeholders := make([]string, len(selection.IDs))
+		for i, id := range selection.IDs {
+			placeholders[i] = "$" + itoa(i+1)
+			args = append(args, id)
+		}
+		where = " WHERE id IN (" + strings.Join(placeholders, ",") + ")"
 		if store.IsCrossTenant(ctx) {
-			where = " WHERE id = ANY($1)"
-			args = []any{pq.Array(selection.IDs)}
+			// Any tenant, system or custom.
 		} else {
 			scope, err := store.ScopeFromContext(ctx)
 			if err != nil {
 				return nil, err
 			}
-			where = " WHERE id = ANY($1) AND (is_system = true OR tenant_id = $2)"
-			args = []any{pq.Array(selection.IDs), scope.TenantID}
+			where += " AND (is_system = true OR tenant_id = $" + itoa(len(args)+1) + ")"
+			args = append(args, scope.TenantID)
 		}
-	} else if selection.IncludeSystem {
-		where = " WHERE (is_system = true OR (is_system = false" + tc + "))"
+	} else {
+		tc, tcArgs, _, err := scopeClause(ctx, 1)
+		if err != nil {
+			return nil, err
+		}
+		if selection.IncludeSystem {
+			where = " WHERE (is_system = true OR (is_system = false" + tc + "))"
+		} else {
+			where = " WHERE is_system = false" + tc
+		}
 		args = tcArgs
 	}
 	var scanned []customSkillExportRow
-	if err := pkgSqlxDB.SelectContext(ctx, &scanned,
+	if err := sqlxFor(db).SelectContext(ctx, &scanned,
 		"SELECT id, name, slug, description, visibility, version, frontmatter, tags, deps, file_path"+
 			", is_system"+
 			" FROM skills"+where+
@@ -99,7 +113,7 @@ func ExportSkillGrantsWithAgentKey(ctx context.Context, db *sql.DB, skillID uuid
 		return nil, err
 	}
 	var result []SkillGrantWithKey
-	if err := pkgSqlxDB.SelectContext(ctx, &result,
+	if err := sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT a.agent_key, g.pinned_version"+
 			" FROM skill_agent_grants g"+
 			" JOIN agents a ON a.id = g.agent_id"+
@@ -179,9 +193,9 @@ func ImportSkillGrant(ctx context.Context, db *sql.DB, skillID, agentID uuid.UUI
 	tid := tenantIDForInsert(ctx)
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO skill_agent_grants (id, skill_id, agent_id, pinned_version, granted_by, created_at, tenant_id)
-		 VALUES ($1, $2, $3, $4, $5, NOW(), $6)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 ON CONFLICT (skill_id, agent_id) DO UPDATE SET pinned_version = EXCLUDED.pinned_version`,
-		uuid.Must(uuid.NewV7()), skillID, agentID, pinnedVersion, grantedBy, tid,
+		uuid.Must(uuid.NewV7()), skillID, agentID, pinnedVersion, grantedBy, time.Now().UTC(), tid,
 	)
 	return err
 }

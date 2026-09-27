@@ -17,7 +17,7 @@ type TeamExport struct {
 	Name        string          `json:"name" db:"name"`
 	Description string          `json:"description,omitempty" db:"description"`
 	Status      string          `json:"status" db:"status"`
-	Settings    json.RawMessage `json:"settings,omitempty" db:"settings"`
+	Settings    ExportJSON `json:"settings,omitempty" db:"settings"`
 }
 
 // TeamMemberExport references a team member by agent_key (portable cross-system).
@@ -117,7 +117,7 @@ func exportTeamMembers(ctx context.Context, db *sql.DB, teamID, leadAgentID uuid
 		return nil, err
 	}
 	var out []TeamMemberExport
-	err = pkgSqlxDB.SelectContext(ctx, &out,
+	err = sqlxFor(db).SelectContext(ctx, &out,
 		"SELECT a.agent_key, m.role"+
 			" FROM agent_team_members m"+
 			" JOIN agents a ON a.id = m.agent_id"+
@@ -129,7 +129,9 @@ func exportTeamMembers(ctx context.Context, db *sql.DB, teamID, leadAgentID uuid
 
 // ExportTeamTasks returns all tasks for a team, resolving agent keys for owner/creator.
 func ExportTeamTasks(ctx context.Context, db *sql.DB, teamID uuid.UUID) (*TeamTasksExport, error) {
-	tc, tcArgs, _, err := scopeClause(ctx, 2)
+	// Alias-qualified: the FROM joins team_tasks with two agents tables, all of
+	// which carry tenant_id, so an unqualified scope clause is ambiguous.
+	tc, tcArgs, _, err := scopeClauseAlias(ctx, 2, "t")
 	if err != nil {
 		return nil, err
 	}
@@ -222,14 +224,20 @@ func ExportTeamTasks(ctx context.Context, db *sql.DB, teamID uuid.UUID) (*TeamTa
 	}
 
 	// Second pass: resolve parent_id → parent_idx
-	if err := resolveTaskParentIdx(ctx, db, teamID, tc, tcArgs, &out, idxByUID); err != nil {
+	if err := resolveTaskParentIdx(ctx, db, teamID, &out, idxByUID); err != nil {
 		slog.Warn("export.team.tasks.parent_resolve", "error", err)
 	}
 	return &out, nil
 }
 
 // resolveTaskParentIdx fills ParentIdx for tasks that have a parent_id.
-func resolveTaskParentIdx(ctx context.Context, db *sql.DB, teamID uuid.UUID, tc string, tcArgs []any, out *TeamTasksExport, idxByUID map[uuid.UUID]int) error {
+func resolveTaskParentIdx(ctx context.Context, db *sql.DB, teamID uuid.UUID, out *TeamTasksExport, idxByUID map[uuid.UUID]int) error {
+	// Its own scope clause: this query reads team_tasks alone, so the
+	// alias-qualified clause built for the joined query above would not resolve.
+	tc, tcArgs, _, err := scopeClause(ctx, 2)
+	if err != nil {
+		return err
+	}
 	rows, err := db.QueryContext(ctx,
 		"SELECT id, parent_id FROM team_tasks WHERE team_id = $1 AND parent_id IS NOT NULL"+tc,
 		append([]any{teamID}, tcArgs...)...,
@@ -372,7 +380,7 @@ func ExportAgentLinks(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]Age
 		return nil, err
 	}
 	var out []AgentLinkExport
-	err = pkgSqlxDB.SelectContext(ctx, &out,
+	err = sqlxFor(db).SelectContext(ctx, &out,
 		"SELECT sa.agent_key AS source_agent_key, ta.agent_key AS target_agent_key, l.direction, COALESCE(l.description,'') AS description"+
 			" FROM agent_links l"+
 			" JOIN agents sa ON sa.id = l.source_agent_id"+

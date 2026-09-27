@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -188,11 +189,11 @@ func ImportMCPServer(ctx context.Context, db *sql.DB, srv MCPServerExport, creat
 		   (id, name, display_name, transport, command, args, url,
 		    tool_prefix, timeout_sec, settings, enabled, require_user_credentials,
 		    created_by, created_at, updated_at, tenant_id)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW(),$14)`,
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
 		id, srv.Name, srv.DisplayName, srv.Transport,
 		srv.Command, jsonOrNull(srv.Args), srv.URL,
 		srv.ToolPrefix, srv.TimeoutSec, jsonOrNull(srv.Settings), srv.Enabled, srv.RequireUserCredentials,
-		createdBy, tid,
+		createdBy, time.Now().UTC(), time.Now().UTC(), tid,
 	)
 	if err != nil {
 		return uuid.Nil, false, err
@@ -206,7 +207,7 @@ func ImportMCPGrant(ctx context.Context, db *sql.DB, serverID, agentID uuid.UUID
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO mcp_agent_grants
 		   (id, server_id, agent_id, enabled, tool_allow, tool_deny, config_overrides, granted_by, created_at, tenant_id)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),$9)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		 ON CONFLICT (server_id, agent_id) DO UPDATE
 		   SET enabled = EXCLUDED.enabled,
 		       tool_allow = EXCLUDED.tool_allow,
@@ -214,7 +215,7 @@ func ImportMCPGrant(ctx context.Context, db *sql.DB, serverID, agentID uuid.UUID
 		       config_overrides = EXCLUDED.config_overrides`,
 		uuid.Must(uuid.NewV7()), serverID, agentID, g.Enabled,
 		jsonOrNull(g.ToolAllow), jsonOrNull(g.ToolDeny), jsonOrNull(g.ConfigOverrides),
-		grantedBy, tid,
+		grantedBy, time.Now().UTC(), tid,
 	)
 	return err
 }

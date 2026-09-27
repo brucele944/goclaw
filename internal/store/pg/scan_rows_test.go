@@ -306,11 +306,11 @@ func TestEntityRow_ToEntity(t *testing.T) {
 		Name:        "Alice",
 		EntityType:  "Person",
 		Description: "friend",
-		Properties:  json.RawMessage(`{"age":"30","role":"dev"}`),
+		Properties:  ExportJSON(`{"age":"30","role":"dev"}`),
 		SourceID:    "src-1",
 		Confidence:  0.9,
-		CreatedAt:   created,
-		UpdatedAt:   created,
+		CreatedAt:   pgTime{created},
+		UpdatedAt:   pgTime{created},
 	}
 	got := r.toEntity()
 	if got.ID != "e1" || got.Name != "Alice" || got.EntityType != "Person" {
@@ -340,8 +340,8 @@ func TestEntityTemporalRow_PreservesTemporal(t *testing.T) {
 	vu := time.Unix(1700000100, 0)
 	r := entityTemporalRow{
 		entityRow:  entityRow{ID: "e1", Name: "n"},
-		ValidFrom:  &vf,
-		ValidUntil: &vu,
+		ValidFrom:  &pgTime{vf},
+		ValidUntil: &pgTime{vu},
 	}
 	got := r.toEntity()
 	if got.ValidFrom == nil || !got.ValidFrom.Equal(vf) {
@@ -358,8 +358,8 @@ func TestRelationRow_ToRelation(t *testing.T) {
 		ID: "r1", AgentID: "a", UserID: "u",
 		SourceEntityID: "s", RelationType: "KNOWS", TargetEntityID: "t",
 		Confidence: 0.8,
-		Properties: json.RawMessage(`{"since":"2020","strength":"strong"}`),
-		CreatedAt:  created,
+		Properties: ExportJSON(`{"since":"2020","strength":"strong"}`),
+		CreatedAt:  pgTime{created},
 	}
 	got := r.toRelation()
 	if got.RelationType != "KNOWS" || got.SourceEntityID != "s" {
@@ -377,7 +377,7 @@ func TestRelationExportRow_PreservesTemporal(t *testing.T) {
 	vf := time.Unix(1700000000, 0)
 	r := relationExportRow{
 		relationRow: relationRow{ID: "r1", RelationType: "T"},
-		ValidFrom:   &vf,
+		ValidFrom:   &pgTime{vf},
 	}
 	got := r.toRelation()
 	if got.ValidFrom == nil || !got.ValidFrom.Equal(vf) {
@@ -689,7 +689,7 @@ func TestCustomSkillExportRow_ToCustomSkillExport(t *testing.T) {
 		ID: id, Name: "n", Slug: "s", Description: &desc,
 		Visibility: "public", Version: 2,
 		FmRaw:    []byte(`{"author":"Alice"}`),
-		Tags:     pq.StringArray{"a", "b"},
+		Tags:     ExportStringArray{"a", "b"},
 		DepsRaw:  []byte(`{"missing":[]}`),
 		FilePath: &fp,
 	}

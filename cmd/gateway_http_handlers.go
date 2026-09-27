@@ -35,6 +35,11 @@ func wireHTTP(stores *store.Stores, defaultWorkspace, dataDir, bundledSkillsDir 
 		}
 		agentsH = httpapi.NewAgentsHandler(stores.Agents, stores.Providers, providerReg, stores.DB, stores.Tracing, defaultWorkspace, msgBus, summoner, isOwner)
 		agentsH.SetImportStores(stores.Memory, stores.KnowledgeGraph)
+		// Tier-2 memory and Knowledge Vault sections of the import path are gated
+		// on these stores; without them the archive's episodic and vault entries
+		// are parsed and then silently dropped.
+		agentsH.SetEpisodicStore(stores.Episodic)
+		agentsH.SetVaultStore(stores.Vault)
 		agentsH.SetDataDir(dataDir)
 		agentsH.SetDisabledToolsStore(stores.BuiltinToolTenantCfgs)
 		if stores.SecureCLI != nil && stores.SecureCLIGrants != nil {

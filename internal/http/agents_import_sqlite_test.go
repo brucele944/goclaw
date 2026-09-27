@@ -5,7 +5,6 @@ package http
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -82,15 +81,15 @@ func TestImportSectionsPersistRowsOnSQLite(t *testing.T) {
 	arc := &importArchive{
 		cronJobs: []pg.CronJobExport{{
 			Name: "imported-job", ScheduleKind: "every", IntervalMS: &intervalMS,
-			Timezone: &timezone, Payload: json.RawMessage(`{"prompt":"hi"}`),
+			Timezone: &timezone, Payload: pg.ExportJSON(`{"prompt":"hi"}`),
 		}},
 		userOverrides: []pg.UserOverrideExport{{
 			UserID: "user-1", Provider: &provider, Model: &model,
-			Settings: json.RawMessage(`{"temperature":0.2}`),
+			Settings: pg.ExportJSON(`{"temperature":0.2}`),
 		}},
 		evolutionMetrics: []pg.EvolutionMetricExport{{
 			SessionKey: "session-1", MetricType: "tokens", MetricKey: "total",
-			Value: json.RawMessage(`{"n":1}`), CreatedAt: createdAt,
+			Value: pg.ExportJSON(`{"n":1}`), CreatedAt: createdAt,
 		}},
 		evolutionSuggestions: []pg.EvolutionSuggestionExport{{
 			SuggestionType: "prompt", Suggestion: "tighten the system prompt",
@@ -207,7 +206,7 @@ func TestImportCronRespectsSQLiteBindLimit(t *testing.T) {
 		arc.cronJobs = append(arc.cronJobs, pg.CronJobExport{
 			Name: fmt.Sprintf("job-%d", i), ScheduleKind: "every",
 			IntervalMS: &intervalMS, Timezone: &timezone,
-			Payload: json.RawMessage(`{"prompt":"hi"}`),
+			Payload: pg.ExportJSON(`{"prompt":"hi"}`),
 		})
 	}
 

@@ -85,8 +85,10 @@ type customSkillExportRow struct {
 	Visibility  string         `db:"visibility"`
 	Version     int            `db:"version"`
 	IsSystem    bool           `db:"is_system"`
-	FmRaw       []byte         `db:"frontmatter"`
-	Tags        pq.StringArray `db:"tags"`
+	FmRaw []byte `db:"frontmatter"`
+	// ExportStringArray: the export query shares this row with the SQLite/lite
+	// build, where the column holds a JSON array rather than a PostgreSQL literal.
+	Tags        ExportStringArray `db:"tags"`
 	DepsRaw     []byte         `db:"deps"`
 	FilePath    *string        `db:"file_path"`
 }

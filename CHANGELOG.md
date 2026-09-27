@@ -232,6 +232,71 @@ All notable changes to GoClaw are documented here. For full documentation, see [
 
 ### Fixed
 
+- **SQLite (desktop/lite) agent export and import: shared export SQL assumed
+  PostgreSQL.** The export helpers take a `*sql.DB` and run on both backends, but
+  only ever had PostgreSQL as a caller. On the desktop/lite build the failures were
+  a dropped connection (skills export), a 500 (agent export once the agent had KG
+  rows), or a silently missing section — the archive builder logs and continues for
+  most sections, so an export could look successful while carrying no memory, vault,
+  schedule or team data. Ten defect sites, all of the same shape:
+  1. **Export helpers dereferenced a package-level `*sqlx.DB` that SQLite never
+     initializes** (`initSqlx` runs from the PostgreSQL factory only) — a nil
+     receiver panic that closed the connection mid-response (`/v1/skills/export`),
+     and a 500 on `/v1/agents/{id}/export` as soon as `kg_entities` had rows. The
+     helpers now wrap the handle they were given (`sqlxFor`), reusing the package
+     handle when it already wraps that pool, so the PostgreSQL path is unchanged.
+  2. **Row structs declared PostgreSQL-native scan types.** `time.Time`,
+     `*time.Time`, `pq.StringArray` (a `{a,b}` literal) and `json.RawMessage` (the
+     driver returns TEXT) cannot scan what the SQLite driver hands back, so the row
+     was skipped with a warning — or aborted the section. Timestamps, string arrays
+     and JSON columns now use tolerant types (`pgTime`, `ExportStringArray`,
+     `ExportJSON`) that accept both representations.
+  3. **`to_char(... AT TIME ZONE 'UTC', ...)` projections** (cron jobs, evolution
+     metrics and suggestions, episodic summaries, vault documents and links) — SQLite
+     has no `to_char`, so those statements failed and the section was dropped. The
+     raw column is selected and normalised in Go (`normalizeArchiveTime`), which
+     produces the same RFC3339 UTC form on both backends.
+  4. **The skills selection filter used `id = ANY($1)` with `pq.Array`** —
+     PostgreSQL-only. It is now a positional `IN` list, accepted by both.
+  5. **Unqualified `tenant_id` scope clauses in queries that join tables carrying
+     it.** `ExportTeamTasks` (ambiguous against its two `agents` joins — broken on
+     PostgreSQL too), its parent-resolution query, `ExportVaultLinks` (also broken on
+     PostgreSQL: `vault_links` has no `tenant_id` of its own), and the vault subquery
+     of `ExportPreviewCounts`, whose error was discarded so vault counts always read
+     zero.
+  6. **Nullable `source_id` read into a non-pointer string** (episodic summaries, KG
+     entities) — a NULL dropped the row on both backends.
+  7. **Shared import statements used PostgreSQL's `NOW()`** (skill grants, MCP
+     servers, MCP grants) — the statement aborted on SQLite while the section
+     reported success. Timestamps now come from Go.
+  8. **The episodic and vault import sections were dead code on every backend.** Both
+     were gated on `h.episodicStore`/`h.vaultStore`, which nothing ever set, so an
+     archive's `episodic/` and `vault/` entries were parsed and then dropped. The
+     stores are wired in `wireHTTP`.
+  9. **The SQLite activity log scanned its `details` JSON column into
+     `json.RawMessage`**, making `GET /v1/activity` fail with a scan error; it now
+     uses the `sqliteJSONValue` scanner already used by the other SQLite row structs.
+  10. **`secure_cli.List` referenced `a.agent_key` from a derived table that no
+     longer exposes `a`** (`no such column: a.agent_key`), so listing CLI binaries —
+     reached when creating an agent with gateway-operator access — returned an error
+     on SQLite.
+  Regression tests: `internal/store/pg/export_sqlite_test.go` calls every shared
+  export function against an in-memory SQLite schema seeded with one row per table it
+  reads (values asserted, not just counts: JSON columns, JSON arrays, NULL
+  `source_id`, TEXT timestamps). Verified end-to-end against the lite binary: an
+  agent export with `?sections=all` returns cron, episodic, evolution,
+  knowledge-graph, memory, team, user-override/profile and vault sections with
+  normalised timestamps, and importing that archive back reports 1 episodic summary,
+  2 vault documents and 1 vault link — 0/0/0 before, because those sections were
+  unreachable.
+
+- **Agent import wrote unparseable timestamps.** An archive without `created_at` on
+  an evolution metric or suggestion bound an empty string into a `NOT NULL` column;
+  the row landed but every later read of it failed (`sqliteTime: cannot parse ""`),
+  turning a list endpoint into a 500. Empty archive timestamps now coalesce to the
+  current time, and the SQLite timestamp scanner reads a blank cell as "unset"
+  instead of aborting the query.
+
 - **SQLite (desktop/lite) startup and agent import: shared SQL relied on
   PostgreSQL-only defaults.** Three defect sites, all of the same shape — SQL
   written once for both dialects but only valid on PostgreSQL, where the failure

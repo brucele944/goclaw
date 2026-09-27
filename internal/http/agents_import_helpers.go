@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
@@ -219,6 +220,17 @@ func coalesceJSON(raw json.RawMessage) json.RawMessage {
 		return json.RawMessage(`{}`)
 	}
 	return raw
+}
+
+// coalesceTimestamp returns an archive timestamp, or the current time when the
+// archive carried none. created_at is NOT NULL in both dialects, and binding an
+// empty string satisfies that constraint while producing a row the read path
+// cannot parse as a timestamp.
+func coalesceTimestamp(s string) any {
+	if strings.TrimSpace(s) == "" {
+		return time.Now().UTC()
+	}
+	return s
 }
 
 // coalesceStr returns *s, or fallback when the pointer is nil — for NOT NULL text

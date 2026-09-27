@@ -3,11 +3,10 @@ package pg
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 )
 
@@ -41,9 +40,9 @@ type SkillGrantExport struct {
 type MCPGrantExport struct {
 	ServerID        string          `json:"server_id" db:"server_id"`
 	Enabled         bool            `json:"enabled" db:"enabled"`
-	ToolAllow       json.RawMessage `json:"tool_allow,omitempty" db:"tool_allow"`
-	ToolDeny        json.RawMessage `json:"tool_deny,omitempty" db:"tool_deny"`
-	ConfigOverrides json.RawMessage `json:"config_overrides,omitempty" db:"config_overrides"`
+	ToolAllow       ExportJSON `json:"tool_allow,omitempty" db:"tool_allow"`
+	ToolDeny        ExportJSON `json:"tool_deny,omitempty" db:"tool_deny"`
+	ConfigOverrides ExportJSON `json:"config_overrides,omitempty" db:"config_overrides"`
 	GrantedBy       string          `json:"granted_by" db:"granted_by"`
 }
 
@@ -54,7 +53,7 @@ type CronJobExport struct {
 	IntervalMS     *int64          `json:"interval_ms,omitempty" db:"interval_ms"`
 	RunAt          *string         `json:"run_at,omitempty" db:"run_at"`
 	Timezone       *string         `json:"timezone,omitempty" db:"timezone"`
-	Payload        json.RawMessage `json:"payload" db:"payload"`
+	Payload        ExportJSON `json:"payload" db:"payload"`
 	DeleteAfterRun bool            `json:"delete_after_run" db:"delete_after_run"`
 }
 
@@ -63,7 +62,7 @@ type ConfigPermissionExport struct {
 	ConfigType string          `json:"config_type" db:"config_type"`
 	UserID     string          `json:"user_id" db:"user_id"`
 	Permission string          `json:"permission" db:"permission"`
-	Metadata   json.RawMessage `json:"metadata,omitempty" db:"metadata"`
+	Metadata   ExportJSON `json:"metadata,omitempty" db:"metadata"`
 	GrantedBy  *string         `json:"granted_by,omitempty" db:"granted_by"`
 }
 
@@ -76,7 +75,7 @@ type UserOverrideExport struct {
 	UserID   string          `json:"user_id" db:"user_id"`
 	Provider *string         `json:"provider,omitempty" db:"provider"`
 	Model    *string         `json:"model,omitempty" db:"model"`
-	Settings json.RawMessage `json:"settings,omitempty" db:"settings"`
+	Settings ExportJSON `json:"settings,omitempty" db:"settings"`
 }
 
 // EpisodicSummaryExport is the portable representation of a Tier 2 episodic memory entry.
@@ -105,7 +104,7 @@ type VaultDocumentExport struct {
 	DocType     string          `json:"doc_type" db:"doc_type"`
 	ContentHash string          `json:"content_hash" db:"content_hash"`
 	Summary     string          `json:"summary" db:"summary"`
-	Metadata    json.RawMessage `json:"metadata,omitempty" db:"metadata"`
+	Metadata    ExportJSON `json:"metadata,omitempty" db:"metadata"`
 	CreatedAt   string          `json:"created_at" db:"created_at"`
 	UpdatedAt   string          `json:"updated_at" db:"updated_at"`
 }
@@ -126,7 +125,7 @@ type EvolutionMetricExport struct {
 	SessionKey string          `json:"session_key" db:"session_key"`
 	MetricType string          `json:"metric_type" db:"metric_type"`
 	MetricKey  string          `json:"metric_key" db:"metric_key"`
-	Value      json.RawMessage `json:"value" db:"value"`
+	Value      ExportJSON `json:"value" db:"value"`
 	CreatedAt  string          `json:"created_at" db:"created_at"` // RFC3339 UTC
 }
 
@@ -136,7 +135,7 @@ type EvolutionSuggestionExport struct {
 	SuggestionType string          `json:"suggestion_type" db:"suggestion_type"`
 	Suggestion     string          `json:"suggestion" db:"suggestion"`
 	Rationale      string          `json:"rationale" db:"rationale"`
-	Parameters     json.RawMessage `json:"parameters,omitempty" db:"parameters"`
+	Parameters     ExportJSON `json:"parameters,omitempty" db:"parameters"`
 	Status         string          `json:"status" db:"status"`
 	ReviewedBy     string          `json:"reviewed_by,omitempty" db:"reviewed_by"`
 	ReviewedAt     *string         `json:"reviewed_at,omitempty" db:"reviewed_at"`
@@ -290,9 +289,9 @@ func ExportKGEntities(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]sto
 	for {
 		args := append(append([]any{}, baseArgs...), cursor, exportBatchSize)
 		var eRows []entityTemporalRow
-		if err := pkgSqlxDB.SelectContext(ctx, &eRows,
+		if err := sqlxFor(db).SelectContext(ctx, &eRows,
 			"SELECT id, agent_id, user_id, external_id, name, entity_type, description,"+
-				" properties, source_id, confidence, created_at, updated_at, valid_from, valid_until"+
+				" properties, COALESCE(source_id, '') AS source_id, confidence, created_at, updated_at, valid_from, valid_until"+
 				" FROM kg_entities WHERE agent_id = $1"+tc+
 				" AND id > $"+itoa(cursorParam)+
 				" ORDER BY id LIMIT $"+itoa(limitParam),
@@ -333,7 +332,7 @@ func ExportKGRelations(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]st
 	for {
 		args := append(append([]any{}, baseArgs...), cursor, exportBatchSize)
 		var rRows []relationExportRow
-		if err := pkgSqlxDB.SelectContext(ctx, &rRows,
+		if err := sqlxFor(db).SelectContext(ctx, &rRows,
 			"SELECT id, agent_id, user_id, source_entity_id, relation_type, target_entity_id,"+
 				" confidence, properties, created_at, valid_from, valid_until"+
 				" FROM kg_relations WHERE agent_id = $1"+tc+
@@ -396,15 +395,19 @@ func ExportPreviewCounts(ctx context.Context, db *sql.DB, agentID uuid.UUID) (*E
 	// Team counts (separate query — agent may not be a lead)
 	p.TeamTasks, p.TeamMembers, p.AgentLinks, _ = ExportTeamPreviewCounts(ctx, db, agentID)
 
-	// Vault counts (separate query — vault_documents/links tables)
-	_ = db.QueryRowContext(ctx,
-		`SELECT
-			(SELECT COUNT(*) FROM vault_documents WHERE agent_id = $1`+tc+`) AS vault_documents,
-			(SELECT COUNT(*) FROM vault_links vl
-			  JOIN vault_documents fd ON vl.from_doc_id = fd.id
-			  WHERE fd.agent_id = $1`+tc+`) AS vault_links`,
-		args...,
-	).Scan(&p.VaultDocuments, &p.VaultLinks)
+	// Vault counts (separate query — vault_documents/links tables). The links
+	// subquery joins vault_documents, so it needs an alias-qualified scope clause.
+	tcVault, tcVaultArgs, _, err := scopeClauseAlias(ctx, 2, "fd")
+	if err == nil {
+		_ = db.QueryRowContext(ctx,
+			`SELECT
+				(SELECT COUNT(*) FROM vault_documents WHERE agent_id = $1`+tc+`) AS vault_documents,
+				(SELECT COUNT(*) FROM vault_links vl
+				  JOIN vault_documents fd ON vl.from_doc_id = fd.id
+				  WHERE fd.agent_id = $1`+tcVault+`) AS vault_links`,
+			append([]any{agentID}, tcVaultArgs...)...,
+		).Scan(&p.VaultDocuments, &p.VaultLinks)
+	}
 
 	return &p, nil
 }
@@ -416,7 +419,7 @@ func ExportSkillGrants(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]Sk
 		return nil, err
 	}
 	var result []SkillGrantExport
-	err = pkgSqlxDB.SelectContext(ctx, &result,
+	err = sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT skill_id, pinned_version, granted_by FROM skill_agent_grants WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
 	)
@@ -430,7 +433,7 @@ func ExportMCPGrants(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]MCPG
 		return nil, err
 	}
 	var result []MCPGrantExport
-	err = pkgSqlxDB.SelectContext(ctx, &result,
+	err = sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT server_id, enabled, tool_allow, tool_deny, config_overrides, granted_by"+
 			" FROM mcp_agent_grants WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
@@ -446,7 +449,7 @@ func ExportCronJobs(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]CronJ
 	}
 	rows, err := db.QueryContext(ctx,
 		"SELECT name, schedule_kind, cron_expression, interval_ms,"+
-			" to_char(run_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), timezone, payload, delete_after_run"+
+			" run_at, timezone, payload, delete_after_run"+
 			" FROM cron_jobs WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
 	)
@@ -463,6 +466,7 @@ func ExportCronJobs(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]CronJ
 			slog.Warn("export.scan", "error", err)
 			continue
 		}
+		normalizeTimePtr(j.RunAt)
 		result = append(result, j)
 	}
 	return result, rows.Err()
@@ -475,7 +479,7 @@ func ExportConfigPermissions(ctx context.Context, db *sql.DB, agentID uuid.UUID)
 		return nil, err
 	}
 	var result []ConfigPermissionExport
-	err = pkgSqlxDB.SelectContext(ctx, &result,
+	err = sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT scope, config_type, user_id, permission, metadata, granted_by"+
 			" FROM agent_config_permissions WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
@@ -490,7 +494,7 @@ func ExportUserProfiles(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]U
 		return nil, err
 	}
 	var result []UserProfileExport
-	err = pkgSqlxDB.SelectContext(ctx, &result,
+	err = sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT user_id, workspace FROM user_agent_profiles WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
 	)
@@ -504,7 +508,7 @@ func ExportUserOverrides(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]
 		return nil, err
 	}
 	var result []UserOverrideExport
-	err = pkgSqlxDB.SelectContext(ctx, &result,
+	err = sqlxFor(db).SelectContext(ctx, &result,
 		"SELECT user_id, provider, model, settings"+
 			" FROM user_agent_overrides WHERE agent_id = $1"+tc,
 		append([]any{agentID}, tcArgs...)...,
@@ -531,7 +535,7 @@ func ExportEvolutionMetrics(ctx context.Context, db *sql.DB, agentID uuid.UUID) 
 		args := append(append([]any{}, baseArgs...), cursor, exportBatchSize)
 		rows, err := db.QueryContext(ctx,
 			"SELECT id, session_key, metric_type, metric_key, value,"+
-				" to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at"+
+				" created_at"+
 				" FROM agent_evolution_metrics WHERE agent_id = $1"+tc+
 				" AND id > $"+itoa(cursorParam)+
 				" ORDER BY id LIMIT $"+itoa(limitParam),
@@ -549,6 +553,7 @@ func ExportEvolutionMetrics(ctx context.Context, db *sql.DB, agentID uuid.UUID) 
 				slog.Warn("export.evolution_metrics.scan", "error", err)
 				continue
 			}
+			m.CreatedAt = normalizeArchiveTime(m.CreatedAt)
 			result = append(result, m)
 			cursor = id
 			count++
@@ -575,8 +580,8 @@ func ExportEvolutionSuggestions(ctx context.Context, db *sql.DB, agentID uuid.UU
 	rows, err := db.QueryContext(ctx,
 		"SELECT suggestion_type, suggestion, rationale, parameters, status,"+
 			" COALESCE(reviewed_by, ''),"+
-			" to_char(reviewed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),"+
-			" to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"+
+			" reviewed_at,"+
+			" created_at"+
 			" FROM agent_evolution_suggestions WHERE agent_id = $1"+tc+
 			" ORDER BY created_at",
 		append([]any{agentID}, tcArgs...)...,
@@ -596,6 +601,8 @@ func ExportEvolutionSuggestions(ctx context.Context, db *sql.DB, agentID uuid.UU
 			slog.Warn("export.evolution_suggestions.scan", "error", err)
 			continue
 		}
+		normalizeTimePtr(s.ReviewedAt)
+		s.CreatedAt = normalizeArchiveTime(s.CreatedAt)
 		result = append(result, s)
 	}
 	return result, rows.Err()
@@ -620,9 +627,8 @@ func ExportEpisodicSummaries(ctx context.Context, db *sql.DB, agentID uuid.UUID)
 		args := append(append([]any{}, baseArgs...), cursor, exportBatchSize)
 		rows, err := db.QueryContext(ctx,
 			"SELECT user_id, session_key, summary, key_topics, l0_abstract,"+
-				" source_type, source_id, turn_count, token_count,"+
-				" to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at,"+
-				" to_char(expires_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS expires_at,"+
+				" source_type, COALESCE(source_id, ''), turn_count, token_count,"+
+				" created_at, expires_at,"+
 				" id"+
 				" FROM episodic_summaries WHERE agent_id = $1"+tc+
 				" AND id > $"+itoa(cursorParam)+
@@ -636,7 +642,7 @@ func ExportEpisodicSummaries(ctx context.Context, db *sql.DB, agentID uuid.UUID)
 		count := 0
 		for rows.Next() {
 			var ep EpisodicSummaryExport
-			var topics pq.StringArray
+			var topics ExportStringArray
 			var id uuid.UUID
 			if err := rows.Scan(
 				&ep.UserID, &ep.SessionKey, &ep.Summary, &topics, &ep.L0Abstract,
@@ -648,6 +654,8 @@ func ExportEpisodicSummaries(ctx context.Context, db *sql.DB, agentID uuid.UUID)
 				continue
 			}
 			ep.KeyTopics = []string(topics)
+			ep.CreatedAt = normalizeArchiveTime(ep.CreatedAt)
+			normalizeTimePtr(ep.ExpiresAt)
 			result = append(result, ep)
 			cursor = id
 			count++
@@ -682,8 +690,7 @@ func ExportVaultDocuments(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([
 		args := append(append([]any{}, baseArgs...), cursor, exportBatchSize)
 		rows, err := db.QueryContext(ctx,
 			"SELECT scope, custom_scope, path, title, doc_type, content_hash, summary, metadata,"+
-				" to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at,"+
-				" to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS updated_at,"+
+				" created_at, updated_at,"+
 				" id"+
 				" FROM vault_documents WHERE agent_id = $1"+tc+
 				" AND id > $"+itoa(cursorParam)+
@@ -706,6 +713,8 @@ func ExportVaultDocuments(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([
 				slog.Warn("export.vault_documents.scan", "error", err)
 				continue
 			}
+			d.CreatedAt = normalizeArchiveTime(d.CreatedAt)
+			d.UpdatedAt = normalizeArchiveTime(d.UpdatedAt)
 			result = append(result, d)
 			cursor = id
 			count++
@@ -724,13 +733,15 @@ func ExportVaultDocuments(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([
 // ExportVaultLinks returns all vault links for the given agent, resolving doc UUIDs to paths.
 // Links are only exported where the source doc belongs to the agent.
 func ExportVaultLinks(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]VaultLinkExport, error) {
-	tc, tcArgs, _, err := scopeClause(ctx, 2)
+	// Scoped on the source document: vault_links has no tenant_id of its own, and
+	// the join brings in two vault_documents aliases that both carry one.
+	tc, tcArgs, _, err := scopeClauseAlias(ctx, 2, "fd")
 	if err != nil {
 		return nil, err
 	}
 	rows, err := db.QueryContext(ctx,
 		"SELECT fd.path, td.path, vl.link_type, vl.context,"+
-			" to_char(vl.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"+
+			" vl.created_at"+
 			" FROM vault_links vl"+
 			" JOIN vault_documents fd ON vl.from_doc_id = fd.id"+
 			" JOIN vault_documents td ON vl.to_doc_id = td.id"+
@@ -750,6 +761,7 @@ func ExportVaultLinks(ctx context.Context, db *sql.DB, agentID uuid.UUID) ([]Vau
 			slog.Warn("export.vault_links.scan", "error", err)
 			continue
 		}
+		l.CreatedAt = normalizeArchiveTime(l.CreatedAt)
 		result = append(result, l)
 	}
 	return result, rows.Err()

@@ -251,8 +251,8 @@ func (s *SQLiteSecureCLIStore) List(ctx context.Context) ([]store.SecureCLIBinar
 	agentGrantsSubquery := `(SELECT json_group_array(json_object(
 			'grant_id', g.id,
 			'agent_id', g.agent_id,
-			'agent_key', a.agent_key,
-			'name',      a.display_name,
+			'agent_key', g.agent_key,
+			'name',      g.display_name,
 			'enabled',   g.enabled,
 			'env_set',   (g.encrypted_env IS NOT NULL)
 		))

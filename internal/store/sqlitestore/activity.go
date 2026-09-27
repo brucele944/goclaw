@@ -5,6 +5,7 @@ package sqlitestore
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -62,9 +63,13 @@ func (s *SQLiteActivityStore) List(ctx context.Context, opts store.ActivityListO
 	for rows.Next() {
 		var a store.ActivityLog
 		var createdAt sqliteTime
-		if err := rows.Scan(&a.ID, &a.ActorType, &a.ActorID, &a.Action, &a.EntityType, &a.EntityID, &a.Details, &a.IPAddress, &createdAt); err != nil {
+		// details is a JSON column: SQLite returns the TEXT it stored, which
+		// database/sql cannot scan into json.RawMessage.
+		var details sqliteJSONValue
+		if err := rows.Scan(&a.ID, &a.ActorType, &a.ActorID, &a.Action, &a.EntityType, &a.EntityID, &details, &a.IPAddress, &createdAt); err != nil {
 			return nil, err
 		}
+		a.Details = json.RawMessage(details)
 		a.CreatedAt = createdAt.Time
 		result = append(result, a)
 	}

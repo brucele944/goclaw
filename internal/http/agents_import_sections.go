@@ -246,7 +246,7 @@ func (h *AgentsHandler) importUserOverrides(ctx context.Context, ag *store.Agent
 				"($%d,$%d,$%d,$%d,$%d,$%d,$%d)",
 				base+1, base+2, base+3, base+4, base+5, base+6, base+7,
 			))
-			args = append(args, uuid.Must(uuid.NewV7()), ag.ID, o.UserID, o.Provider, o.Model, coalesceJSON(o.Settings), tid)
+			args = append(args, uuid.Must(uuid.NewV7()), ag.ID, o.UserID, o.Provider, o.Model, coalesceJSON(json.RawMessage(o.Settings)), tid)
 		}
 
 		// The upsert's updated_at is a bound value: SQLite has no NOW().
@@ -332,7 +332,7 @@ func (h *AgentsHandler) importEvolution(ctx context.Context, ag *store.AgentData
 				   (id, agent_id, session_key, metric_type, metric_key, value, created_at, tenant_id)
 				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 				uuid.Must(uuid.NewV7()), ag.ID, m.SessionKey, m.MetricType, m.MetricKey,
-				coalesceJSON(m.Value), m.CreatedAt, tid,
+				coalesceJSON(json.RawMessage(m.Value)), coalesceTimestamp(m.CreatedAt), tid,
 			)
 			if err != nil {
 				slog.Warn("agents.import.evolution_metric", "agent_id", ag.ID, "error", err)
@@ -366,9 +366,9 @@ func (h *AgentsHandler) importEvolution(ctx context.Context, ag *store.AgentData
 				    status, reviewed_by, reviewed_at, created_at, tenant_id)
 				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 				uuid.Must(uuid.NewV7()), ag.ID, s.SuggestionType, s.Suggestion, s.Rationale,
-				nullJSON(s.Parameters), s.Status,
+				nullJSON(json.RawMessage(s.Parameters)), s.Status,
 				nullStrVal(s.ReviewedBy), nullStr(s.ReviewedAt),
-				s.CreatedAt, tid,
+				coalesceTimestamp(s.CreatedAt), tid,
 			)
 			if err != nil {
 				slog.Warn("agents.import.evolution_suggestion", "agent_id", ag.ID, "type", s.SuggestionType, "error", err)

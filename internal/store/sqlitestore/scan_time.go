@@ -52,6 +52,13 @@ func (st *sqliteTime) parseString(s string) error {
 	if idx := strings.Index(s, " m="); idx > 0 {
 		s = s[:idx]
 	}
+	// SQLite has no timestamp type: a blank TEXT cell (written by an older
+	// importer or a hand-edited database) reads as "unset" instead of aborting
+	// the whole list query with a parse error.
+	if strings.TrimSpace(s) == "" {
+		st.Time = time.Time{}
+		return nil
+	}
 	for _, layout := range timeFormats {
 		if t, err := time.Parse(layout, s); err == nil {
 			st.Time = t

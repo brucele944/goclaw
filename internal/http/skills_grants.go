@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -11,6 +12,18 @@ import (
 	"github.com/nextlevelbuilder/goclaw/internal/permissions"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 )
+
+// writeSkillNotFound writes 404 if err is store.ErrSkillNotFound — returned by
+// verifySkillInGrantScope once a skill id doesn't exist or is outside the
+// caller's tenant — and reports whether it did, so callers keep their existing
+// 500 handling for every other error unchanged.
+func writeSkillNotFound(w http.ResponseWriter, locale string, skillID uuid.UUID, err error) bool {
+	if !errors.Is(err, store.ErrSkillNotFound) {
+		return false
+	}
+	writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T(locale, i18n.MsgNotFound, "skill", skillID.String())})
+	return true
+}
 
 func (h *SkillsHandler) handleListAgentSkills(w http.ResponseWriter, r *http.Request) {
 	locale := store.LocaleFromContext(r.Context())
@@ -42,6 +55,9 @@ func (h *SkillsHandler) handleListAgentGrants(w http.ResponseWriter, r *http.Req
 
 	grants, err := h.skills.ListAgentGrantsForSkill(r.Context(), skillID)
 	if err != nil {
+		if writeSkillNotFound(w, locale, skillID, err) {
+			return
+		}
 		slog.Error("failed to list skill agent grants", "skill_id", skillID, "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": i18n.T(locale, i18n.MsgFailedToList, "skill grants")})
 		return
@@ -61,6 +77,9 @@ func (h *SkillsHandler) handleListUserGrants(w http.ResponseWriter, r *http.Requ
 
 	grants, err := h.skills.ListUserGrantsForSkill(r.Context(), skillID)
 	if err != nil {
+		if writeSkillNotFound(w, locale, skillID, err) {
+			return
+		}
 		slog.Error("failed to list skill user grants", "skill_id", skillID, "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": i18n.T(locale, i18n.MsgFailedToList, "skill grants")})
 		return
@@ -118,6 +137,9 @@ func (h *SkillsHandler) handleGrantAgent(w http.ResponseWriter, r *http.Request)
 		grantErr = h.skills.GrantToAgent(r.Context(), skillID, agentID, req.Version, userID, *req.CanManage)
 	}
 	if grantErr != nil {
+		if writeSkillNotFound(w, locale, skillID, grantErr) {
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": grantErr.Error()})
 		return
 	}
@@ -155,6 +177,9 @@ func (h *SkillsHandler) handleRevokeAgent(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.skills.RevokeFromAgent(r.Context(), skillID, agentID); err != nil {
+		if writeSkillNotFound(w, locale, skillID, err) {
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
@@ -203,6 +228,9 @@ func (h *SkillsHandler) handleGrantUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := h.skills.GrantToUser(r.Context(), skillID, req.UserID, userID); err != nil {
+		if writeSkillNotFound(w, locale, skillID, err) {
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
@@ -238,6 +266,9 @@ func (h *SkillsHandler) handleRevokeUser(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if err := h.skills.RevokeFromUser(r.Context(), skillID, targetUserID); err != nil {
+		if writeSkillNotFound(w, locale, skillID, err) {
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

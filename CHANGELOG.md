@@ -387,6 +387,21 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   Rows written before this fix keep their original encoding; only new
   writes are affected.
 
+- **`/v1/skills/{id}/grants/*` (list, grant, revoke — agent and user) returned
+  500 instead of 404 for a well-formed but non-existent or cross-tenant skill
+  id.** `verifySkillInGrantScope` (both stores) returned a bare
+  `fmt.Errorf("skill not found")` for a missing row and for a tenant mismatch,
+  which `errors.Is` could never match, so every handler on this path fell
+  through to its generic 500 branch. Added `store.ErrSkillNotFound`; both
+  stores now return it from `sql.ErrNoRows` and the tenant-mismatch branch
+  (any other error is still wrapped through unchanged), and all six handlers
+  reachable through it map it to 404. `TestSQLiteSkillGrantsReturnErrSkillNotFound`
+  (all six store methods) and `TestSQLiteSkillGrantsCrossTenantReturnsErrSkillNotFound`
+  fail without the fix and pass with it; verified end-to-end against the lite
+  binary. The PG store received the identical fix (same query shape, `$1` vs
+  `?`) but was verified by code symmetry and a clean build only — the
+  integration Postgres container was not running this session.
+
 - **Claude CLI provider failed every follow-up turn with `Session ID ... is already
   in use`** — `sessionFileExists` encoded the work directory into the Claude CLI's
   `~/.claude/projects/<encoded-path>` name with a narrow replacement set

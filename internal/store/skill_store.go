@@ -17,6 +17,11 @@ var ErrSystemSkillSlugConflict = errors.New("system skill slug conflicts with cu
 // migration that still needs its metadata restored from managed files.
 var ErrMisclassifiedCustomSkill = errors.New("custom skill requires bundled collision recovery")
 
+// ErrSkillNotFound is returned when a skill id does not exist, or exists but is
+// outside the caller's tenant scope (the two cases are indistinguishable to a
+// non-admin caller by design).
+var ErrSkillNotFound = errors.New("skill not found")
+
 // SkillInfo describes a discovered skill.
 type SkillInfo struct {
 	ID            string          `json:"id,omitempty" db:"id"` // DB UUID

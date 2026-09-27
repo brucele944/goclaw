@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -125,10 +126,13 @@ func (s *PGSkillStore) verifySkillInGrantScope(ctx context.Context, skillID, ten
 	if err := s.db.QueryRowContext(ctx,
 		"SELECT tenant_id, is_system FROM skills WHERE id = $1", skillID,
 	).Scan(&skillTenantID, &isSystem); err != nil {
-		return fmt.Errorf("skill not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return store.ErrSkillNotFound
+		}
+		return err
 	}
 	if !isSystem && skillTenantID != tenantID {
-		return fmt.Errorf("skill not found")
+		return store.ErrSkillNotFound
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -217,6 +218,12 @@ func (h *VaultHandler) handleGetDocument(w http.ResponseWriter, r *http.Request)
 
 	doc, err := h.store.GetDocumentByID(r.Context(), tenantID.String(), docID)
 	if err != nil {
+		// A missing document is a 404, not a 500: callers reach this route with
+		// ids that may have been deleted since the list was rendered.
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "document not found"})
+			return
+		}
 		slog.Warn("vault.get failed", "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

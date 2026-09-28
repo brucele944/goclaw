@@ -28,6 +28,7 @@ import (
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
 	"github.com/nextlevelbuilder/goclaw/internal/providers/catalog"
 	"github.com/nextlevelbuilder/goclaw/internal/providers/discovery"
+	"github.com/nextlevelbuilder/goclaw/internal/providers/wire"
 	"github.com/nextlevelbuilder/goclaw/internal/security"
 	"github.com/nextlevelbuilder/goclaw/internal/store"
 	"github.com/nextlevelbuilder/goclaw/internal/tools"
@@ -398,8 +399,15 @@ func (h *ProvidersHandler) registerInMemory(p *store.LLMProviderData) providerRu
 			WithThinkingEnabled(store.ParseThinkingEnabled(p.Settings))
 		h.providerReg.RegisterForTenant(p.TenantID, prov)
 	default:
-		base, model := openAIProviderDefaults(p.ProviderType, apiBase)
+		base, model, brand, hasBrand := openAIBrandDefaults(p.ProviderType, apiBase)
 		prov := providers.NewOpenAIProvider(p.Name, p.APIKey, base, model)
+		if hasBrand {
+			// Same data the boot path gets from wire.Build (cmd/gateway_providers.go):
+			// without it a provider created here behaves differently until the next
+			// gateway restart — that is how an OpenCode row ended up calling
+			// api.openai.com with no x-opencode-session (2026-09-29).
+			prov.WithExtraHeaders(brand.ExtraHeaders).WithSessionHeader(brand.SessionHeader)
+		}
 		prov.WithThinkingEnabled(store.ParseThinkingEnabled(p.Settings))
 		h.providerReg.RegisterForTenant(p.TenantID, prov)
 	}
@@ -439,6 +447,30 @@ func openAIProviderDefaults(providerType, apiBase string) (string, string) {
 	default:
 		return apiBase, ""
 	}
+}
+
+// openAIBrandDefaults resolves the OpenAI-compatible construction inputs for a
+// provider type this handler has no dedicated branch for.
+//
+// The legacy per-type table (openAIProviderDefaults) knows only a couple of
+// vendors and falls back to the row's api_base with an empty model; the wire
+// catalog is the single source of truth for every shipped brand, including its
+// base URL, default model, identity headers and per-conversation session header.
+// Merging the two keeps a provider created here identical to the same row built
+// by the boot path (wire.Build).
+func openAIBrandDefaults(providerType, apiBase string) (base, model string, brand wire.Brand, ok bool) {
+	base, model = openAIProviderDefaults(providerType, apiBase)
+	brand, ok = wire.BrandFor(providerType)
+	if !ok {
+		return base, model, brand, false
+	}
+	if base == "" {
+		base = brand.BaseURL
+	}
+	if model == "" {
+		model = brand.Model
+	}
+	return base, model, brand, true
 }
 
 // normalizeOllamaAPIBase normalizes the api_base stored for Ollama providers.

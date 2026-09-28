@@ -67,7 +67,6 @@ func (r *artifactSecureRoot) mkdirAll(relativePath string, _ fs.FileMode) error 
 	if err != nil {
 		return err
 	}
-	defer windows.CloseHandle(current)
 	for _, component := range components {
 		next, err := artifactNtOpen(
 			current,
@@ -77,6 +76,7 @@ func (r *artifactSecureRoot) mkdirAll(relativePath string, _ fs.FileMode) error 
 			windows.FILE_DIRECTORY_FILE|windows.FILE_OPEN_REPARSE_POINT,
 			windows.FILE_ATTRIBUTE_NORMAL,
 		)
+		windows.CloseHandle(current)
 		if err != nil {
 			return translateArtifactWindowsError(err)
 		}
@@ -84,10 +84,13 @@ func (r *artifactSecureRoot) mkdirAll(relativePath string, _ fs.FileMode) error 
 			windows.CloseHandle(next)
 			return err
 		}
-		windows.CloseHandle(current)
 		current = next
 	}
-	return nil
+	// Nothing outlives this call: mkdirAll only needs the directories to exist.
+	// Leaking the deepest handle left the directory open, and Windows then refused
+	// to rename its parent with STATUS_ACCESS_DENIED — every delegation artifact
+	// publication failed on "publish" (fixed 2026-09-29).
+	return windows.CloseHandle(current)
 }
 
 func (r *artifactSecureRoot) createSubroot(relativePath string, _ fs.FileMode) (*artifactSecureRoot, error) {

@@ -118,6 +118,8 @@ Each row below is a *brand*: the `provider_type` string plus the vendor defaults
 | **dashscope** | OpenAI-compat wrapper | API key + custom models | `qwen3-max` |
 | **openai** (+ 10+ variants) | OpenAI-compatible | API key + endpoint URL | Model-specific |
 
+Prompt delivery for **claude_cli**: the prompt travels as a CLI argument up to 28,000 characters (`cliArgvMessageLimit`) and through stdin as a stream-json user message above that. Windows caps the whole command line at 32,767 characters, and an overrun surfaces as `fork/exec claude.exe: The filename or extension is too long` — which aborts the run without a user-visible error (`internal/providers/claude_cli_session.go`, `internal/providers/claude_cli_chat.go`).
+
 ### OpenAI-Compatible Providers
 
 | Provider | API Base | Default Model | Notes |

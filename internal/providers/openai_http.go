@@ -12,7 +12,29 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+// providerSessionIDKey carries the per-conversation id a gateway wants in a
+// routing header (see OpenAIProvider.withSessionHeader).
+type providerSessionIDKey struct{}
+
+// WithProviderSessionID returns a context carrying the conversation identifier a
+// gateway may require for routing and prompt-cache locality.
+func WithProviderSessionID(ctx context.Context, id string) context.Context {
+	if id == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, providerSessionIDKey{}, id)
+}
+
+// providerSessionIDFromContext returns the conversation id stamped by
+// withSessionHeader, or "" when the call has none.
+func providerSessionIDFromContext(ctx context.Context) string {
+	id, _ := ctx.Value(providerSessionIDKey{}).(string)
+	return id
+}
 
 func (p *OpenAIProvider) doRequest(ctx context.Context, body any) (io.ReadCloser, error) {
 	data, err := json.Marshal(body)
@@ -55,6 +77,16 @@ func (p *OpenAIProvider) doRequest(ctx context.Context, body any) (io.ReadCloser
 	// Applied after the standard headers so providers can override them if needed.
 	for k, v := range p.extraHeaders {
 		httpReq.Header.Set(k, v)
+	}
+	// Per-conversation routing id (e.g. OpenCode Go's x-opencode-session). The
+	// caller stamps it on the context; a request without one (probe, model listing)
+	// still gets an id, because a missing header is what the gateway rejects.
+	if p.sessionHeader != "" {
+		id := providerSessionIDFromContext(ctx)
+		if id == "" {
+			id = uuid.NewString()
+		}
+		httpReq.Header.Set(p.sessionHeader, id)
 	}
 	// Declared compat headers (operator quirk rows / gateway overlay). Applied
 	// last so an explicit declaration wins over the brand defaults; Authorization

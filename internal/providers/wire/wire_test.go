@@ -98,6 +98,46 @@ func TestBrandDefaultsCoverShippedBrands(t *testing.T) {
 	}
 }
 
+// TestBuildOpenCodeBrandCarriesClientIdentity covers the OpenCode Go/Zen client
+// contract: the gateway wants our own user agent (not a generic HTTP-library
+// name) and a per-conversation id in x-opencode-session, and it rejects requests
+// that arrive without one (2026-09-29).
+func TestBuildOpenCodeBrandCarriesClientIdentity(t *testing.T) {
+	for _, tc := range []struct {
+		providerType string
+		baseURL      string
+	}{
+		{"opencode_go", "https://opencode.ai/zen/go/v1"},
+		{"opencode", "https://opencode.ai/zen/v1"},
+	} {
+		t.Run(tc.providerType, func(t *testing.T) {
+			prov, err := Build(Config{
+				API:          OpenAICompletions,
+				Source:       SourceDB,
+				Name:         tc.providerType,
+				ProviderType: tc.providerType,
+				APIKey:       "k",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			openai, ok := prov.(*providers.OpenAIProvider)
+			if !ok {
+				t.Fatalf("prov = %T, want *providers.OpenAIProvider", prov)
+			}
+			if got := openai.APIBase(); got != tc.baseURL {
+				t.Errorf("APIBase() = %q, want %q", got, tc.baseURL)
+			}
+			if got := openai.SessionHeader(); got != "x-opencode-session" {
+				t.Errorf("SessionHeader() = %q, want x-opencode-session", got)
+			}
+			if got := openai.ExtraHeaders()["User-Agent"]; got != "goclaw" {
+				t.Errorf("User-Agent = %q, want the GoClaw identity header", got)
+			}
+		})
+	}
+}
+
 // TestBrandExtraHeadersAreNotShared verifies the catalog cannot be mutated by a
 // caller through the returned header map.
 func TestBrandExtraHeadersAreNotShared(t *testing.T) {

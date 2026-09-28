@@ -25,6 +25,7 @@ func (p *OpenAIProvider) chatImpl(ctx context.Context, req ChatRequest) (*ChatRe
 		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
 		defer cancel()
 	}
+	ctx = p.withSessionHeader(ctx, req)
 	model := p.resolveModel(req.Model)
 	body := p.buildRequestBody(model, req, false)
 	body = ApplyMiddlewares(body, p.middlewares, p.middlewareConfig(model, req))
@@ -108,6 +109,7 @@ func (p *OpenAIProvider) chatStreamImpl(ctx context.Context, req ChatRequest, on
 		ctx, cancel = withRequestTimeout(ctx, p.requestTimeout)
 		defer cancel()
 	}
+	ctx = p.withSessionHeader(ctx, req)
 	model := p.resolveModel(req.Model)
 	// stripThinking suppresses user-visible reasoning while leaving
 	// Usage.ThinkingTokens untouched (the usage chunk below still records it).

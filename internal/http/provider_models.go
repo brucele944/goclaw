@@ -215,13 +215,30 @@ func openAIModelsAPIBase(providerType, apiBase string) string {
 
 // openAIModelsExtraHeaders returns the identity headers a vendor requires on its
 // /models endpoint (Kimi Coding rejects requests without this exact User-Agent).
+// Brands that declare them in the wire catalog (e.g. OpenCode's user agent and
+// per-conversation session header) get the same treatment, so the listing call
+// matches the shape of the chat call.
 func openAIModelsExtraHeaders(providerType string) map[string]string {
-	if providerType != store.ProviderKimiCoding {
+	if providerType == store.ProviderKimiCoding {
+		return map[string]string{
+			"User-Agent": store.KimiCodingRequiredUserAgent,
+		}
+	}
+	brand, ok := wire.BrandFor(providerType)
+	if !ok {
 		return nil
 	}
-	return map[string]string{
-		"User-Agent": store.KimiCodingRequiredUserAgent,
+	headers := make(map[string]string, len(brand.ExtraHeaders)+1)
+	for k, v := range brand.ExtraHeaders {
+		headers[k] = v
 	}
+	if brand.SessionHeader != "" {
+		headers[brand.SessionHeader] = uuid.NewString()
+	}
+	if len(headers) == 0 {
+		return nil
+	}
+	return headers
 }
 
 func reasoningDefaultsForModels(

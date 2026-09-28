@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -23,6 +24,7 @@ type OpenAIProvider struct {
 	siteURL         string            // optional site URL for provider identification (e.g. OpenRouter HTTP-Referer)
 	siteTitle       string            // optional site title for provider identification (e.g. OpenRouter X-Title)
 	extraHeaders    map[string]string // static headers set on every outgoing request (e.g. fixed User-Agent for kimi_coding)
+	sessionHeader   string            // header to fill with the stable per-conversation id (e.g. OpenCode Go x-opencode-session)
 	client          *http.Client
 	retryConfig     RetryConfig
 	middlewares     RequestMiddleware // composed middleware chain (nil = no-op)
@@ -224,6 +226,29 @@ func (p *OpenAIProvider) ExtraHeaders() map[string]string {
 		out[k] = v
 	}
 	return out
+}
+
+// WithSessionHeader sets the request header a gateway wants filled with a stable
+// per-conversation id (OpenCode Go: x-opencode-session). The value comes from the
+// run's session key, so it stays constant for the whole conversation.
+func (p *OpenAIProvider) WithSessionHeader(name string) *OpenAIProvider {
+	p.sessionHeader = name
+	return p
+}
+
+// SessionHeader returns the configured per-conversation header name ("" when the
+// provider needs none).
+func (p *OpenAIProvider) SessionHeader() string { return p.sessionHeader }
+
+// withSessionHeader stamps the conversation id onto the request context so
+// doRequest can attach it. Deriving from the session key keeps the id stable
+// across turns (routing + prompt cache); session-less calls (capability probes,
+// model listings) get a one-off id instead of a missing header.
+func (p *OpenAIProvider) withSessionHeader(ctx context.Context, req ChatRequest) context.Context {
+	if p.sessionHeader == "" {
+		return ctx
+	}
+	return WithProviderSessionID(ctx, deriveSessionUUID(extractStringOpt(req.Options, OptSessionKey)).String())
 }
 
 // WithRegistry sets the model registry for forward-compat resolution.

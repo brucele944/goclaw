@@ -311,6 +311,9 @@ func applyOpenAIOptions(prov *providers.OpenAIProvider, brand Brand, cfg Config)
 	if brand.SiteURL != "" || brand.SiteTitle != "" {
 		prov.WithSiteInfo(brand.SiteURL, brand.SiteTitle)
 	}
+	if brand.SessionHeader != "" {
+		prov.WithSessionHeader(brand.SessionHeader)
+	}
 	if cfg.Registry != nil {
 		prov.WithRegistry(cfg.Registry)
 	}

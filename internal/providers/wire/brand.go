@@ -63,6 +63,10 @@ type Brand struct {
 	// SiteURL/SiteTitle are identification headers (OpenRouter rankings).
 	SiteURL   string
 	SiteTitle string
+	// SessionHeader is the request header a gateway wants filled with a stable
+	// per-conversation id (OpenCode Go: x-opencode-session, used for routing and
+	// prompt-cache locality). The value is derived from the run's session key.
+	SessionHeader string
 	// Reflect rules for passing provider_type into the transport.
 	Reflect Reflect
 	// ThinkingFromSettings says whether llm_providers.settings.thinking_enabled
@@ -143,11 +147,18 @@ var brands = map[string]Brand{
 	// OpenCode's gateways (https://opencode.ai/docs/zen/, /docs/go/). Plain
 	// OpenAI-compatible endpoints authenticated with one OpenCode API key; "zen" is
 	// the pay-as-you-go catalogue, "opencode_go" the subscription ("Go") gateway.
+	//
+	// Go's published client contract (https://opencode.ai/docs/go/#where-can-i-use-it)
+	// asks clients to identify themselves with their own user agent — not a generic
+	// HTTP-library name — and to send a stable conversation id in x-opencode-session
+	// "so we can optimize routing and prompt caching".
 	"opencode": {
 		ProviderType:         "opencode",
 		API:                  OpenAICompletions,
 		BaseURL:              "https://opencode.ai/zen/v1",
 		Model:                "deepseek-v4.1-flash",
+		ExtraHeaders:         map[string]string{"User-Agent": "goclaw"},
+		SessionHeader:        "x-opencode-session",
 		Reflect:              ReflectDBOnly,
 		ThinkingFromSettings: true,
 	},
@@ -156,6 +167,8 @@ var brands = map[string]Brand{
 		API:                  OpenAICompletions,
 		BaseURL:              "https://opencode.ai/zen/go/v1",
 		Model:                "deepseek-v4.1-flash",
+		ExtraHeaders:         map[string]string{"User-Agent": "goclaw"},
+		SessionHeader:        "x-opencode-session",
 		Reflect:              ReflectDBOnly,
 		ThinkingFromSettings: true,
 	},

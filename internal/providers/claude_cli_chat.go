@@ -38,29 +38,27 @@ func (p *ClaudeCLIProvider) Chat(ctx context.Context, req ChatRequest) (*ChatRes
 	disableTools := extractBoolOpt(req.Options, OptDisableTools)
 	bc := bridgeContextFromOpts(req.Options)
 	mcpPath := p.resolveMCPConfigPath(ctx, sessionKey, bc)
-	// Claude CLI >= v2.1.87 requires matching input/output formats.
-	// When images are present, buildArgs adds --input-format stream-json,
-	// so output format must also be stream-json.
+	// The message travels in argv unless images are present or it exceeds the OS
+	// command-line limit, in which case it goes through stdin as stream-json.
+	streamInput := cliUseStreamInput(userMsg, images)
+	// Claude CLI >= v2.1.87 requires matching input/output formats: when buildArgs
+	// emits --input-format stream-json (stdin input enabled), output must be
+	// stream-json too.
 	outputFmt := "json"
-	if len(images) > 0 {
+	if streamInput {
 		outputFmt = "stream-json"
 	}
 	effortLevel := extractStringOpt(req.Options, OptThinkingLevel)
 	allowedToolNames := extractStringSliceOpt(req.Options, OptAllowedToolNames)
 
-	// rebuild re-creates args (and stdin for image turns) for a retry that needs
-	// a different session mode.
+	// rebuild re-creates args (and stdin for stream-json turns) for a retry that
+	// needs a different session mode.
 	var args []string
 	var stdin *bytes.Reader
 	resumeRetried := false
 	rebuild := func(forceResume bool) {
-		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, outputFmt, len(images) > 0, disableTools, effortLevel, allowedToolNames)
-		stdin = nil
-		if len(images) > 0 {
-			stdin = buildStreamJSONInput(userMsg, images)
-		} else {
-			args = append(args, "--", userMsg)
-		}
+		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, outputFmt, streamInput, disableTools, effortLevel, allowedToolNames)
+		args, stdin = p.cliInvocationInput(args, userMsg, images)
 	}
 
 	rebuild(false)
@@ -164,19 +162,18 @@ func (p *ClaudeCLIProvider) ChatStream(ctx context.Context, req ChatRequest, onC
 	effortLevel := extractStringOpt(req.Options, OptThinkingLevel)
 	allowedToolNames := extractStringSliceOpt(req.Options, OptAllowedToolNames)
 
-	// rebuild re-creates args (and stdin for image turns) for a retry that needs
-	// a different session mode.
+	// The message travels in argv unless images are present or it exceeds the OS
+	// command-line limit, in which case it goes through stdin as stream-json.
+	streamInput := cliUseStreamInput(userMsg, images)
+
+	// rebuild re-creates args (and stdin for stream-json turns) for a retry that
+	// needs a different session mode.
 	var args []string
 	var stdin *bytes.Reader
 	resumeRetried := false
 	rebuild := func(forceResume bool) {
-		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, "stream-json", len(images) > 0, disableTools, effortLevel, allowedToolNames)
-		stdin = nil
-		if len(images) > 0 {
-			stdin = buildStreamJSONInput(userMsg, images)
-		} else {
-			args = append(args, "--", userMsg)
-		}
+		args = p.buildArgs(model, workDir, mcpPath, cliSessionID, forceResume, "stream-json", streamInput, disableTools, effortLevel, allowedToolNames)
+		args, stdin = p.cliInvocationInput(args, userMsg, images)
 	}
 
 	rebuild(false)

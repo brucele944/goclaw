@@ -131,6 +131,36 @@ func validateCLIModel(model string) error {
 	return nil
 }
 
+// cliArgvMessageLimit is the largest user message that may travel in argv.
+//
+// Windows caps the whole command line (executable + flags + message) at 32,767
+// characters and Go surfaces an overrun as "The filename or extension is too
+// long". Measured with claude CLI 2.1.283 on 2026-09-28: a 32,000-char message
+// still spawns, 33,000 does not, with ~700 chars of static flags. The remaining
+// headroom absorbs longer install paths and future flags.
+const cliArgvMessageLimit = 28000
+
+// cliUseStreamInput reports whether the user message must be delivered on stdin
+// as a stream-json user message instead of a trailing argv entry. Images already
+// require stdin; oversized text takes the same path rather than failing to
+// spawn — which silently aborted agent runs (see
+// plans/260928-2300-claude-cli-argv-limit/report.md).
+func cliUseStreamInput(userMsg string, images []ImageContent) bool {
+	return len(images) > 0 || len(userMsg) > cliArgvMessageLimit
+}
+
+// cliInvocationInput completes a CLI invocation by routing the user message
+// either to a trailing argv entry or to stdin as stream-json. It returns the
+// final args and the stdin payload (nil when the message travels in argv).
+// Callers must pass the same decision to buildArgs as `streamInput`, so the
+// --input-format flag matches where the message actually arrives.
+func (p *ClaudeCLIProvider) cliInvocationInput(args []string, userMsg string, images []ImageContent) ([]string, *bytes.Reader) {
+	if cliUseStreamInput(userMsg, images) {
+		return args, buildStreamJSONInput(userMsg, images)
+	}
+	return append(args, "--", userMsg), nil
+}
+
 // buildArgs constructs CLI arguments.
 // mcpConfigPath is the resolved per-session MCP config file (may differ per call).
 // forceResume forces --resume even when the session file lookup says otherwise
@@ -139,7 +169,8 @@ func validateCLIModel(model string) error {
 // allowedToolNames is the agent's policy-filtered canonical GoClaw tool set for this
 // turn; it drives which Claude CLI native built-in tools are permitted (see
 // disallowedCLITools). nil means "no tools allowed" (fail closed).
-func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliSessionID uuid.UUID, forceResume bool, outputFormat string, hasImages, disableTools bool, effort string, allowedToolNames []string) []string {
+// streamInput adds --input-format stream-json: the prompt arrives on stdin.
+func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliSessionID uuid.UUID, forceResume bool, outputFormat string, streamInput, disableTools bool, effort string, allowedToolNames []string) []string {
 	args := []string{
 		"-p",
 		"--output-format", outputFormat,
@@ -171,7 +202,7 @@ func (p *ClaudeCLIProvider) buildArgs(model, workDir, mcpConfigPath string, cliS
 		args = append(args, "--session-id", sid)
 	}
 
-	if hasImages {
+	if streamInput {
 		args = append(args, "--input-format", "stream-json")
 	}
 

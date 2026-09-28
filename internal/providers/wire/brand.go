@@ -140,6 +140,25 @@ var brands = map[string]Brand{
 		Reflect:              ReflectDBOnly,
 		ThinkingFromSettings: true,
 	},
+	// OpenCode's gateways (https://opencode.ai/docs/zen/, /docs/go/). Plain
+	// OpenAI-compatible endpoints authenticated with one OpenCode API key; "zen" is
+	// the pay-as-you-go catalogue, "opencode_go" the subscription ("Go") gateway.
+	"opencode": {
+		ProviderType:         "opencode",
+		API:                  OpenAICompletions,
+		BaseURL:              "https://opencode.ai/zen/v1",
+		Model:                "deepseek-v4.1-flash",
+		Reflect:              ReflectDBOnly,
+		ThinkingFromSettings: true,
+	},
+	"opencode_go": {
+		ProviderType:         "opencode_go",
+		API:                  OpenAICompletions,
+		BaseURL:              "https://opencode.ai/zen/go/v1",
+		Model:                "deepseek-v4.1-flash",
+		Reflect:              ReflectDBOnly,
+		ThinkingFromSettings: true,
+	},
 	"mistral": {
 		ProviderType:         "mistral",
 		API:                  OpenAICompletions,

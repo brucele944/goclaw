@@ -129,6 +129,8 @@ Prompt delivery for **claude_cli**: the prompt travels as a CLI argument up to 2
 | openrouter | `https://openrouter.ai/api/v1` | `anthropic/claude-sonnet-4-5-20250929` | Model must contain `/` |
 | groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` | |
 | deepseek | `https://api.deepseek.com/v1` | `deepseek-chat` | |
+| opencode | `https://opencode.ai/zen/v1` | `deepseek-v4.1-flash` | OpenCode Zen catalogue; one OpenCode API key |
+| opencode_go | `https://opencode.ai/zen/go/v1` | `deepseek-v4.1-flash` | OpenCode Go subscription gateway; same key, `/zen/go` base |
 | gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` | Skips empty content fields |
 | mistral | `https://api.mistral.ai/v1` | `mistral-large-latest` | |
 | xai | `https://api.x.ai/v1` | `grok-3-mini` | |

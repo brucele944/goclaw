@@ -296,6 +296,11 @@ const (
 	// output and no deliverable media, replacing the old meaningless "...".
 	MsgEmptyReplyFallback = "chat.empty_reply_fallback"
 
+	// Context over-budget abort (user-facing) — the conversation exceeded the
+	// context budget and compaction could not shrink it, so the run aborted before
+	// the model was called. Without this the channel would receive nothing at all.
+	MsgContextOverBudgetAbort = "chat.context_over_budget_abort"
+
 	// Model capability notices (user-facing) — the selected model's catalogue row
 	// declares it cannot accept image input, so the images in the message were
 	// not sent to it.

@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/nextlevelbuilder/goclaw/internal/eventbus"
+	"github.com/nextlevelbuilder/goclaw/internal/i18n"
 	"github.com/nextlevelbuilder/goclaw/internal/providers"
+	"github.com/nextlevelbuilder/goclaw/internal/store"
 )
 
 // PruneStage runs every iteration. 2-phase pruning:
@@ -216,6 +218,12 @@ func (s *PruneStage) Execute(ctx context.Context, state *RunState) error {
 
 	if historyTokens > budget {
 		slog.Warn("still over budget after compaction", "tokens", historyTokens, "budget", budget)
+		// The run cannot continue. Without a message the channel would show nothing
+		// at all (the run never reaches the think stage), so surface the reason —
+		// FinalContent is delivered by the finalize stage / run result.
+		if state.Observe.FinalContent == "" {
+			state.Observe.FinalContent = i18n.T(store.LocaleFromContext(ctx), i18n.MsgContextOverBudgetAbort)
+		}
 		s.result = AbortRun
 	}
 

@@ -249,6 +249,7 @@ func init() {
 		MsgSkillNudge70Pct:          "[System] 您已使用 70% 的迭代预算。请考虑本次会话中的模式是否值得保存为技能。",
 		MsgSkillNudge90Pct:          "[System] 您已使用 90% 的迭代预算。如果本次会话涉及可重用的模式，请考虑在完成前将其保存为技能。",
 		MsgEmptyReplyFallback:       "⚠️ 代理无法生成响应。注意：部分工具操作可能已经执行 — 请先确认后再重试",
+		MsgContextOverBudgetAbort:   "⚠️ 本次对话已超出上下文预算且无法生成摘要，代理无法回复。请开启新对话（/reset）或发送更短的消息。",
 		MsgModelWithoutVisionNotice: "⚠️ 所选模型不接受图片，因此你消息中的图片未发送。如需发送图片，请切换到支持视觉的模型。",
 
 		MsgInvalidRole: "无效角色：允许的值为 owner、admin、operator、member、viewer",

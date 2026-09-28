@@ -249,6 +249,7 @@ func init() {
 		MsgSkillNudge70Pct:          "[System] Bạn đã dùng 70% ngân sách vòng lặp. Cân nhắc xem các mẫu trong phiên này có nên lưu thành kỹ năng không.",
 		MsgSkillNudge90Pct:          "[System] Bạn đã dùng 90% ngân sách vòng lặp. Nếu phiên này có quy trình tái sử dụng, hãy cân nhắc lưu thành kỹ năng trước khi hoàn thành.",
 		MsgEmptyReplyFallback:       "⚠️ Agent không thể tạo phản hồi. Lưu ý: một số thao tác công cụ có thể đã được thực hiện — vui lòng kiểm tra trước khi thử lại",
+		MsgContextOverBudgetAbort:   "⚠️ Hội thoại này đã vượt ngân sách ngữ cảnh và không thể tóm tắt, nên agent không trả lời được. Hãy bắt đầu hội thoại mới (/reset) hoặc gửi tin nhắn ngắn hơn.",
 		MsgModelWithoutVisionNotice: "⚠️ Model đang chọn không nhận hình ảnh, nên (các) hình trong tin nhắn của bạn đã không được gửi. Chuyển sang model có hỗ trợ hình ảnh nếu bạn muốn gửi kèm.",
 
 		MsgInvalidRole: "vai trò không hợp lệ: giá trị cho phép là owner, admin, operator, member, viewer",

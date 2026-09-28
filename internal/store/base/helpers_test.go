@@ -162,3 +162,96 @@ func TestJsonOrNull_Value(t *testing.T) {
 		t.Errorf("JsonOrNull(data) = %q, want %q", b, data)
 	}
 }
+
+// --- NUL stripping ---
+// PostgreSQL rejects U+0000 in text (SQLSTATE 22021) and in jsonb (22021 raw,
+// 22P05 escaped), so these helpers are the last line of defence on write.
+
+func TestStripNUL_CleanStringUnchanged(t *testing.T) {
+	const in = "plain ascii"
+	if got := StripNUL(in); got != in {
+		t.Errorf("StripNUL(%q) = %q, want unchanged", in, got)
+	}
+}
+
+func TestStripNUL_RemovesNUL(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"leading", "\x00abc", "abc"},
+		{"middle", "a\x00b", "ab"},
+		{"multiple", "a\x00\x00b\x00", "ab"},
+		{"nul only", "\x00", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StripNUL(tt.in); got != tt.want {
+				t.Errorf("StripNUL(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStripNUL_KeepsOtherControlBytes(t *testing.T) {
+	in := "a\tb\x1bc\x7f"
+	if got := StripNUL(in); got != in {
+		t.Errorf("StripNUL(%q) = %q, want other control bytes preserved", in, got)
+	}
+}
+
+func TestStripNULBytes_RemovesNUL(t *testing.T) {
+	got := StripNULBytes([]byte{'a', 0, 'b'})
+	if want := "ab"; string(got) != want {
+		t.Errorf("StripNULBytes = %q, want %q", got, want)
+	}
+}
+
+func TestStripNULJSON_RawAndEscaped(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"raw byte", "{\"k\":\"a\x00b\"}", `{"k":"ab"}`},
+		{"escaped nul", `{"k":"a\u0000b"}`, `{"k":"ab"}`},
+		{"escaped backslash is data", `{"k":"a\\u0000b"}`, `{"k":"a\\u0000b"}`},
+		{"clean", `{"k":"ab"}`, `{"k":"ab"}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := string(StripNULJSON([]byte(tt.in))); got != tt.want {
+				t.Errorf("StripNULJSON(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNilStr_StripsNUL(t *testing.T) {
+	got := NilStr("a\x00b")
+	if got == nil || *got != "ab" {
+		t.Errorf("NilStr(\"a\\x00b\") = %v, want &\"ab\"", got)
+	}
+	if only := NilStr("\x00"); only != nil {
+		t.Errorf("NilStr(\"\\x00\") = %q, want nil (NUL-only is empty)", *only)
+	}
+}
+
+func TestJsonOrEmpty_StripsNUL(t *testing.T) {
+	got := JsonOrEmpty([]byte(`{"k":"a\u0000b"}`))
+	if want := `{"k":"ab"}`; string(got) != want {
+		t.Errorf("JsonOrEmpty = %q, want %q", got, want)
+	}
+}
+
+func TestJsonOrNull_StripsNUL(t *testing.T) {
+	got := JsonOrNull(json.RawMessage(`{"k":"a\u0000b"}`))
+	b, ok := got.([]byte)
+	if !ok {
+		t.Fatalf("JsonOrNull type = %T, want []byte", got)
+	}
+	if want := `{"k":"ab"}`; string(b) != want {
+		t.Errorf("JsonOrNull = %q, want %q", b, want)
+	}
+}

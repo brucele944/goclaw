@@ -62,12 +62,18 @@ func scanJSONStringArray(data []byte, dest *[]string) {
 
 // sqliteVal marshals complex Go types (maps, slices) to JSON strings
 // since the SQLite driver cannot serialize them directly.
+// Text values get U+0000 stripped so SQLite and PostgreSQL persist the same
+// bytes (see base.StripNUL); plain []byte is binary data and stays untouched.
 func sqliteVal(v any) any {
 	if v == nil {
 		return nil
 	}
 	switch typed := v.(type) {
-	case string, int, int64, float64, bool, time.Time, []byte, json.RawMessage:
+	case string:
+		return base.StripNUL(typed)
+	case json.RawMessage:
+		return json.RawMessage(base.StripNULJSON(typed))
+	case int, int64, float64, bool, time.Time, []byte:
 		return v
 	case *time.Time:
 		if typed == nil {
@@ -80,7 +86,7 @@ func sqliteVal(v any) any {
 	if err != nil {
 		return nil
 	}
-	return string(b)
+	return string(base.StripNULJSON(b))
 }
 
 // --- Dynamic UPDATE helpers (using base.BuildMapUpdate) ---

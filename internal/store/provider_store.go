@@ -45,6 +45,8 @@ const (
 	ProviderVertex          = "vertex"          // Google Cloud Vertex AI (OAuth2 service account + ADC)
 	ProviderKimiCoding      = "kimi_coding"     // Moonshot Kimi Coding (OpenAI-compat, requires fixed User-Agent)
 	ProviderAtlasCloud      = "atlascloud"      // Atlas Cloud (OpenAI-compatible endpoint)
+	ProviderOpenCode        = "opencode"        // OpenCode Zen gateway (OpenAI-compatible, one OpenCode API key)
+	ProviderOpenCodeGo      = "opencode_go"     // OpenCode Go subscription gateway (OpenAI-compatible, same key)
 
 	// MiniMax defaults.
 	MiniMaxDefaultAPIBase = "https://api.minimax.io/v1"
@@ -110,6 +112,8 @@ var ValidProviderTypes = map[string]bool{
 	ProviderVertex:          true,
 	ProviderKimiCoding:      true,
 	ProviderAtlasCloud:      true,
+	ProviderOpenCode:        true,
+	ProviderOpenCodeGo:      true,
 }
 
 // --- Provider declaration: wire protocol + auth shape (provider rework, phase 1) ---

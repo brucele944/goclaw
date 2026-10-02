@@ -3,15 +3,20 @@ package browser
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/launcher/flags"
 )
 
 // Backend identifies the CDP browser goclaw is talking to.
@@ -268,22 +273,18 @@ func (m *Manager) Start(ctx context.Context) error {
 		launchCtx, launchCancel := context.WithTimeout(ctx, 30*time.Second)
 		defer launchCancel()
 
-		l := launcher.New().
-			Context(launchCtx).
-			Leakless(true).
-			Headless(m.headless).
-			Set("disable-gpu").
-			Set("no-first-run").
-			Set("no-default-browser-check").
-			Set("disable-dev-shm-usage").
-			Set("disable-software-rasterizer").
-			Set("disable-extensions").
-			Set("disable-background-networking").
-			Set("disable-renderer-backgrounding").
-			Set("disable-background-timer-throttling").
-			Set("disable-backgrounding-occluded-windows")
-
-		u, err := l.Launch()
+		l, u, err := m.launchChrome(launchCtx, true)
+		var pathErr *fs.PathError
+		if err != nil && errors.As(err, &pathErr) {
+			// The leakless helper is an unsigned exe dropped into %TEMP%; endpoint
+			// security tools (e.g. Kaspersky) may block or lock it, so the exec fails
+			// before Chrome even starts. Retry with Chrome spawned directly. Chrome is
+			// still stopped via launcher.Kill() on shutdown; only the crash-time
+			// orphan guard is lost.
+			m.logger.Warn("leakless helper failed to start, retrying without it",
+				"path", pathErr.Path, "op", pathErr.Op, "errno", errnoOf(pathErr.Err), "error", err)
+			l, u, err = m.launchChrome(launchCtx, false)
+		}
 		if err != nil {
 			return fmt.Errorf("launch Chrome: %w", err)
 		}
@@ -474,4 +475,44 @@ func (m *Manager) Status() *StatusInfo {
 		}
 	}
 	return info
+}
+
+// launchChrome starts a local Chrome with the stability flags goclaw relies on.
+// A rod launcher is single-use, so each attempt needs its own instance.
+func (m *Manager) launchChrome(ctx context.Context, leakless bool) (*launcher.Launcher, string, error) {
+	l := launcher.New().
+		Context(ctx).
+		Leakless(leakless).
+		Headless(m.headless).
+		Set("disable-gpu").
+		Set("no-first-run").
+		Set("no-default-browser-check").
+		Set("disable-dev-shm-usage").
+		Set("disable-software-rasterizer").
+		Set("disable-extensions").
+		Set("disable-background-networking").
+		Set("disable-renderer-backgrounding").
+		Set("disable-background-timer-throttling").
+		Set("disable-backgrounding-occluded-windows")
+
+	u, err := l.Launch()
+	if err != nil {
+		// Do not call l.Cleanup(): it blocks until the browser process exits, and
+		// this launcher never started one. Remove the profile dir directly.
+		if dir := l.Get(flags.UserDataDir); dir != "" {
+			_ = os.RemoveAll(dir)
+		}
+		return nil, "", err
+	}
+	return l, u, nil
+}
+
+// errnoOf returns the raw OS error number (e.g. 5 = ERROR_ACCESS_DENIED on
+// Windows) behind err, or 0 when err is not a syscall error.
+func errnoOf(err error) uintptr {
+	var errno syscall.Errno
+	if errors.As(err, &errno) {
+		return uintptr(errno)
+	}
+	return 0
 }

@@ -3,6 +3,7 @@ package skills
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -40,7 +41,7 @@ func TestNpmCommandEnvUsesRuntimePrefix(t *testing.T) {
 	env := npmCommandEnv()
 	wantPrefix := filepath.Join(runtimeDir, "npm-global")
 	wantBin := npmGlobalBinDir()
-	wantNodePath := filepath.Join(wantPrefix, "lib", "node_modules")
+	wantNodePath := npmGlobalNodePathFor(runtime.GOOS, wantPrefix)
 
 	if !envContainsExact(env, "NPM_CONFIG_PREFIX="+wantPrefix) {
 		t.Fatalf("npmCommandEnv missing NPM_CONFIG_PREFIX=%q", wantPrefix)
@@ -118,7 +119,7 @@ func TestFindRuntimeExecutableFindsNpmPackageCliAlias(t *testing.T) {
 	t.Setenv("RUNTIME_DIR", runtimeDir)
 	t.Setenv("NPM_CONFIG_PREFIX", "")
 
-	pkgDir := filepath.Join(runtimeDir, "npm-global", "lib", "node_modules", "openrouter-cli")
+	pkgDir := filepath.Join(npmGlobalNodePath(), "openrouter-cli")
 	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -181,4 +182,40 @@ func envContainsPrefixValue(env []string, key, wantPrefix string) bool {
 		}
 	}
 	return false
+}
+
+func TestNpmGlobalNodePathForMatchesNpmLayout(t *testing.T) {
+	prefix := filepath.Join("rt", "npm-global")
+	if got, want := npmGlobalNodePathFor("windows", prefix), filepath.Join(prefix, "node_modules"); got != want {
+		t.Errorf("windows: npmGlobalNodePathFor = %q, want %q", got, want)
+	}
+	for _, goos := range []string{"linux", "darwin"} {
+		if got, want := npmGlobalNodePathFor(goos, prefix), filepath.Join(prefix, "lib", "node_modules"); got != want {
+			t.Errorf("%s: npmGlobalNodePathFor = %q, want %q", goos, got, want)
+		}
+	}
+}
+
+func TestPackageRuntimeDirIsAbsolute(t *testing.T) {
+	t.Setenv("RUNTIME_DIR", "")
+	t.Setenv("GOCLAW_DATA_DIR", "")
+	if got := packageRuntimeDir(); !filepath.IsAbs(got) {
+		t.Errorf("default packageRuntimeDir() = %q, want an absolute path (drive-qualified on Windows)", got)
+	}
+
+	t.Setenv("RUNTIME_DIR", filepath.Join("rel", "rt"))
+	got := packageRuntimeDir()
+	want, err := filepath.Abs(filepath.Join("rel", "rt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Errorf("relative RUNTIME_DIR: packageRuntimeDir() = %q, want %q", got, want)
+	}
+
+	abs := t.TempDir()
+	t.Setenv("RUNTIME_DIR", abs)
+	if got := packageRuntimeDir(); got != abs {
+		t.Errorf("absolute RUNTIME_DIR: packageRuntimeDir() = %q, want %q unchanged", got, abs)
+	}
 }

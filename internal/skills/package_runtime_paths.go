@@ -7,7 +7,30 @@ import (
 	"strings"
 )
 
+// packageRuntimeDir returns the absolute directory holding runtime-installed
+// packages (npm-global, pip, GitHub binaries, update caches).
 func packageRuntimeDir() string {
+	return absRuntimePath(rawPackageRuntimeDir())
+}
+
+// absRuntimePath anchors a runtime path to an absolute location. On Windows the
+// "/app/data/.runtime" default (and any relative override) is drive-relative:
+// "\app\data\.runtime" resolves against the drive of whichever working directory
+// a child process runs in. Skill dep checks run node/python with cmd.Dir set to
+// the skill's scripts dir (e.g. on C:) while installs ran from the gateway's cwd
+// (e.g. A:), so the checker looked in a different tree than the installer wrote
+// to. filepath.Abs pins it once, to the gateway process's own drive/cwd.
+func absRuntimePath(p string) string {
+	if p == "" || filepath.IsAbs(p) {
+		return p
+	}
+	if abs, err := filepath.Abs(p); err == nil {
+		return abs
+	}
+	return p
+}
+
+func rawPackageRuntimeDir() string {
 	if v := strings.TrimSpace(os.Getenv("RUNTIME_DIR")); v != "" {
 		return v
 	}
@@ -88,8 +111,20 @@ func IsExecutableFile(path string) bool {
 	return info.Mode().Perm()&0111 != 0
 }
 
+// npmGlobalNodePath returns the directory where `npm install -g` places packages
+// under the runtime prefix. npm uses <prefix>/lib/node_modules on Unix but
+// <prefix>\node_modules on Windows (bins live directly in <prefix> there).
 func npmGlobalNodePath() string {
-	return filepath.Join(npmGlobalPrefix(), "lib", "node_modules")
+	return npmGlobalNodePathFor(runtime.GOOS, npmGlobalPrefix())
+}
+
+// npmGlobalNodePathFor is npmGlobalNodePath with an explicit GOOS and prefix so
+// both platform layouts stay testable on any host.
+func npmGlobalNodePathFor(goos, prefix string) string {
+	if goos == "windows" {
+		return filepath.Join(prefix, "node_modules")
+	}
+	return filepath.Join(prefix, "lib", "node_modules")
 }
 
 func ensureNpmGlobalEnv() {

@@ -42,7 +42,7 @@ func findNpmPackageExecutableAlias(name string) (string, bool) {
 }
 
 func npmGlobalPackageDirs() ([]string, error) {
-	root := filepath.Join(npmGlobalPrefix(), "lib", "node_modules")
+	root := npmGlobalNodePath()
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err

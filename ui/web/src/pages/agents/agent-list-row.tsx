@@ -39,7 +39,7 @@ export function AgentListRow({ agent, ownerName, onClick, onResummon, onDelete }
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate text-sm font-semibold">{displayName}</span>
-          {agent.is_default && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
+          {agent.is_default && <Star className="h-3 w-3 shrink-0 fill-amber-400" />}
         </div>
         {agent.display_name && !UUID_RE.test(agent.agent_key) && (
           <div className="truncate text-xs text-muted-foreground">{agent.agent_key}</div>
@@ -49,7 +49,7 @@ export function AgentListRow({ agent, ownerName, onClick, onResummon, onDelete }
       {/* Status */}
       <div className="hidden shrink-0 sm:block">
         {agent.status === "summoning" ? (
-          <Badge variant="outline" className="animate-pulse border-orange-400 text-orange-600 dark:text-orange-400">
+          <Badge variant="outline" className="animate-pulse border-warning/25 text-warning-text">
             {t("card.summoning")}
           </Badge>
         ) : agent.status === "summon_failed" ? (
@@ -82,7 +82,7 @@ export function AgentListRow({ agent, ownerName, onClick, onResummon, onDelete }
         {selfEvolve && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className="bg-orange-100 text-xs-plus text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300">
+              <Badge className="bg-warning-subtle text-xs-plus text-warning-text hover:bg-warning-subtle">
                 <Sparkles className="mr-0.5 h-3 w-3" />
                 {t("card.evolving")}
               </Badge>
@@ -120,6 +120,7 @@ export function AgentListRow({ agent, ownerName, onClick, onResummon, onDelete }
             variant="outline"
             size="xs"
             onClick={(e) => { e.stopPropagation(); onResummon(); }}
+            aria-label={t("card.resummon")}
           >
             <RotateCcw className="h-3 w-3" />
           </Button>
@@ -130,6 +131,7 @@ export function AgentListRow({ agent, ownerName, onClick, onResummon, onDelete }
             size="xs"
             className="text-muted-foreground hover:text-destructive"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            aria-label={t("common:delete")}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

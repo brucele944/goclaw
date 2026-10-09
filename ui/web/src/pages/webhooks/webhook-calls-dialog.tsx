@@ -20,6 +20,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { Inbox } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useWebhookCalls } from "./hooks/use-webhooks";
 import { WebhookCallDetailDialog } from "./webhook-call-detail-dialog";
 import type { WebhookData, WebhookCallData } from "@/types/webhook";
@@ -86,7 +87,7 @@ export function WebhookCallsDialog({ webhook, onClose }: Props) {
               <SelectItem value="dead">{t("calls.status.dead")}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1" aria-label={t("common:refresh")}>
             <RefreshCw className={isFetching ? "animate-spin h-3.5 w-3.5" : "h-3.5 w-3.5"} />
           </Button>
         </div>
@@ -114,8 +115,8 @@ export function WebhookCallsDialog({ webhook, onClose }: Props) {
                   {calls.map((c) => (
                     <tr
                       key={c.id}
-                      onClick={() => setDetailCallId(c.id)}
-                      className="border-b last:border-0 align-top hover:bg-muted/30 cursor-pointer"
+                      {...getClickableProps(() => setDetailCallId(c.id))}
+                      className="border-b last:border-0 align-top hover:bg-muted/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <td className="px-3 py-2">
                         <Badge variant={STATUS_VARIANT[c.status]} className="text-xs">

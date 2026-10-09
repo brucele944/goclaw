@@ -179,7 +179,7 @@ export function ProviderApiKeyBadge({
   if (provider.provider_type === "chatgpt_oauth") {
     if (oauthAvailability === "needs_sign_in") {
       return (
-        <span className="flex items-center gap-1 text-xs-plus text-amber-700 dark:text-amber-400">
+        <span className="flex items-center gap-1 text-xs-plus text-warning-text">
           <AlertTriangle className="h-3 w-3" />{t("card.signInNeeded")}
         </span>
       );
@@ -192,14 +192,14 @@ export function ProviderApiKeyBadge({
       );
     }
     return (
-      <span className="flex items-center gap-1 text-xs-plus text-emerald-600 dark:text-emerald-400">
+      <span className="flex items-center gap-1 text-xs-plus text-success-text">
         <Link2 className="h-3 w-3" />{t("card.connected")}
       </span>
     );
   }
   if (provider.provider_type === "claude_cli") {
     return (
-      <span className="flex items-center gap-1 text-xs-plus text-emerald-600 dark:text-emerald-400">
+      <span className="flex items-center gap-1 text-xs-plus text-success-text">
         <ShieldCheck className="h-3 w-3" />{t("card.authenticated")}
       </span>
     );

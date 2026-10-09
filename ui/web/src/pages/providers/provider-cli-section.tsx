@@ -47,10 +47,10 @@ export function CLISection({ open }: { open: boolean }) {
         </div>
       ) : cliAuth?.logged_in ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2 dark:border-green-800 dark:bg-green-950">
+          <div className="flex items-center justify-between rounded-md border border-success/25 bg-success-subtle px-3 py-2">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <p className="text-sm text-green-700 dark:text-green-300">
+              <CheckCircle2 className="h-4 w-4 text-success-text" />
+              <p className="text-sm text-success-text">
                 {t("cli.authenticatedAs")} <strong>{cliAuth.email}</strong>
                 {cliAuth.subscription_type && (
                   <span className="ml-1 text-xs opacity-75">({cliAuth.subscription_type})</span>
@@ -61,8 +61,9 @@ export function CLISection({ open }: { open: boolean }) {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+              className="h-7 px-2 text-success-text hover:text-green-800"
               onClick={checkAuth}
+              aria-label={t("cli.recheckButton")}
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
@@ -81,31 +82,31 @@ export function CLISection({ open }: { open: boolean }) {
           </details>
         </div>
       ) : cliAuth ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950">
+        <div className="rounded-md border border-warning/25 bg-warning-subtle px-3 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-300">{t("cli.notAuthenticated")}</p>
+              <AlertTriangle className="h-4 w-4 text-warning-text" />
+              <p className="text-sm font-medium text-warning-text">{t("cli.notAuthenticated")}</p>
             </div>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
+              className="h-7 px-2 text-warning-text hover:text-amber-800"
               onClick={checkAuth}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1" />
               <span className="text-xs">{t("cli.recheckButton")}</span>
             </Button>
           </div>
-          <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
+          <p className="mt-1 text-sm text-warning-text">
             {t("cli.runOnServer")}
           </p>
-          <code className="mt-1 block rounded bg-amber-100 px-2 py-1 text-xs font-mono dark:bg-amber-900 dark:text-amber-300">
+          <code className="mt-1 block rounded bg-warning-subtle px-2 py-1 text-xs font-mono">
             {cliAuth.in_docker ? "docker compose exec goclaw claude auth login" : "claude auth login"}
           </code>
           {cliAuth.error && (
-            <p className="mt-1 text-xs text-amber-500">{cliAuth.error}</p>
+            <p className="mt-1 text-xs text-warning-text">{cliAuth.error}</p>
           )}
         </div>
       ) : null}

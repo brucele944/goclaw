@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Upload, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ function S3HistoryTable({ backups }: { backups: S3BackupEntry[] }) {
 export function SystemBackupPanel() {
   const { t } = useTranslation("backup");
   const [destination, setDestination] = useState<"local" | "s3">("local");
+  const destinationLabelId = useId();
 
   const backup = useSystemBackup();
   const preflight = useBackupPreflight();
@@ -75,7 +76,7 @@ export function SystemBackupPanel() {
   if (backup.status === "complete") {
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-green-600">{t("backup.complete")}</h3>
+        <h3 className="text-sm font-medium text-success-text">{t("backup.complete")}</h3>
         <OperationProgress steps={backup.steps} elapsed={backup.elapsed} />
 
         {backup.result && (
@@ -146,8 +147,8 @@ export function SystemBackupPanel() {
       {/* Destination toggle (only if S3 configured) */}
       {s3Configured && (
         <div className="space-y-2">
-          <Label>{t("backup.options.destination")}</Label>
-          <div className="flex gap-3">
+          <Label id={destinationLabelId}>{t("backup.options.destination")}</Label>
+          <div className="flex gap-3" role="radiogroup" aria-labelledby={destinationLabelId}>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="radio"

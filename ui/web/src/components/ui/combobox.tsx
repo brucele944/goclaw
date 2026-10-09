@@ -25,6 +25,8 @@ interface ComboboxProps {
   /** Label for the custom value hint (default: "Use custom:"). */
   customLabel?: string;
   disabled?: boolean;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 export function Combobox({
@@ -38,6 +40,7 @@ export function Combobox({
   allowCustom,
   customLabel = "Use custom:",
   disabled,
+  id,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -257,6 +260,7 @@ export function Combobox({
     <div ref={containerRef} className={cn("relative", className)}>
       <input
         ref={inputRef}
+        id={id}
         value={search}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -264,8 +268,8 @@ export function Combobox({
         disabled={disabled}
         placeholder={placeholder}
         className={cn(
-          "border-input placeholder:text-muted-foreground dark:bg-input/30 h-9 w-full rounded-md border bg-transparent px-3 py-1 pr-8 text-base md:text-sm shadow-xs outline-none transition-[color,box-shadow]",
-          "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1",
+          "border-control-border placeholder:text-muted-foreground dark:bg-input/30 h-9 w-full rounded-md border bg-transparent px-3 py-1 pr-8 text-base md:text-sm shadow-xs outline-none transition-[color,box-shadow]",
+          "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
           disabled && "cursor-not-allowed opacity-50",
         )}
       />

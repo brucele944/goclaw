@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ interface WorkspaceSharingSectionProps {
 
 export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.workspaceSharing";
   const [contactSearch, setContactSearch] = useState("");
 
@@ -47,8 +48,8 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
       {/* ── Section 1: Memory & Knowledge Graph ── */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-            <Brain className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning-subtle">
+            <Brain className="h-4 w-4 text-warning-text" />
           </div>
           <div>
             <h3 className="text-sm font-semibold">{t(`${s}.memoryGroupLabel`)}</h3>
@@ -57,46 +58,49 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
         </div>
 
         <div className="space-y-2">
-          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_memory ? "border-orange-400/60 bg-orange-50/30 dark:border-orange-500/30 dark:bg-orange-950/10" : ""}`}>
+          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_memory ? "border-warning/25 bg-orange-50/30" : ""}`}>
             <div className="flex items-center justify-between">
-              <InfoLabel tip={t(`${s}.shareMemoryTip`)}>{t(`${s}.shareMemory`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-shareMemory`} tip={t(`${s}.shareMemoryTip`)}>{t(`${s}.shareMemory`)}</InfoLabel>
               <Switch
+                id={`${uid}-shareMemory`}
                 checked={value.share_memory ?? false}
                 onCheckedChange={(v) => onChange({ ...value, share_memory: v })}
               />
             </div>
             {value.share_memory && (
-              <p className="mt-2 text-xs text-orange-600 dark:text-orange-400">
+              <p className="mt-2 text-xs text-warning-text">
                 {t(`${s}.shareMemoryNote`)}
               </p>
             )}
           </div>
 
-          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_knowledge_graph ? "border-orange-400/60 bg-orange-50/30 dark:border-orange-500/30 dark:bg-orange-950/10" : ""}`}>
+          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_knowledge_graph ? "border-warning/25 bg-orange-50/30" : ""}`}>
             <div className="flex items-center justify-between">
-              <InfoLabel tip={t(`${s}.shareKGTip`)}>{t(`${s}.shareKG`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-shareKG`} tip={t(`${s}.shareKGTip`)}>{t(`${s}.shareKG`)}</InfoLabel>
               <Switch
+                id={`${uid}-shareKG`}
                 checked={value.share_knowledge_graph ?? false}
                 onCheckedChange={(v) => onChange({ ...value, share_knowledge_graph: v })}
               />
             </div>
             {value.share_knowledge_graph && (
-              <p className="mt-2 text-xs text-orange-600 dark:text-orange-400">
+              <p className="mt-2 text-xs text-warning-text">
                 {t(`${s}.shareKGNote`)}
               </p>
             )}
           </div>
 
-          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_sessions ? "border-orange-400/60 bg-orange-50/30 dark:border-orange-500/30 dark:bg-orange-950/10" : ""}`}>
+          <div className={`rounded-lg border p-3 sm:p-4 ${value.share_sessions ? "border-warning/25 bg-orange-50/30" : ""}`}>
             <div className="flex items-center justify-between">
-              <InfoLabel tip={t(`${s}.shareSessionsTip`)}>{t(`${s}.shareSessions`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-shareSessions`} tip={t(`${s}.shareSessionsTip`)}>{t(`${s}.shareSessions`)}</InfoLabel>
               <Switch
+                id={`${uid}-shareSessions`}
                 checked={value.share_sessions ?? false}
                 onCheckedChange={(v) => onChange({ ...value, share_sessions: v })}
               />
             </div>
             {value.share_sessions && (
-              <p className="mt-2 text-xs text-orange-600 dark:text-orange-400">
+              <p className="mt-2 text-xs text-warning-text">
                 {t(`${s}.shareSessionsNote`)}
               </p>
             )}
@@ -107,8 +111,8 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
       {/* ── Section 2: Workspace File Sharing ── */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-            <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning-subtle">
+            <Shield className="h-4 w-4 text-warning-text" />
           </div>
           <div>
             <h3 className="text-sm font-semibold">{t(`${s}.title`)}</h3>
@@ -116,9 +120,9 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
           </div>
         </div>
 
-        <div className={`rounded-lg border p-3 space-y-4 sm:p-4 ${isWorkspaceActive ? "border-amber-400/60 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-950/10" : ""}`}>
+        <div className={`rounded-lg border p-3 space-y-4 sm:p-4 ${isWorkspaceActive ? "border-warning/25 bg-amber-50/30" : ""}`}>
           {/* Security warning */}
-          <Alert variant="destructive" className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 [&>svg]:text-amber-600">
+          <Alert variant="destructive" className="border-warning/25 bg-warning-subtle text-warning-text [&>svg]:text-warning-text">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-xs">
               {t(`${s}.warning`)}
@@ -130,15 +134,17 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
             <p className="text-xs font-medium text-muted-foreground">{t(`${s}.folderGroupLabel`)}</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-md border bg-background p-3">
-                <InfoLabel tip={t(`${s}.sharedDmTip`)}>{t(`${s}.sharedDm`)}</InfoLabel>
+                <InfoLabel htmlFor={`${uid}-sharedDm`} tip={t(`${s}.sharedDmTip`)}>{t(`${s}.sharedDm`)}</InfoLabel>
                 <Switch
+                  id={`${uid}-sharedDm`}
                   checked={value.shared_dm ?? false}
                   onCheckedChange={(v) => onChange({ ...value, shared_dm: v })}
                 />
               </div>
               <div className="flex items-center justify-between rounded-md border bg-background p-3">
-                <InfoLabel tip={t(`${s}.sharedGroupTip`)}>{t(`${s}.sharedGroup`)}</InfoLabel>
+                <InfoLabel htmlFor={`${uid}-sharedGroup`} tip={t(`${s}.sharedGroupTip`)}>{t(`${s}.sharedGroup`)}</InfoLabel>
                 <Switch
+                  id={`${uid}-sharedGroup`}
                   checked={value.shared_group ?? false}
                   onCheckedChange={(v) => onChange({ ...value, shared_group: v })}
                 />
@@ -148,7 +154,7 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
 
           {/* Shared users allowlist */}
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.sharedUsersTip`)}>{t(`${s}.sharedUsers`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-sharedUsers`} tip={t(`${s}.sharedUsersTip`)}>{t(`${s}.sharedUsers`)}</InfoLabel>
             {existingUsers.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {existingUsers.map((u, i) => (
@@ -156,6 +162,7 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
                     <span className="max-w-48 truncate">{formatUserLabel(u, resolve)}</span>
                     <button
                       type="button"
+                      aria-label={t("common:remove")}
                       onClick={() => removeUser(i)}
                       className="rounded-full p-0.5 hover:bg-muted-foreground/20"
                     >
@@ -167,6 +174,7 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
             )}
             <div className="flex gap-2">
               <UserPickerCombobox
+                id={`${uid}-sharedUsers`}
                 value={contactSearch}
                 onChange={(val) => setContactSearch(val)}
                 placeholder={t(`${s}.userIdPlaceholder`)}
@@ -174,6 +182,7 @@ export function WorkspaceSharingSection({ value, onChange }: WorkspaceSharingSec
               />
               <Button
                 type="button"
+                aria-label={t(`${s}.addUser`)}
                 variant="outline"
                 size="icon"
                 onClick={() => addUser(contactSearch)}

@@ -55,7 +55,7 @@ function PhaseLabel({ state, isSkill }: { state: ToolCall['state']; isSkill: boo
     ? { calling: t('skillActivating'), completed: t('skillActivated'), error: t('toolFailed') }[state]
     : { calling: t('toolRunning'), completed: t('toolDone'), error: t('toolFailed') }[state]
   const color = state === 'error' ? 'text-error' : state === 'completed' ? 'text-text-secondary' : 'text-blue-500'
-  return <span className={`text-[11px] ${color}`}>{label}</span>
+  return <span className={`text-2xs ${color}`}>{label}</span>
 }
 
 interface ToolCallBlockProps {
@@ -102,16 +102,16 @@ export function ToolCallBlock({ toolCall, compact }: ToolCallBlockProps) {
           )}
           {Object.keys(toolCall.arguments).length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold uppercase text-text-muted mb-0.5">{t('toolArguments')}</div>
-              <pre className="whitespace-pre-wrap text-[11px] font-mono text-text-secondary bg-surface-primary rounded p-1.5 max-h-40 overflow-y-auto">
+              <div className="text-2xs font-semibold uppercase text-text-muted mb-0.5">{t('toolArguments')}</div>
+              <pre className="whitespace-pre-wrap text-2xs font-mono text-text-secondary bg-surface-primary rounded p-1.5 max-h-40 overflow-y-auto">
                 {JSON.stringify(toolCall.arguments, null, 2)}
               </pre>
             </div>
           )}
           {toolCall.result && (
             <div>
-              <div className="text-[10px] font-semibold uppercase text-text-muted mb-0.5">{t('toolResult')}</div>
-              <pre className="whitespace-pre-wrap text-[11px] font-mono text-text-secondary bg-surface-primary rounded p-1.5 max-h-40 overflow-y-auto">
+              <div className="text-2xs font-semibold uppercase text-text-muted mb-0.5">{t('toolResult')}</div>
+              <pre className="whitespace-pre-wrap text-2xs font-mono text-text-secondary bg-surface-primary rounded p-1.5 max-h-40 overflow-y-auto">
                 {toolCall.result}
               </pre>
             </div>

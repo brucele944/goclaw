@@ -29,7 +29,7 @@ export function McpServerRow({
           </svg>
           <div className="min-w-0">
             <div className="text-sm font-medium text-text-primary truncate">{s.display_name || s.name}</div>
-            <div className="font-mono text-[11px] text-text-muted bg-surface-tertiary/50 px-1.5 py-0.5 rounded inline-block mt-0.5">
+            <div className="font-mono text-2xs text-text-muted bg-surface-tertiary/50 px-1.5 py-0.5 rounded inline-block mt-0.5">
               mcp_{s.name}
             </div>
           </div>
@@ -37,7 +37,7 @@ export function McpServerRow({
       </td>
       {/* Transport */}
       <td className="px-4 py-3">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        <span className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
           s.transport === 'sse'
             ? 'bg-surface-tertiary text-text-secondary'
             : 'border border-border text-text-muted'
@@ -74,7 +74,7 @@ export function McpServerRow({
       </td>
       {/* Enabled */}
       <td className="px-4 py-3">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        <span className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
           s.enabled
             ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20'
             : 'bg-surface-tertiary text-text-secondary'

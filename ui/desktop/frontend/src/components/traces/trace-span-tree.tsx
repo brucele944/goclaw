@@ -52,7 +52,7 @@ function TraceContentPreview({ text }: { text?: string }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       {lang && (
-        <div className="flex items-center justify-between px-3 py-1 bg-surface-tertiary text-[11px]">
+        <div className="flex items-center justify-between px-3 py-1 bg-surface-tertiary text-2xs">
           <span className="text-text-muted font-mono">{lang}</span>
           <button onClick={handleCopy} className="text-text-muted hover:text-text-primary transition-colors cursor-pointer">
             {copied ? 'Copied!' : 'Copy'}
@@ -92,8 +92,8 @@ export function SpanRow({ node, expanded, onToggle }: { node: SpanNode; expanded
         </svg>
         <span className="text-sm shrink-0">{spanTypeIcon(span.span_type)}</span>
         <span className="text-xs font-medium text-text-primary truncate min-w-0 flex-1">{span.name}</span>
-        {subtitle && <span className="text-[10px] text-text-muted truncate max-w-[120px] shrink-0">{subtitle}</span>}
-        <div className="flex items-center gap-2 shrink-0 text-[11px] text-text-muted ml-auto">
+        {subtitle && <span className="text-2xs text-text-muted truncate max-w-[120px] shrink-0">{subtitle}</span>}
+        <div className="flex items-center gap-2 shrink-0 text-2xs text-text-muted ml-auto">
           {hasTokens && (
             <span className="font-mono">
               {formatTokens(span.input_tokens)}/{formatTokens(span.output_tokens)}
@@ -102,7 +102,7 @@ export function SpanRow({ node, expanded, onToggle }: { node: SpanNode; expanded
             </span>
           )}
           <span>{formatDuration(span.duration_ms, span.start_time, span.end_time)}</span>
-          <span className={`rounded-full px-1.5 py-0.5 border text-[10px] font-medium ${statusClass(span.status)}`}>
+          <span className={`rounded-full px-1.5 py-0.5 border text-2xs font-medium ${statusClass(span.status)}`}>
             {span.status}
           </span>
         </div>
@@ -111,20 +111,20 @@ export function SpanRow({ node, expanded, onToggle }: { node: SpanNode; expanded
       {expanded && hasExpandContent && (
         <div className="px-4 pb-3 space-y-2" style={{ paddingLeft: `${28 + depth * 16}px` }}>
           {cacheCreate > 0 && (
-            <div className="text-[11px]">
+            <div className="text-2xs">
               <span className="text-yellow-600 dark:text-yellow-400">+{formatTokens(cacheCreate)} cache write</span>
             </div>
           )}
-          {span.error && <p className="text-[11px] text-red-600 dark:text-red-400">{span.error}</p>}
+          {span.error && <p className="text-2xs text-red-600 dark:text-red-400">{span.error}</p>}
           {span.input_preview && (
             <div>
-              <p className="text-[11px] font-medium text-text-secondary mb-1">{t('detail.input')}</p>
+              <p className="text-2xs font-medium text-text-secondary mb-1">{t('detail.input')}</p>
               <TraceContentPreview text={span.input_preview} />
             </div>
           )}
           {span.output_preview && (
             <div>
-              <p className="text-[11px] font-medium text-text-secondary mb-1">{t('detail.output')}</p>
+              <p className="text-2xs font-medium text-text-secondary mb-1">{t('detail.output')}</p>
               <TraceContentPreview text={span.output_preview} />
             </div>
           )}

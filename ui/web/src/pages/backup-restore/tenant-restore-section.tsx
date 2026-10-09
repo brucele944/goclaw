@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useId, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Upload, RotateCcw, FileArchive } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,9 @@ export function TenantRestoreSection() {
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const slugInputId = useId();
+  const modeSelectId = useId();
+  const tenantFieldId = useId();
 
   const isNewMode = mode === "new";
   const tenantOptions = tenants.map((t) => ({ value: t.id, label: t.name || t.slug }));
@@ -75,11 +78,11 @@ export function TenantRestoreSection() {
     const tablesRestored = (r.tables_restored ?? {}) as Record<string, number>;
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-green-600">{t("tenant.restore.complete")}</h3>
+        <h3 className="text-sm font-medium text-success-text">{t("tenant.restore.complete")}</h3>
         <OperationProgress steps={restore.steps} elapsed={restore.elapsed} />
 
         {!!r.dry_run && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900/40 dark:bg-blue-950/20 px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
+          <div className="rounded-md border border-info/25 bg-info-subtle px-3 py-2 text-sm text-info-text">
             {t("tenant.restore.dryRunNote")}
           </div>
         )}
@@ -135,8 +138,9 @@ export function TenantRestoreSection() {
     <div className="space-y-4">
       {!isNewMode && (
         <div>
-          <Label className="mb-1.5">{t("tenant.selectTenant")}</Label>
+          <Label htmlFor={tenantFieldId} className="mb-1.5">{t("tenant.selectTenant")}</Label>
           <Combobox
+            id={tenantFieldId}
             value={tenantId}
             onChange={setTenantId}
             options={tenantOptions}
@@ -147,8 +151,9 @@ export function TenantRestoreSection() {
 
       {isNewMode && (
         <div>
-          <Label className="mb-1.5">{t("tenant.restore.newTenantSlug")}</Label>
+          <Label htmlFor={slugInputId} className="mb-1.5">{t("tenant.restore.newTenantSlug")}</Label>
           <Input
+            id={slugInputId}
             value={newTenantSlug}
             onChange={(e) => setNewTenantSlug(e.target.value)}
             placeholder={t("tenant.restore.newTenantSlugPlaceholder")}
@@ -160,9 +165,9 @@ export function TenantRestoreSection() {
       )}
 
       <div>
-        <Label>{t("tenant.restore.mode")}</Label>
+        <Label htmlFor={modeSelectId}>{t("tenant.restore.mode")}</Label>
         <Select value={mode} onValueChange={(value) => setMode(value as RestoreMode)}>
-          <SelectTrigger className="mt-1 text-base md:text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger id={modeSelectId} className="mt-1 text-base md:text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="upsert">{t("tenant.restore.modeUpsert")}</SelectItem>
             <SelectItem value="replace">{t("tenant.restore.modeReplace")}</SelectItem>
@@ -172,20 +177,23 @@ export function TenantRestoreSection() {
       </div>
 
       {!file && (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{t("tenant.restore.dropzone")}</p>
+        <>
           <input ref={fileRef} type="file" className="hidden" accept=".tar.gz,.gz"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        </div>
+          <button
+            type="button"
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground/50" />
+            <span className="block text-sm text-muted-foreground">{t("tenant.restore.dropzone")}</span>
+          </button>
+        </>
       )}
 
       {file && (

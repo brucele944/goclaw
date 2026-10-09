@@ -16,20 +16,20 @@ interface HookListRowProps {
 }
 
 const EVENT_COLORS: Record<string, string> = {
-  session_start: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  session_start: "bg-info-subtle text-info-text",
   user_prompt_submit: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
-  pre_tool_use: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  post_tool_use: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  stop: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  subagent_start: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
-  subagent_stop: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  pre_tool_use: "bg-warning-subtle text-warning-text",
+  post_tool_use: "bg-success-subtle text-success-text",
+  stop: "bg-destructive-subtle text-destructive-text",
+  subagent_start: "bg-info-subtle text-info-text",
+  subagent_stop: "bg-warning-subtle text-warning-text",
 };
 
 const HANDLER_COLORS: Record<string, string> = {
   command: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
   http: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
   prompt: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
-  script: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  script: "bg-success-subtle text-success-text",
 };
 
 export function HookListRow({ hook, onClick, onToggle, onEdit, onDelete, onTest }: HookListRowProps) {
@@ -38,7 +38,7 @@ export function HookListRow({ hook, onClick, onToggle, onEdit, onDelete, onTest 
   return (
     <div className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:border-primary/30 hover:shadow-sm">
       {/* Icon */}
-      <button type="button" onClick={onClick} className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <button type="button" onClick={onClick} aria-label={t("common:view")} className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Webhook className="h-4 w-4" />
       </button>
 

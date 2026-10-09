@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ interface Props {
 
 export function CronSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<CronData>(data ?? DEFAULT);
   const [dirty, setDirty] = useState(false);
 
@@ -49,8 +50,9 @@ export function CronSection({ data, onSave, saving }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-1.5">
-          <InfoLabel tip={t("cron.defaultTimezoneTip")}>{t("cron.defaultTimezone")}</InfoLabel>
+          <InfoLabel tip={t("cron.defaultTimezoneTip")} htmlFor={`${uid}-default-timezone`}>{t("cron.defaultTimezone")}</InfoLabel>
           <Combobox
+            id={`${uid}-default-timezone`}
             value={draft.default_timezone || "__system__"}
             onChange={(v) => update({ default_timezone: v === "__system__" ? "" : v })}
             options={[
@@ -63,8 +65,9 @@ export function CronSection({ data, onSave, saving }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("cron.maxRetriesTip")}>{t("cron.maxRetries")}</InfoLabel>
+            <InfoLabel tip={t("cron.maxRetriesTip")} htmlFor={`${uid}-max-retries`}>{t("cron.maxRetries")}</InfoLabel>
             <Input
+              id={`${uid}-max-retries`}
               type="number"
               value={draft.max_retries ?? ""}
               onChange={(e) => update({ max_retries: Number(e.target.value) })}
@@ -73,16 +76,18 @@ export function CronSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("cron.baseDelayTip")}>{t("cron.baseDelay")}</InfoLabel>
+            <InfoLabel tip={t("cron.baseDelayTip")} htmlFor={`${uid}-base-delay`}>{t("cron.baseDelay")}</InfoLabel>
             <Input
+              id={`${uid}-base-delay`}
               value={draft.retry_base_delay ?? ""}
               onChange={(e) => update({ retry_base_delay: e.target.value })}
               placeholder="2s"
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("cron.maxDelayTip")}>{t("cron.maxDelay")}</InfoLabel>
+            <InfoLabel tip={t("cron.maxDelayTip")} htmlFor={`${uid}-max-delay`}>{t("cron.maxDelay")}</InfoLabel>
             <Input
+              id={`${uid}-max-delay`}
               value={draft.retry_max_delay ?? ""}
               onChange={(e) => update({ retry_max_delay: e.target.value })}
               placeholder="30s"

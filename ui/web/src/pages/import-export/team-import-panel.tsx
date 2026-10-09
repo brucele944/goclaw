@@ -43,7 +43,7 @@ export function TeamImportPanel() {
         <div className="flex items-center justify-end gap-2 pt-2">
           {imp.status === "running" && (
             <>
-              <p className="text-xs text-amber-600 mr-auto flex items-center gap-1">
+              <p className="text-xs text-warning-text mr-auto flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 {t("teamDontClose")}
               </p>
@@ -64,18 +64,7 @@ export function TeamImportPanel() {
   return (
     <div className="space-y-4">
       {!file && (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{t("teamDropHere")}</p>
-          <p className="text-xs text-muted-foreground/60">{t("teamDropFormats")}</p>
+        <>
           <input
             ref={fileRef}
             type="file"
@@ -83,7 +72,21 @@ export function TeamImportPanel() {
             accept=".tar.gz,.gz"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
           />
-        </div>
+          <button
+            type="button"
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground/50" />
+            <span className="block text-sm text-muted-foreground">{t("teamDropHere")}</span>
+            <span className="block text-xs text-muted-foreground/60">{t("teamDropFormats")}</span>
+          </button>
+        </>
       )}
 
       {file && (

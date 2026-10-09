@@ -35,7 +35,7 @@ export function TraceListRow({ trace, onClick }: TraceListRowProps) {
             <span title="Delegated" className="text-text-muted text-xs shrink-0">🔀</span>
           )}
           {trace.channel && (
-            <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-surface-tertiary text-text-secondary border border-border shrink-0">
+            <span className="rounded-full px-1.5 py-0.5 text-2xs bg-surface-tertiary text-text-secondary border border-border shrink-0">
               {trace.channel}
             </span>
           )}
@@ -44,7 +44,7 @@ export function TraceListRow({ trace, onClick }: TraceListRowProps) {
 
       {/* Status */}
       <td className="px-4 py-3">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${statusClass(trace.status)}`}>
+        <span className={`rounded-full px-2 py-0.5 text-2xs font-medium border ${statusClass(trace.status)}`}>
           {trace.status}
         </span>
       </td>
@@ -60,7 +60,7 @@ export function TraceListRow({ trace, onClick }: TraceListRowProps) {
           {formatTokens(trace.total_input_tokens)} / {formatTokens(trace.total_output_tokens)}
         </div>
         {(cacheRead ?? 0) > 0 && (
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400">
+          <div className="text-2xs text-emerald-600 dark:text-emerald-400">
             {formatTokens(cacheRead)} {t('cached')}
           </div>
         )}

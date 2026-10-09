@@ -73,7 +73,7 @@ function FieldRenderer({ field, value, onChange, id, isEdit, disabled, disabledH
         <div className="space-y-1">
           <label htmlFor={id} className="text-xs font-medium text-text-secondary">{label}{labelSuffix}{editHint}</label>
           <input id={id} type={field.type} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} className={inputClass} />
-          {help && <p className="text-[11px] text-text-muted">{help}</p>}
+          {help && <p className="text-2xs text-text-muted">{help}</p>}
         </div>
       )
 
@@ -82,7 +82,7 @@ function FieldRenderer({ field, value, onChange, id, isEdit, disabled, disabledH
         <div className="space-y-1">
           <label htmlFor={id} className="text-xs font-medium text-text-secondary">{label}{labelSuffix}</label>
           <input id={id} type="number" value={value !== undefined && value !== null ? String(value) : ''} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)} placeholder={field.defaultValue !== undefined ? String(field.defaultValue) : undefined} className={inputClass} />
-          {help && <p className="text-[11px] text-text-muted">{help}</p>}
+          {help && <p className="text-2xs text-text-muted">{help}</p>}
         </div>
       )
 
@@ -91,8 +91,8 @@ function FieldRenderer({ field, value, onChange, id, isEdit, disabled, disabledH
         <div className={`flex items-center gap-2${disabled ? ' opacity-50' : ''}`}>
           <Switch checked={(value as boolean) ?? (field.defaultValue as boolean) ?? false} onCheckedChange={(v) => onChange(v)} disabled={disabled} />
           <label className="text-xs text-text-secondary">{label}</label>
-          {disabledHint && <span className="text-[11px] text-text-muted ml-1">— {disabledHint}</span>}
-          {!disabledHint && help && <span className="text-[11px] text-text-muted ml-1">— {help}</span>}
+          {disabledHint && <span className="text-2xs text-text-muted ml-1">— {disabledHint}</span>}
+          {!disabledHint && help && <span className="text-2xs text-text-muted ml-1">— {help}</span>}
         </div>
       )
 
@@ -106,7 +106,7 @@ function FieldRenderer({ field, value, onChange, id, isEdit, disabled, disabledH
             options={field.options?.map((opt) => ({ value: opt.value, label: opt.label })) ?? []}
             allowCustom={false}
           />
-          {help && <p className="text-[11px] text-text-muted">{help}</p>}
+          {help && <p className="text-2xs text-text-muted">{help}</p>}
         </div>
       )
 
@@ -125,7 +125,7 @@ function FieldRenderer({ field, value, onChange, id, isEdit, disabled, disabledH
             rows={3}
             className={`${inputClass} font-mono resize-y`}
           />
-          {help && <p className="text-[11px] text-text-muted">{help}</p>}
+          {help && <p className="text-2xs text-text-muted">{help}</p>}
         </div>
       )
 

@@ -40,7 +40,7 @@ export function TeamOrchestrationSection({
         <h3 className="text-sm font-medium">{t("settings.workspace")}</h3>
         <div className="rounded-lg border bg-gradient-to-r from-emerald-500/5 to-teal-500/5 p-4">
           <div className="flex items-start gap-4">
-            <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-600 dark:text-emerald-400">
+            <div className="rounded-lg bg-success-subtle p-2.5 text-success-text">
               <FolderSync className="h-5 w-5" />
             </div>
             <div className="flex-1 space-y-3">
@@ -100,7 +100,7 @@ export function TeamOrchestrationSection({
         <h3 className="text-sm font-medium">{t("settings.blockerEscalation")}</h3>
         <div className="rounded-lg border bg-gradient-to-r from-orange-500/5 to-red-500/5 p-4">
           <div className="flex items-start gap-4">
-            <div className="rounded-lg bg-orange-500/10 p-2.5 text-orange-600 dark:text-orange-400">
+            <div className="rounded-lg bg-warning-subtle p-2.5 text-warning-text">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div className="flex-1">
@@ -121,7 +121,7 @@ export function TeamOrchestrationSection({
         <h3 className="text-sm font-medium">{t("settings.followupReminders")}</h3>
         <div className="rounded-lg border bg-gradient-to-r from-amber-500/5 to-yellow-500/5 p-4">
           <div className="flex items-start gap-4">
-            <div className="rounded-lg bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400">
+            <div className="rounded-lg bg-warning-subtle p-2.5 text-warning-text">
               <Clock className="h-5 w-5" />
             </div>
             <div className="flex-1 space-y-4">

@@ -14,6 +14,7 @@ import { useTraces, type TraceData } from "./hooks/use-traces";
 import { TraceDetailDialog } from "./trace-detail-dialog";
 import { useMinLoading } from "@/hooks/use-min-loading";
 import { useDeferredLoading } from "@/hooks/use-deferred-loading";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useUiStore } from "@/stores/use-ui-store";
 import { useAgents } from "@/pages/agents/hooks/use-agents";
 import { useChannelInstances } from "@/pages/channels/hooks/use-channel-instances";
@@ -191,8 +192,8 @@ export function TracesPage() {
                   return (
                     <tr
                       key={trace.id}
-                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
-                      onClick={() => setSelectedTraceId(trace.id)}
+                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      {...getClickableProps(() => setSelectedTraceId(trace.id))}
                     >
                       <td className="px-4 py-2.5 max-w-[300px] lg:max-w-[400px]">
                         <div className="flex items-center gap-1.5 text-sm font-medium min-w-0">
@@ -247,7 +248,7 @@ export function TracesPage() {
                       <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                         <div>{formatTokens(trace.total_input_tokens)} / {formatTokens(trace.total_output_tokens)}</div>
                         {(trace.metadata?.total_cache_read_tokens ?? 0) > 0 && (
-                          <div className="text-xs text-green-400">
+                          <div className="text-xs">
                             {formatTokens(trace.metadata!.total_cache_read_tokens!)} {t("cached")}
                           </div>
                         )}
@@ -291,13 +292,13 @@ export function TracesPage() {
 
 function StatusIcon({ status }: { status: string }) {
   if (status === "ok" || status === "success" || status === "completed") {
-    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    return <CheckCircle2 className="h-4 w-4 text-success-text" />;
   }
   if (status === "error" || status === "failed") {
     return <XCircle className="h-4 w-4 text-destructive" />;
   }
   if (status === "running") {
-    return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+    return <Loader2 className="h-4 w-4 text-info-text animate-spin" />;
   }
   if (status === "pending") {
     return <CircleDashed className="h-4 w-4 text-muted-foreground" />;

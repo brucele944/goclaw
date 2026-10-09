@@ -126,7 +126,7 @@ export function FilterBar({ agents, providerBreakdown, channelBreakdown, onExpor
           {chips.map((chip) => (
             <Badge key={chip.label} variant="secondary" className="gap-1 text-xs">
               {chip.label}
-              <button onClick={chip.onRemove} className="ml-0.5 hover:text-foreground">
+              <button onClick={chip.onRemove} aria-label={t("analytics.removeFilter")} className="ml-0.5 hover:text-foreground">
                 <X className="h-3 w-3" />
               </button>
             </Badge>

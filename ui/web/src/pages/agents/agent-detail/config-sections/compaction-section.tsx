@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +12,7 @@ interface CompactionSectionProps {
 
 export function CompactionSection({ value, onChange }: CompactionSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.compaction";
   return (
     <section className="space-y-3">
@@ -21,8 +23,9 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
       <div className="rounded-lg border p-3 space-y-4 sm:p-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.maxRequestShareTip`)}>{t(`${s}.maxRequestShare`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxRequestShare`} tip={t(`${s}.maxRequestShareTip`)}>{t(`${s}.maxRequestShare`)}</InfoLabel>
           <Input
+            id={`${uid}-maxRequestShare`}
             type="number"
             step="0.05"
             placeholder="0.85"
@@ -31,8 +34,9 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
           />
         </div>
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.maxHistoryShareTip`)}>{t(`${s}.maxHistoryShare`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxHistoryShare`} tip={t(`${s}.maxHistoryShareTip`)}>{t(`${s}.maxHistoryShare`)}</InfoLabel>
           <Input
+            id={`${uid}-maxHistoryShare`}
             type="number"
             step="0.05"
             placeholder="0.85"
@@ -41,8 +45,9 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
           />
         </div>
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.keepLastMessagesTip`)}>{t(`${s}.keepLastMessages`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-keepLastMessages`} tip={t(`${s}.keepLastMessagesTip`)}>{t(`${s}.keepLastMessages`)}</InfoLabel>
           <Input
+            id={`${uid}-keepLastMessages`}
             type="number"
             placeholder="4"
             value={value.keepLastMessages ?? ""}
@@ -50,8 +55,9 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
           />
         </div>
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.timeoutSecondsTip`)}>{t(`${s}.timeoutSeconds`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-timeoutSeconds`} tip={t(`${s}.timeoutSecondsTip`)}>{t(`${s}.timeoutSeconds`)}</InfoLabel>
           <Input
+            id={`${uid}-timeoutSeconds`}
             type="number"
             placeholder="120"
             value={value.timeoutSeconds ?? ""}
@@ -61,12 +67,13 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
       </div>
       <div className="flex items-center gap-2">
         <Switch
+          id={`${uid}-memoryFlush`}
           checked={value.memoryFlush?.enabled ?? true}
           onCheckedChange={(v) =>
             onChange({ ...value, memoryFlush: { ...value.memoryFlush, enabled: v } })
           }
         />
-        <InfoLabel tip={t(`${s}.memoryFlushTip`)}>{t(`${s}.memoryFlush`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-memoryFlush`} tip={t(`${s}.memoryFlushTip`)}>{t(`${s}.memoryFlush`)}</InfoLabel>
       </div>
       </div>
     </section>

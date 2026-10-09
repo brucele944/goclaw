@@ -15,7 +15,7 @@ export function MemoryTab() {
     <div className="space-y-3 pt-2">
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <Brain className="h-4 w-4 text-blue-500" />
+          <Brain className="h-4 w-4 text-info-text" />
           <h4 className="text-sm font-medium">{t("memory.title")}</h4>
         </div>
         <p className="text-xs text-muted-foreground">

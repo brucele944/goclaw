@@ -71,7 +71,7 @@ export function ConfirmDeleteDialog({
           <button
             onClick={onConfirm}
             disabled={!isMatch || loading}
-            className="px-3 py-1.5 text-xs bg-error text-white rounded-lg transition-opacity disabled:opacity-50 hover:opacity-90"
+            className="px-3 py-1.5 text-xs bg-error text-error-foreground rounded-lg transition-opacity disabled:opacity-50 hover:opacity-90"
           >
             {loading ? '...' : resolvedConfirmLabel}
           </button>

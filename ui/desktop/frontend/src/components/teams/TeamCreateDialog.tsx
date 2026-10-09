@@ -63,7 +63,7 @@ export function TeamCreateDialog({ agents, onClose, onCreated }: TeamCreateDialo
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="text-sm font-semibold text-text-primary">{t('createTeam', 'Create Team')}</h3>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer">
+          <button aria-label={t('common:close')} onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer p-2">
             <IconClose size={16} />
           </button>
         </div>
@@ -117,7 +117,7 @@ export function TeamCreateDialog({ agents, onClose, onCreated }: TeamCreateDialo
                         'w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors',
                         checked ? 'bg-accent' : 'border border-border bg-surface-tertiary',
                       ].join(' ')}>
-                        {checked && <IconCheck size={10} className="text-white" />}
+                        {checked && <IconCheck size={10} className="text-accent-foreground" />}
                       </div>
                       <span className={`text-xs font-medium ${checked ? 'text-accent' : 'text-text-secondary'}`}>
                         {opt.label}
@@ -127,7 +127,7 @@ export function TeamCreateDialog({ agents, onClose, onCreated }: TeamCreateDialo
                 })}
               </div>
               {memberKeys.length > 0 && (
-                <p className="text-[10px] text-text-muted mt-1 px-1">
+                <p className="text-2xs text-text-muted mt-1 px-1">
                   {memberKeys.length} {t('selected', 'selected')}
                 </p>
               )}
@@ -136,7 +136,7 @@ export function TeamCreateDialog({ agents, onClose, onCreated }: TeamCreateDialo
 
           {/* Validation: need at least lead + 1 member */}
           {lead && memberKeys.length === 0 && memberOptions.length > 0 && (
-            <p className="text-[10px] text-amber-500 px-1">
+            <p className="text-2xs text-amber-500 px-1">
               {t('needMembers', 'Select at least 1 member for the team')}
             </p>
           )}
@@ -149,7 +149,7 @@ export function TeamCreateDialog({ agents, onClose, onCreated }: TeamCreateDialo
             <button
               type="submit"
               disabled={!name.trim() || !lead || memberKeys.length === 0 || saving}
-              className="text-xs font-medium bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 cursor-pointer"
+              className="text-xs font-medium bg-accent text-accent-foreground px-4 py-1.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 cursor-pointer"
             >
               {saving ? t('creating', 'Creating...') : t('create', 'Create')}
             </button>

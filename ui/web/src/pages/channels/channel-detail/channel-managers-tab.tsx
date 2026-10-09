@@ -185,6 +185,7 @@ export function ChannelManagersTab({
                                       size="icon"
                                       className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                       onClick={() => handleRemoveManager(g.group_id, w.user_id)}
+                                      aria-label={t("common:remove")}
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>

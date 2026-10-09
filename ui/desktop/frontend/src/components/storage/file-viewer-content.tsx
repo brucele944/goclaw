@@ -23,7 +23,7 @@ function CodeViewer({ content, language }: { content: string; language: string }
 
   return (
     <div className="rounded-lg overflow-hidden border border-border">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-tertiary text-[11px]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-tertiary text-2xs">
         <span className="text-text-muted font-mono uppercase tracking-wide">{language || 'text'}</span>
         <button onClick={handleCopy} className="text-text-muted hover:text-text-primary transition-colors cursor-pointer">
           {copied ? `${t('copy')}!` : t('copy')}
@@ -78,7 +78,7 @@ function CsvViewer({ content }: { content: string }) {
 
   return (
     <div className="rounded-lg border border-border flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-tertiary text-[11px] shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-tertiary text-2xs shrink-0">
         <span className="text-text-muted font-mono uppercase tracking-wide">{body.length} rows</span>
         <button onClick={handleCopy} className="text-text-muted hover:text-text-primary transition-colors cursor-pointer">
           {copied ? `${t('copy')}!` : t('copy')}
@@ -89,7 +89,7 @@ function CsvViewer({ content }: { content: string }) {
           <thead className="sticky top-0 z-10">
             <tr className="bg-surface-tertiary">
               {header.map((col, i) => (
-                <th key={i} className="px-3 py-2 text-left text-[11px] font-semibold tracking-wide border-b border-border whitespace-nowrap text-text-primary">
+                <th key={i} className="px-3 py-2 text-left text-2xs font-semibold tracking-wide border-b border-border whitespace-nowrap text-text-primary">
                   {col}
                 </th>
               ))}
@@ -183,7 +183,7 @@ function UnsupportedViewer({ path, size, onDownload }: { path: string; size: num
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
           </svg>
           {fileName}
-          <span className="text-[10px] text-text-muted">({formatSize(size)})</span>
+          <span className="text-2xs text-text-muted">({formatSize(size)})</span>
         </button>
       )}
     </div>

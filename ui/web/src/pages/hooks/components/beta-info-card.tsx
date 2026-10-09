@@ -37,30 +37,30 @@ export function BetaInfoCard() {
 
   return (
     <>
-      <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/10">
+      <div className="rounded-lg border border-info/25 bg-info-subtle">
         <button
           type="button"
           onClick={toggle}
           className="flex w-full items-center gap-2 px-4 py-3 text-left"
           aria-expanded={!collapsed}
         >
-          <Sparkles className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+          <Sparkles className="h-4 w-4 shrink-0 text-info-text" />
+          <span className="text-sm font-medium dark:text-blue-100">
             {t("beta.title")}
           </span>
-          <span className="rounded-full bg-blue-200/80 px-1.5 py-0.5 text-2xs font-semibold uppercase text-blue-800 dark:bg-blue-800/40 dark:text-blue-200">
+          <span className="rounded-full bg-info-subtle px-1.5 py-0.5 text-2xs font-semibold uppercase dark:text-blue-200">
             {t("beta.badge")}
           </span>
           <div className="flex-1" />
           {collapsed ? (
-            <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <ChevronDown className="h-4 w-4 text-info-text" />
           ) : (
-            <ChevronUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <ChevronUp className="h-4 w-4 text-info-text" />
           )}
         </button>
 
         {!collapsed && (
-          <div className="space-y-3 px-4 pb-4 text-sm text-blue-900/90 dark:text-blue-100/90">
+          <div className="space-y-3 px-4 pb-4 text-sm dark:text-blue-100/90">
             <p>{t("beta.description")}</p>
 
             <div className="grid gap-3 sm:grid-cols-3">
@@ -74,7 +74,7 @@ export function BetaInfoCard() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setModalOpen(true)}
-                className="h-7 gap-1 text-xs text-blue-700 hover:bg-blue-100 hover:text-blue-900 dark:text-blue-300 dark:hover:bg-blue-900/30 dark:hover:text-blue-100"
+                className="h-7 gap-1 text-xs text-info-text hover:bg-info-subtle hover:text-blue-900 dark:hover:text-blue-100"
               >
                 <Info className="h-3.5 w-3.5" />
                 {t("beta.learnMore")}
@@ -83,7 +83,7 @@ export function BetaInfoCard() {
                 variant="ghost"
                 size="sm"
                 onClick={toggle}
-                className="h-7 text-xs text-blue-700 hover:bg-blue-100 hover:text-blue-900 dark:text-blue-300 dark:hover:bg-blue-900/30 dark:hover:text-blue-100"
+                className="h-7 text-xs text-info-text hover:bg-info-subtle hover:text-blue-900 dark:hover:text-blue-100"
               >
                 {t("beta.collapse")}
               </Button>
@@ -132,9 +132,9 @@ function ExplainerSection({ title, body }: { title: string; body: string }) {
 
 function BetaPoint({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded border border-blue-200/60 bg-white/60 p-3 dark:border-blue-900/40 dark:bg-blue-950/30">
-      <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">{title}</p>
-      <p className="mt-1 text-xs text-blue-800/80 dark:text-blue-200/70">{body}</p>
+    <div className="rounded border border-blue-200/60 bg-white/60 p-3">
+      <p className="text-xs font-semibold dark:text-blue-100">{title}</p>
+      <p className="mt-1 text-xs dark:text-blue-200/70">{body}</p>
     </div>
   );
 }

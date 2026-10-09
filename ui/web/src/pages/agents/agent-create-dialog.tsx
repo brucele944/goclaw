@@ -156,8 +156,8 @@ export function AgentCreateDialog({ open, onOpenChange, onCreate }: AgentCreateD
           <AgentDescriptionSection form={form} agentPresets={agentPresets} />
 
           {/* Prompt Mode selector */}
-          <div className="space-y-1.5">
-            <Label>{t("detail.prompt.title")}</Label>
+          <div className="space-y-1.5" role="group" aria-labelledby="prompt-mode-label">
+            <Label id="prompt-mode-label">{t("detail.prompt.title")}</Label>
             <PromptModeCards
               value={(watch("promptMode") ?? "full") as PromptMode}
               onChange={(m) => setValue("promptMode", m === "full" ? undefined : m)}

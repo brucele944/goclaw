@@ -1,12 +1,15 @@
 import { useRef, useEffect, useCallback } from "react";
 import type Sigma from "sigma";
 import type Graph from "graphology";
+import { graphColor } from "./graph-color-tokens";
 
 interface SigmaGraphMinimapProps {
   sigma: Sigma | null;
   graph: Graph;
   /** Minimap canvas size in pixels */
   size?: number;
+  /** Active theme, used to resolve canvas colours */
+  isDark: boolean;
 }
 
 /**
@@ -14,7 +17,7 @@ interface SigmaGraphMinimapProps {
  * Draws all nodes as small dots + a viewport rectangle showing the current camera view.
  * Click to jump, no drag (KISS).
  */
-export function SigmaGraphMinimap({ sigma, graph, size = 140 }: SigmaGraphMinimapProps) {
+export function SigmaGraphMinimap({ sigma, graph, size = 140, isDark }: SigmaGraphMinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -57,16 +60,19 @@ export function SigmaGraphMinimap({ sigma, graph, size = 140 }: SigmaGraphMinima
     ctx.clearRect(0, 0, size, size);
 
     // Background
-    ctx.fillStyle = "rgba(0,0,0,0.03)";
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = graphColor("slate", isDark);
     ctx.fillRect(0, 0, size, size);
+    ctx.globalAlpha = 1;
 
     // Draw nodes as 1.5px dots
+    const dotFallback = graphColor("slate", isDark);
     graph.forEachNode((_node, attrs) => {
       const x = ((attrs.x as number) - bounds.minX) * scale + offsetX;
       const y = ((attrs.y as number) - bounds.minY) * scale + offsetY;
       ctx.beginPath();
       ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-      ctx.fillStyle = (attrs.color as string) || "#9ca3af";
+      ctx.fillStyle = (attrs.color as string) || dotFallback;
       ctx.fill();
     });
 
@@ -83,12 +89,16 @@ export function SigmaGraphMinimap({ sigma, graph, size = 140 }: SigmaGraphMinima
     const vw = vx2 - vx1;
     const vh = vy2 - vy1;
 
-    ctx.strokeStyle = "rgba(59, 130, 246, 0.7)";
+    const viewportColor = graphColor("blue", isDark);
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = viewportColor;
     ctx.lineWidth = 1.5;
     ctx.strokeRect(vx1, vy1, vw, vh);
-    ctx.fillStyle = "rgba(59, 130, 246, 0.08)";
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = viewportColor;
     ctx.fillRect(vx1, vy1, vw, vh);
-  }, [sigma, graph, size, getBounds]);
+    ctx.globalAlpha = 1;
+  }, [sigma, graph, size, getBounds, isDark]);
 
   // Redraw on camera changes
   useEffect(() => {

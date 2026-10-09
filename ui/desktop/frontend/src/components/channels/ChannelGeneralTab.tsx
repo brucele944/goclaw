@@ -81,7 +81,7 @@ export function ChannelGeneralTab({ instance, agents, onUpdate }: ChannelGeneral
           <div className="px-3 py-2 rounded-lg border border-border bg-surface-tertiary/50 text-xs text-text-muted font-mono">
             {instance.name}
           </div>
-          <p className="text-[11px] text-text-muted">{t('detail.general.nameHint')}</p>
+          <p className="text-2xs text-text-muted">{t('detail.general.nameHint')}</p>
         </div>
 
         <div className="space-y-1">
@@ -130,7 +130,7 @@ export function ChannelGeneralTab({ instance, agents, onUpdate }: ChannelGeneral
       <button
         onClick={handleSave}
         disabled={saving}
-        className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
+        className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
       >
         {saving ? t('detail.general.saving') : t('detail.general.saveChanges')}
       </button>

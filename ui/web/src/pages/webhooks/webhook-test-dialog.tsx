@@ -93,8 +93,8 @@ export function WebhookTestDialog({ webhook, onClose, onRun }: Props) {
         </DialogHeader>
 
         {isMessage && (
-          <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-sm">
+            <AlertTriangle className="h-4 w-4 text-warning-text shrink-0 mt-0.5" />
             <span>{t("test.messageWarning")}</span>
           </div>
         )}
@@ -169,7 +169,7 @@ export function WebhookTestDialog({ webhook, onClose, onRun }: Props) {
                     chatId: (result as WebhookTestMessageResult).chat_id,
                   })}
                   {(result as WebhookTestMessageResult).warning && (
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-warning-text mt-1">
                       {(result as WebhookTestMessageResult).warning}
                     </p>
                   )}

@@ -37,7 +37,7 @@ export function CronJobsCard({ jobs }: { jobs: CronJob[] }) {
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
                       job.enabled
-                        ? "bg-emerald-500"
+                        ? "bg-success"
                         : "bg-muted-foreground/40"
                     }`}
                   />

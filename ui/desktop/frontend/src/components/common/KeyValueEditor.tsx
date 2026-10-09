@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface KeyValueEditorProps {
   value: Record<string, string>
@@ -30,6 +31,7 @@ function fromRows(rows: Row[]): Record<string, string> {
 }
 
 export function KeyValueEditor({ value, onChange, sensitivePattern, placeholder }: KeyValueEditorProps) {
+  const { t } = useTranslation('common')
   const [rows, setRows] = useState<Row[]>(() => toRows(value))
 
   function updateAndEmit(updated: Row[]) {
@@ -73,8 +75,9 @@ export function KeyValueEditor({ value, onChange, sensitivePattern, placeholder 
           />
           <button
             type="button"
+            aria-label={t('remove')}
             onClick={() => removeRow(row.id)}
-            className="shrink-0 p-1 text-text-muted hover:text-error transition-colors"
+            className="shrink-0 p-2 text-text-muted hover:text-error transition-colors"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />

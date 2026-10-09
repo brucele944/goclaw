@@ -20,7 +20,7 @@ export function V3InfoModal({ open, onOpenChange }: V3InfoModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("v3Info.title")}
-            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">v3</Badge>
+            <Badge className="bg-info-subtle text-info-text">v3</Badge>
           </DialogTitle>
           <DialogDescription>{t("v3Info.subtitle")}</DialogDescription>
         </DialogHeader>

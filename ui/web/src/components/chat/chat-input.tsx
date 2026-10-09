@@ -123,6 +123,7 @@ export function ChatInput({
               <button
                 type="button"
                 onClick={() => removeFile(i)}
+                aria-label={t("remove")}
                 className="rounded-sm p-0.5 hover:bg-accent"
               >
                 <X className="h-3 w-3" />

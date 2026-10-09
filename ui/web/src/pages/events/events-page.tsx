@@ -142,7 +142,7 @@ export function EventsPage() {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 pb-10">
+    <div className="flex h-full min-h-0 flex-col p-4 pb-4 sm:p-6">
       <PageHeader
         title={t("title")}
         description={t("description")}
@@ -241,7 +241,7 @@ export function EventsPage() {
       </div>
 
       {/* Event feed */}
-      <div className="mt-4 rounded-md border">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-md border">
         {filteredEvents.length === 0 ? (
           <div className="px-4 py-12">
             <EmptyState
@@ -251,11 +251,11 @@ export function EventsPage() {
             />
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative flex min-h-0 flex-1 flex-col">
             <div
               ref={feedRef}
               onScroll={handleScroll}
-              className="max-h-[calc(100vh-280px)] min-h-[200px] space-y-2 overflow-y-auto p-3"
+              className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
             >
               {filteredEvents.map((entry) => (
                 <EventCard key={entry.id} entry={entry} resolveTeam={resolveTeam} />

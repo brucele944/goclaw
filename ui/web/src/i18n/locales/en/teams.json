@@ -9,6 +9,7 @@
   "noMatchDescription": "Try a different search term.",
   "viewCard": "Card view",
   "viewList": "List view",
+  "viewBoard": "Board view",
   "scope": {
     "all": "All scopes",
     "label": "Scope"
@@ -363,7 +364,12 @@
     "locked": "Agent is running",
     "emptyColumn": "No tasks",
     "unassigned": "Unassigned",
-    "createViaChat": "Chat with the team agent to create tasks"
+    "createViaChat": "Chat with the team agent to create tasks",
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityHigh": "High",
+    "priorityCritical": "Critical",
+    "priorityTooltip": "{{level}} priority"
   },
   "sidebar": {
     "members": "Members",

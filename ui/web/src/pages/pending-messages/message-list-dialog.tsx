@@ -54,7 +54,7 @@ export function MessageListDialog({
                   key={msg.id}
                   className={
                     "rounded-md border p-3 text-sm" +
-                    (msg.is_summary ? " border-amber-500/30 bg-amber-500/5" : "")
+                    (msg.is_summary ? "border-warning/25 bg-warning-subtle" : "")
                   }
                 >
                   <div className="mb-1.5 flex items-center gap-2">

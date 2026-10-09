@@ -86,6 +86,7 @@ export function AgentSharesTab({ agentId }: AgentSharesTabProps) {
           <div className="flex-1 space-y-1.5">
             <Label htmlFor="shareUserId">{t("shares.userId")}</Label>
             <Combobox
+              id="shareUserId"
               value={newUserId}
               onChange={handleUserIdChange}
               options={options}
@@ -93,9 +94,9 @@ export function AgentSharesTab({ agentId }: AgentSharesTabProps) {
             />
           </div>
           <div className="w-full space-y-1.5 sm:w-36">
-            <Label>{t("shares.role")}</Label>
+            <Label htmlFor="shareRole">{t("shares.role")}</Label>
             <Select value={newRole} onValueChange={setNewRole}>
-              <SelectTrigger>
+              <SelectTrigger id="shareRole">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -166,6 +167,7 @@ export function AgentSharesTab({ agentId }: AgentSharesTabProps) {
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => setRevokeTarget(share.user_id)}
+                  aria-label={t("shares.revoke")}
                 >
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>

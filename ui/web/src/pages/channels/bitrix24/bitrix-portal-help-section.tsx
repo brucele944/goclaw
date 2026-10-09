@@ -57,7 +57,7 @@ export function BitrixPortalHelpSection() {
               </Button>
             </div>
             {isLocalDev && (
-              <p className="mt-1 text-amber-600">
+              <p className="mt-1 text-warning-text">
                 ⚠ {t("bitrix24.create.help.localDevWarning", {
                   defaultValue: "You're on localhost — Bitrix24 cannot reach this URL. Use Cloudflare Tunnel or your public domain first.",
                 })}

@@ -22,13 +22,13 @@ export function ProviderRow({ provider, onEdit, onDelete }: ProviderRowProps) {
           <span className="text-sm font-medium text-text-primary truncate">
             {provider.display_name || provider.name}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0">
+          <span className="text-2xs px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0">
             {typeInfo?.label ?? provider.provider_type}
           </span>
         </div>
         <ProviderMetaChips provider={provider} />
         {provider.api_base && (
-          <p className="text-[11px] text-text-muted truncate mt-0.5">{provider.api_base}</p>
+          <p className="text-2xs text-text-muted truncate mt-0.5">{provider.api_base}</p>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ interface Props {
 
 export function ToolsExecSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ToolsData>(data ?? {});
   const [allowlistText, setAllowlistText] = useState("");
   const [allowlistError, setAllowlistError] = useState<string | null>(null);
@@ -85,24 +86,24 @@ export function ToolsExecSection({ data, onSave, saving }: Props) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.execSecurityTip")}>{t("tools.execSecurity")}</InfoLabel>
+            <InfoLabel tip={t("tools.execSecurityTip")} htmlFor={`${uid}-exec-security`}>{t("tools.execSecurity")}</InfoLabel>
             <Select value={exec.security ?? "full"} onValueChange={(v) => updateNested("execApproval", { security: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id={`${uid}-exec-security`}><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="deny">Deny All</SelectItem>
-                <SelectItem value="allowlist">Allowlist</SelectItem>
-                <SelectItem value="full">Full (Allow All)</SelectItem>
+                <SelectItem value="deny">{t("tools.execSecurityOption.deny")}</SelectItem>
+                <SelectItem value="allowlist">{t("tools.execSecurityOption.allowlist")}</SelectItem>
+                <SelectItem value="full">{t("tools.execSecurityOption.full")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.execAskModeTip")}>{t("tools.execAskMode")}</InfoLabel>
+            <InfoLabel tip={t("tools.execAskModeTip")} htmlFor={`${uid}-exec-ask`}>{t("tools.execAskMode")}</InfoLabel>
             <Select value={exec.ask ?? "off"} onValueChange={(v) => updateNested("execApproval", { ask: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id={`${uid}-exec-ask`}><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="off">Off</SelectItem>
-                <SelectItem value="on-miss">On Miss</SelectItem>
-                <SelectItem value="always">Always</SelectItem>
+                <SelectItem value="off">{t("tools.execAskOption.off")}</SelectItem>
+                <SelectItem value="on-miss">{t("tools.execAskOption.onMiss")}</SelectItem>
+                <SelectItem value="always">{t("tools.execAskOption.always")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -110,8 +111,9 @@ export function ToolsExecSection({ data, onSave, saving }: Props) {
 
         {exec.security === "allowlist" && (
           <div className="grid gap-1.5">
-            <Label>{t("tools.execAllowlistLabel")}</Label>
+            <Label htmlFor={`${uid}-exec-allowlist`}>{t("tools.execAllowlistLabel")}</Label>
             <Textarea
+              id={`${uid}-exec-allowlist`}
               value={(exec.allowlist ?? []).join("\n")}
               onChange={(e) =>
                 updateNested("execApproval", {
@@ -125,10 +127,11 @@ export function ToolsExecSection({ data, onSave, saving }: Props) {
         )}
 
         <div className="grid gap-1.5">
-          <InfoLabel tip={t("tools.commandKeywordAllowlistTip")}>
+          <InfoLabel tip={t("tools.commandKeywordAllowlistTip")} htmlFor={`${uid}-command-keyword-allowlist`}>
             {t("tools.commandKeywordAllowlist")}
           </InfoLabel>
           <Textarea
+            id={`${uid}-command-keyword-allowlist`}
             value={allowlistText}
             onChange={(e) => updateCommandKeywordAllowlist(e.target.value)}
             className="min-h-[180px] font-mono text-base md:text-sm"

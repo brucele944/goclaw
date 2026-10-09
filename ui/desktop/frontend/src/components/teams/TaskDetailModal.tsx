@@ -57,7 +57,7 @@ export function TaskDetailModal({ task, members, onClose, onAssign, onDelete, on
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold text-text-primary leading-snug sm:text-lg mt-1">{task.subject}</h3>
             </div>
-            <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1.5 cursor-pointer shrink-0 rounded-lg hover:bg-surface-tertiary">
+            <button aria-label={t('common:close')} onClick={onClose} className="text-text-muted hover:text-text-primary p-2.5 cursor-pointer shrink-0 rounded-lg hover:bg-surface-tertiary">
               <IconClose />
             </button>
           </div>

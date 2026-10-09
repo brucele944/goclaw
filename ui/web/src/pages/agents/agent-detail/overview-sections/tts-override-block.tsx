@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { PlayCircleIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,7 @@ export function TtsOverrideBlock({
 }: Props) {
   const { t } = useTranslation("tts");
   const [testing, setTesting] = useState(false);
+  const uid = useId();
 
   // Fetch capabilities for the current provider to find agent-overridable params.
   // Finding #9: capabilities API is the single source of truth — agent_overridable_as
@@ -205,8 +206,9 @@ export function TtsOverrideBlock({
         <div className="space-y-2 pl-6">
           {/* Voice picker — provider-aware */}
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">{t("voice_label")}</Label>
+            <Label htmlFor={`${uid}-voice`} className="text-xs text-muted-foreground">{t("voice_label")}</Label>
             <VoicePicker
+              id={`${uid}-voice`}
               provider={(globalProvider as TtsProviderId) || undefined}
               value={voiceId || undefined}
               onChange={onVoiceChange}
@@ -216,9 +218,9 @@ export function TtsOverrideBlock({
           {/* Model select — catalog-driven; hidden for providers with no models (edge) */}
           {hasModels && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{t("model_label")}</Label>
+              <Label htmlFor={`${uid}-model`} className="text-xs text-muted-foreground">{t("model_label")}</Label>
               <Select value={modelId} onValueChange={onModelChange}>
-                <SelectTrigger className="w-full text-base md:text-sm">
+                <SelectTrigger id={`${uid}-model`} className="w-full text-base md:text-sm">
                   <SelectValue placeholder={t("model_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>

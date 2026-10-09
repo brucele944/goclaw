@@ -95,11 +95,11 @@ export function EditionCompareModal({ open, onClose }: EditionCompareModalProps)
             <h3 className="text-sm font-semibold text-text-primary">
               {t('editionCompare', 'GoClaw Lite vs Standard')}
             </h3>
-            <p className="text-[10px] text-text-muted mt-0.5">
+            <p className="text-2xs text-text-muted mt-0.5">
               {t('editionUpgrade', 'Upgrade to Standard with PostgreSQL for full features')}
             </p>
           </div>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer p-1">
+          <button aria-label={t('common:close')} onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer p-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -110,21 +110,21 @@ export function EditionCompareModal({ open, onClose }: EditionCompareModalProps)
         <div className="overflow-y-auto overscroll-contain flex-1 px-4 py-3">
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_90px_90px] gap-2 mb-2 px-1">
-            <span className="text-[10px] text-text-muted font-medium">{t('feature', 'Feature')}</span>
-            <span className="text-[10px] text-accent font-semibold text-center">Lite</span>
-            <span className="text-[10px] text-text-muted font-medium text-center">Standard</span>
+            <span className="text-2xs text-text-muted font-medium">{t('feature', 'Feature')}</span>
+            <span className="text-2xs text-accent font-semibold text-center">Lite</span>
+            <span className="text-2xs text-text-muted font-medium text-center">Standard</span>
           </div>
 
           {FEATURES.map((group) => (
             <div key={group.group} className="mb-3">
-              <div className="text-[9px] uppercase tracking-wider text-text-muted font-semibold px-1 py-1.5 bg-surface-tertiary/50 rounded mb-1">
+              <div className="text-2xs uppercase tracking-wider text-text-muted font-semibold px-1 py-1.5 bg-surface-tertiary/50 rounded mb-1">
                 {t(`edition.group.${group.group}`, group.group)}
               </div>
               {group.rows.map((row) => (
                 <div key={row.key} className="grid grid-cols-[1fr_90px_90px] gap-2 px-1 py-1.5 border-b border-border/30">
                   <span className="text-xs text-text-primary">{t(`edition.${row.key}`, row.key)}</span>
-                  <div className="text-[11px] text-center"><FeatureCell value={row.lite} /></div>
-                  <div className="text-[11px] text-center"><FeatureCell value={row.standard} /></div>
+                  <div className="text-2xs text-center"><FeatureCell value={row.lite} /></div>
+                  <div className="text-2xs text-center"><FeatureCell value={row.standard} /></div>
                 </div>
               ))}
             </div>

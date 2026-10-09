@@ -52,8 +52,8 @@ export function SpanTreeNode({ node, depth }: { node: SpanNode; depth: number })
             {(span.input_tokens > 0 || span.output_tokens > 0) && (
               <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
                 {formatTokens(span.input_tokens)}/{formatTokens(span.output_tokens)}
-                {(span.metadata?.cache_read_tokens ?? 0) > 0 && <span className="ml-1 text-green-400">({formatTokens(span.metadata!.cache_read_tokens!)} {t("span.cached")})</span>}
-                {(span.metadata?.thinking_tokens ?? 0) > 0 && <span className="ml-1 text-orange-400">({formatTokens(span.metadata!.thinking_tokens!)} {t("span.thinking")})</span>}
+                {(span.metadata?.cache_read_tokens ?? 0) > 0 && <span className="ml-1">({formatTokens(span.metadata!.cache_read_tokens!)} {t("span.cached")})</span>}
+                {(span.metadata?.thinking_tokens ?? 0) > 0 && <span className="ml-1">({formatTokens(span.metadata!.thinking_tokens!)} {t("span.thinking")})</span>}
               </span>
             )}
             {span.created_at && <Badge variant="outline" className="hidden shrink-0 text-xs text-muted-foreground lg:inline-flex">{formatDate(span.created_at, tz)}</Badge>}
@@ -92,13 +92,13 @@ function SpanDetailPanel({ span }: { span: SpanData }) {
           {((span.metadata?.cache_creation_tokens ?? 0) > 0 || (span.metadata?.cache_read_tokens ?? 0) > 0) && (
             <span className="ml-2 text-muted-foreground">
               (cache:
-              {(span.metadata?.cache_read_tokens ?? 0) > 0 && <span className="ml-1 text-green-400">{formatTokens(span.metadata!.cache_read_tokens!)} {t("span.cacheRead")}</span>}
-              {(span.metadata?.cache_creation_tokens ?? 0) > 0 && <span className="ml-1 text-yellow-400">{formatTokens(span.metadata!.cache_creation_tokens!)} {t("span.cacheWrite")}</span>}
+              {(span.metadata?.cache_read_tokens ?? 0) > 0 && <span className="ml-1">{formatTokens(span.metadata!.cache_read_tokens!)} {t("span.cacheRead")}</span>}
+              {(span.metadata?.cache_creation_tokens ?? 0) > 0 && <span className="ml-1">{formatTokens(span.metadata!.cache_creation_tokens!)} {t("span.cacheWrite")}</span>}
               )
             </span>
           )}
           {(span.metadata?.thinking_tokens ?? 0) > 0 && (
-            <span className="ml-2 text-muted-foreground">(<span className="text-orange-400">{formatTokens(span.metadata!.thinking_tokens!)} {t("span.thinking")}</span>)</span>
+            <span className="ml-2 text-muted-foreground">(<span className="">{formatTokens(span.metadata!.thinking_tokens!)} {t("span.thinking")}</span>)</span>
           )}
         </div>
       )}
@@ -116,7 +116,7 @@ function SpanDetailPanel({ span }: { span: SpanData }) {
       )}
       {span.input_preview && <TracePreviewBlock label={t("span.input")} content={span.input_preview} />}
       {span.output_preview && <TracePreviewBlock label={t("span.output")} content={span.output_preview} />}
-      {span.error && <p className="break-all text-xs text-red-300">{span.error}</p>}
+      {span.error && <p className="break-all text-xs">{span.error}</p>}
     </div>
   );
 }

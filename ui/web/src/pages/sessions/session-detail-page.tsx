@@ -143,7 +143,7 @@ export function SessionDetailPage({
       {/* Header */}
       <div className="flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={onBack} aria-label={t("common:back")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -167,6 +167,7 @@ export function SessionDetailPage({
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
+                  aria-label={t("common:save")}
                   onClick={() => {
                     onPatch?.(session.key, { label: titleDraft });
                     setEditingTitle(false);
@@ -174,20 +175,23 @@ export function SessionDetailPage({
                 >
                   <Check className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingTitle(false)}>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingTitle(false)} aria-label={t("common:cancel")}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ) : (
-              <h3
-                className="group flex cursor-pointer items-center gap-1.5 font-medium hover:text-primary"
-                onClick={() => {
-                  setTitleDraft(session.label || session.metadata?.chat_title || session.metadata?.display_name || "");
-                  setEditingTitle(true);
-                }}
-              >
-                {session.metadata?.chat_title || session.metadata?.display_name || session.label || parsed.scope}
-                <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50" />
+              <h3 className="font-medium">
+                <button
+                  type="button"
+                  className="group flex w-full cursor-pointer items-center gap-1.5 rounded text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => {
+                    setTitleDraft(session.label || session.metadata?.chat_title || session.metadata?.display_name || "");
+                    setEditingTitle(true);
+                  }}
+                >
+                  {session.metadata?.chat_title || session.metadata?.display_name || session.label || parsed.scope}
+                  <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50" />
+                </button>
               </h3>
             )}
             <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">

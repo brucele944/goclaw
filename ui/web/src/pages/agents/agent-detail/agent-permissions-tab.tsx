@@ -192,7 +192,7 @@ export function AgentPermissionsTab({ agentId }: AgentPermissionsTabProps) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <Shield className="h-4 w-4 text-amber-500" />
+            <Shield className="h-4 w-4 text-warning-text" />
             {t("permissions.title")}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">{t("permissions.description")}</p>
@@ -280,8 +280,8 @@ export function AgentPermissionsTab({ agentId }: AgentPermissionsTabProps) {
             <div
               className={`flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
                 decision.allowed
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
+                  ? "border-success/25 bg-success-subtle text-success-text"
+                  : "border-warning/25 bg-warning-subtle text-warning-text"
               }`}
             >
               {decision.allowed ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> : <XCircle className="h-3.5 w-3.5 shrink-0" />}
@@ -345,6 +345,7 @@ export function AgentPermissionsTab({ agentId }: AgentPermissionsTabProps) {
                             size="sm"
                             className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
                             onClick={() => revoke(p.scope, p.configType, p.userId)}
+                            aria-label={t("permissions.revoke")}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -382,6 +383,7 @@ export function AgentPermissionsTab({ agentId }: AgentPermissionsTabProps) {
                       size="sm"
                       className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => revoke(p.scope, p.configType, p.userId)}
+                      aria-label={t("permissions.revoke")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

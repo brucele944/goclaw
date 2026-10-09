@@ -29,10 +29,10 @@ function highlightCode(code: string, lang: Tab): React.ReactNode[] {
 function highlightLine(line: string, lang: Tab): React.ReactNode | string {
   // Comments
   if (lang === "curl" && line.trimStart().startsWith("#")) {
-    return <span className="text-emerald-600 dark:text-emerald-400">{line}</span>;
+    return <span className="text-success-text">{line}</span>;
   }
   if ((lang === "typescript" || lang === "go") && line.trimStart().startsWith("//")) {
-    return <span className="text-emerald-600 dark:text-emerald-400">{line}</span>;
+    return <span className="text-success-text">{line}</span>;
   }
 
   // Simple token-based highlighting
@@ -59,7 +59,7 @@ function highlightLine(line: string, lang: Tab): React.ReactNode | string {
     }
     // The string itself
     parts.push(
-      <span key={key++} className="text-amber-600 dark:text-amber-400">{match[0]}</span>,
+      <span key={key++} className="text-warning-text">{match[0]}</span>,
     );
     lastIndex = match.index + match[0].length;
   }

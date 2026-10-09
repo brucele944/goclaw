@@ -9,6 +9,7 @@ import type Graph from "graphology";
 import { useUiStore } from "@/stores/use-ui-store";
 import { SIGMA_SETTINGS, getFA2WorkerSettings, ZOOM_TIERS, TIER_MIN_DEGREE, TIER_EDGE_DEGREE } from "./graph-utils";
 import { resolveGraphNodeDisplayColor } from "./graph-node-colors";
+import { graphChromeColor } from "./graph-color-tokens";
 
 export type EdgeType = "curvedArrow" | "arrow";
 
@@ -29,7 +30,8 @@ export interface SigmaGraphContainerProps {
 }
 
 /** Theme-aware colors — derived from store value, not DOM class.
- *  DOM class lags behind store update, causing stale reads on theme toggle. */
+ *  DOM class lags behind store update, causing stale reads on theme toggle.
+ *  Sigma needs concrete colours, so the tokens are resolved per theme. */
 function useThemeColors() {
   const theme = useUiStore((s) => s.theme);
   const systemDark = typeof window !== "undefined"
@@ -37,9 +39,9 @@ function useThemeColors() {
   const isDark = theme === "dark" || (theme === "system" && systemDark);
   return {
     isDark,
-    labelColor: isDark ? "#e2e8f0" : "#1e293b",
-    edgeColor: isDark ? "#71717a" : "#d4d4d8",
-    highlightEdgeColor: isDark ? "#d4d4d8" : "#3f3f46",
+    labelColor: graphChromeColor("label", isDark),
+    edgeColor: graphChromeColor("edge", isDark),
+    highlightEdgeColor: graphChromeColor("edge-highlight", isDark),
   };
 }
 

@@ -4,7 +4,7 @@ import { V3FeatureCard } from "./v3-feature-card";
 
 const FEATURES = [
   { key: "orchestration", icon: GitBranch, iconColor: "text-indigo-500" },
-  { key: "evolution", icon: TrendingUp, iconColor: "text-orange-500" },
+  { key: "evolution", icon: TrendingUp, iconColor: "text-warning-text" },
 ] as const;
 
 export function V3InfoTabOrchestration() {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Plus, RefreshCw, Users, Trash2, Calendar, Hash, Shield } from "lucide-react";
@@ -40,9 +40,9 @@ const ROLE_KEYS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  owner: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  admin: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  operator: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  owner: "bg-warning-subtle",
+  admin: "bg-warning-subtle",
+  operator: "bg-info-subtle",
   member: "bg-muted text-muted-foreground",
   viewer: "bg-muted text-muted-foreground",
 };
@@ -52,6 +52,8 @@ export function TenantDetailPage() {
   const navigate = useNavigate();
   const { t } = useTranslation("tenants");
   const { t: tc } = useTranslation("common");
+  const userIdFieldId = useId();
+  const roleFieldId = useId();
 
   const { tenant, tenantLoading, users, usersLoading, usersRefreshing, refreshUsers, addUser, removeUser } =
     useTenantDetail(id);
@@ -137,7 +139,7 @@ export function TenantDetailPage() {
             <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
               <Plus className="h-3.5 w-3.5" /> {t("addUser")}
             </Button>
-            <Button variant="outline" size="sm" onClick={refreshUsers} disabled={spinning} className="gap-1">
+            <Button variant="outline" size="sm" onClick={refreshUsers} disabled={spinning} className="gap-1" aria-label={tc("refresh")}>
               <RefreshCw className={spinning ? "animate-spin h-3.5 w-3.5" : "h-3.5 w-3.5"} />
             </Button>
           </div>
@@ -189,8 +191,9 @@ export function TenantDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>{t("userId")}</Label>
+              <Label htmlFor={userIdFieldId}>{t("userId")}</Label>
               <UserPickerCombobox
+                id={userIdFieldId}
                 value={userId}
                 onChange={setUserId}
                 placeholder="user-id"
@@ -199,9 +202,9 @@ export function TenantDetailPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("selectRole")}</Label>
+              <Label htmlFor={roleFieldId}>{t("selectRole")}</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="text-base md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger id={roleFieldId} className="text-base md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TENANT_ROLES.map((r) => (
                     <SelectItem key={r} value={r}>{t(ROLE_KEYS[r] ?? r)}</SelectItem>

@@ -67,7 +67,7 @@ export function CliCredentialAgentChips({ agentGrantsSummary, onOpenGrants }: Pr
               >
                 <span
                   className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
-                    grant.enabled ? "bg-emerald-500" : "bg-muted-foreground"
+                    grant.enabled ? "bg-success" : "bg-muted-foreground"
                   }`}
                 />
                 <span className="truncate max-w-[120px]">{grant.name || grant.agent_key}</span>

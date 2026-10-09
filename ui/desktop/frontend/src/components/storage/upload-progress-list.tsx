@@ -60,12 +60,12 @@ export function UploadProgressList({ entries, uploading, onRemove }: UploadProgr
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="truncate font-medium text-text-primary">{entry.file.name}</span>
-              <span className="shrink-0 text-[10px] text-text-muted">
+              <span className="shrink-0 text-2xs text-text-muted">
                 {(entry.file.size / 1024).toFixed(1)} KB
               </span>
             </div>
             {entry.status === 'error' && (
-              <p className="text-[10px] text-error truncate">{entry.error}</p>
+              <p className="text-2xs text-error truncate">{entry.error}</p>
             )}
           </div>
           {!uploading && entry.status !== 'uploading' && entry.status !== 'success' && (

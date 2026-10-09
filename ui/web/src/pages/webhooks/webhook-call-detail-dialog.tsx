@@ -61,7 +61,7 @@ export function WebhookCallDetailDialog({ webhookId, callId, onClose }: Props) {
           <p className="py-8 text-center text-sm text-muted-foreground">{t("callDetail.loading")}</p>
         ) : (
           <div className="max-h-[70vh] overflow-y-auto space-y-4">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
               <div className="space-y-0.5">
                 <div className="text-xs text-muted-foreground">{t("calls.cols.status")}</div>
                 <Badge variant={STATUS_VARIANT[detail.status]} className="text-xs">

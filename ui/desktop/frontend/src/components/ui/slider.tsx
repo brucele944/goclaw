@@ -31,7 +31,7 @@ function Slider({ className, ...props }: SliderProps) {
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         data-slot="slider-thumb"
-        className="border-accent bg-white block size-4 shrink-0 rounded-full border shadow focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 transition-colors"
+        className="border-accent bg-surface-secondary block size-4 shrink-0 rounded-full border shadow focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 transition-colors"
       />
     </SliderPrimitive.Root>
   )

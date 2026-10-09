@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +12,7 @@ interface MemorySectionProps {
 
 export function MemorySection({ value, onChange }: MemorySectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.memory";
   const ds = "configSections.dreaming";
   const dreaming: DreamingConfig = value.dreaming ?? {};
@@ -25,15 +27,17 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
       <div className="rounded-lg border p-3 space-y-4 sm:p-4">
         <div className="flex items-center gap-2">
           <Switch
+            id={`${uid}-enabled`}
             checked={value.enabled ?? true}
             onCheckedChange={(v) => onChange({ ...value, enabled: v })}
           />
-          <InfoLabel tip={t(`${s}.enabledTip`)}>{t(`${s}.enabled`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-enabled`} tip={t(`${s}.enabledTip`)}>{t(`${s}.enabled`)}</InfoLabel>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.maxChunkLenTip`)}>{t(`${s}.maxChunkLen`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-maxChunkLen`} tip={t(`${s}.maxChunkLenTip`)}>{t(`${s}.maxChunkLen`)}</InfoLabel>
             <Input
+              id={`${uid}-maxChunkLen`}
               type="number"
               placeholder="1000"
               value={value.max_chunk_len ?? ""}
@@ -42,8 +46,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
             />
           </div>
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.chunkOverlapTip`)}>{t(`${s}.chunkOverlap`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-chunkOverlap`} tip={t(`${s}.chunkOverlapTip`)}>{t(`${s}.chunkOverlap`)}</InfoLabel>
             <Input
+              id={`${uid}-chunkOverlap`}
               type="number"
               placeholder="200"
               value={value.chunk_overlap ?? ""}
@@ -54,8 +59,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.maxResultsTip`)}>{t(`${s}.maxResults`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-maxResults`} tip={t(`${s}.maxResultsTip`)}>{t(`${s}.maxResults`)}</InfoLabel>
             <Input
+              id={`${uid}-maxResults`}
               type="number"
               placeholder="6"
               value={value.max_results ?? ""}
@@ -64,8 +70,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
             />
           </div>
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.minScoreTip`)}>{t(`${s}.minScore`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-minScore`} tip={t(`${s}.minScoreTip`)}>{t(`${s}.minScore`)}</InfoLabel>
             <Input
+              id={`${uid}-minScore`}
               type="number"
               step="0.01"
               placeholder="0.35"
@@ -77,8 +84,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.vectorWeightTip`)}>{t(`${s}.vectorWeight`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-vectorWeight`} tip={t(`${s}.vectorWeightTip`)}>{t(`${s}.vectorWeight`)}</InfoLabel>
             <Input
+              id={`${uid}-vectorWeight`}
               type="number"
               step="0.1"
               placeholder="0.7"
@@ -88,8 +96,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
             />
           </div>
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.textWeightTip`)}>{t(`${s}.textWeight`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-textWeight`} tip={t(`${s}.textWeightTip`)}>{t(`${s}.textWeight`)}</InfoLabel>
             <Input
+              id={`${uid}-textWeight`}
               type="number"
               step="0.1"
               placeholder="0.3"
@@ -109,15 +118,17 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
           </div>
           <div className="flex items-center gap-2">
             <Switch
+              id={`${uid}-dreamingEnabled`}
               checked={dreaming.enabled ?? true}
               onCheckedChange={(v) => setDreaming({ enabled: v })}
             />
-            <InfoLabel tip={t(`${ds}.enabledTip`)}>{t(`${ds}.enabled`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-dreamingEnabled`} tip={t(`${ds}.enabledTip`)}>{t(`${ds}.enabled`)}</InfoLabel>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <InfoLabel tip={t(`${ds}.thresholdTip`)}>{t(`${ds}.threshold`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-dreamingThreshold`} tip={t(`${ds}.thresholdTip`)}>{t(`${ds}.threshold`)}</InfoLabel>
               <Input
+                id={`${uid}-dreamingThreshold`}
                 type="number"
                 placeholder="5"
                 value={dreaming.threshold ?? ""}
@@ -126,8 +137,9 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
               />
             </div>
             <div className="space-y-2">
-              <InfoLabel tip={t(`${ds}.debounceMsTip`)}>{t(`${ds}.debounceMs`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-dreamingDebounceMs`} tip={t(`${ds}.debounceMsTip`)}>{t(`${ds}.debounceMs`)}</InfoLabel>
               <Input
+                id={`${uid}-dreamingDebounceMs`}
                 type="number"
                 placeholder="600000"
                 value={dreaming.debounce_ms ?? ""}
@@ -138,10 +150,11 @@ export function MemorySection({ value, onChange }: MemorySectionProps) {
           </div>
           <div className="flex items-center gap-2">
             <Switch
+              id={`${uid}-dreamingVerboseLog`}
               checked={dreaming.verbose_log ?? false}
               onCheckedChange={(v) => setDreaming({ verbose_log: v })}
             />
-            <InfoLabel tip={t(`${ds}.verboseLogTip`)}>{t(`${ds}.verboseLog`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-dreamingVerboseLog`} tip={t(`${ds}.verboseLogTip`)}>{t(`${ds}.verboseLog`)}</InfoLabel>
           </div>
         </div>
       </div>

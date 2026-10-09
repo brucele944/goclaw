@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -48,6 +48,11 @@ export function SortableProviderCard({
 }: SortableCardProps) {
   const { t } = useTranslation("tools");
   const [expanded, setExpanded] = useState(false);
+  const fieldId = useId();
+  const providerId = `${fieldId}-provider`;
+  const modelId = `${fieldId}-model`;
+  const timeoutId = `${fieldId}-timeout`;
+  const retriesId = `${fieldId}-retries`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
   });
@@ -103,6 +108,7 @@ export function SortableProviderCard({
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <button
           type="button"
+          aria-label={t("common:dragToReorder")}
           className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
           {...attributes}
           {...listeners}
@@ -130,6 +136,7 @@ export function SortableProviderCard({
           size="sm"
           className="ml-auto h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
           onClick={() => onRemove(entry.id)}
+          aria-label={t("common:remove")}
         >
           <Trash2 className="size-3.5" />
         </Button>
@@ -138,9 +145,9 @@ export function SortableProviderCard({
       {/* Row 2: provider + model selects */}
       <div className="grid grid-cols-1 gap-2 px-3 py-1.5 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">{t("builtin.mediaChain.provider")}</Label>
+          <Label htmlFor={providerId} className="text-xs text-muted-foreground">{t("builtin.mediaChain.provider")}</Label>
           <Select value={entry.provider} onValueChange={handleProviderChange}>
-            <SelectTrigger className="h-8 text-sm">
+            <SelectTrigger id={providerId} className="h-8 text-sm">
               <SelectValue placeholder={t("builtin.mediaChain.selectProvider")} />
             </SelectTrigger>
             <SelectContent>
@@ -160,8 +167,9 @@ export function SortableProviderCard({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">{t("builtin.mediaChain.model")}</Label>
+          <Label htmlFor={modelId} className="text-xs text-muted-foreground">{t("builtin.mediaChain.model")}</Label>
           <Combobox
+            id={modelId}
             value={entry.model}
             onChange={(v) => onUpdate(entry.id, { model: v })}
             options={modelOptions}
@@ -179,9 +187,10 @@ export function SortableProviderCard({
       {/* Row 3: timeout, retries, expand button */}
       <div className="flex items-center gap-3 px-3 pb-3 pt-1">
         <div className="flex items-center gap-1.5">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">{t("builtin.mediaChain.timeout")}</Label>
+          <Label htmlFor={timeoutId} className="text-xs text-muted-foreground whitespace-nowrap">{t("builtin.mediaChain.timeout")}</Label>
           <div className="relative">
             <Input
+              id={timeoutId}
               type="number"
               min={1}
               max={600}
@@ -193,8 +202,9 @@ export function SortableProviderCard({
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">{t("builtin.mediaChain.retries")}</Label>
+          <Label htmlFor={retriesId} className="text-xs text-muted-foreground whitespace-nowrap">{t("builtin.mediaChain.retries")}</Label>
           <Input
+            id={retriesId}
             type="number"
             min={0}
             max={10}

@@ -11,12 +11,12 @@ import { extOf, CODE_EXTENSIONS, IMAGE_EXTENSIONS } from "@/lib/file-helpers";
 const cls = "h-4 w-4 shrink-0";
 
 function PreviewIcon({ name, isDir }: { name: string; isDir: boolean }) {
-  if (isDir) return <Folder className={`${cls} text-yellow-600`} />;
+  if (isDir) return <Folder className={`${cls} text-warning-text`} />;
   const ext = extOf(name);
-  if (ext === "md" || ext === "mdx") return <FileText className={`${cls} text-blue-500`} />;
-  if (ext === "json" || ext === "json5") return <FileJson2 className={`${cls} text-yellow-600`} />;
-  if (IMAGE_EXTENSIONS.has(ext)) return <FileImage className={`${cls} text-emerald-500`} />;
-  if (CODE_EXTENSIONS.has(ext)) return <FileCode2 className={`${cls} text-orange-500`} />;
+  if (ext === "md" || ext === "mdx") return <FileText className={`${cls} text-info-text`} />;
+  if (ext === "json" || ext === "json5") return <FileJson2 className={`${cls} text-warning-text`} />;
+  if (IMAGE_EXTENSIONS.has(ext)) return <FileImage className={`${cls} text-success-text`} />;
+  if (CODE_EXTENSIONS.has(ext)) return <FileCode2 className={`${cls} text-warning-text`} />;
   return <File className={`${cls} text-muted-foreground`} />;
 }
 

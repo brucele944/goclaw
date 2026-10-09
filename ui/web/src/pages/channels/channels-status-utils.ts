@@ -245,21 +245,21 @@ export function getChannelStatusMeta(
   switch (status?.state) {
     case "healthy":
       return {
-        dotClass: "bg-emerald-500",
+        dotClass: "bg-success",
         badgeVariant: "success",
         label: t("status.running", { defaultValue: "Running" }),
         surfaceClass:
-          "border-emerald-200/70 bg-emerald-500/[0.04] dark:border-emerald-500/20 dark:bg-emerald-500/10",
+          "border-emerald-200/70 bg-emerald-500/[0.04] dark:bg-success-subtle",
         priority: 0,
         attention: false,
       };
     case "degraded":
       return {
-        dotClass: "bg-amber-500",
+        dotClass: "bg-warning",
         badgeVariant: "warning",
         label: t("status.degraded", { defaultValue: "Degraded" }),
         surfaceClass:
-          "border-amber-200/80 bg-amber-500/[0.06] dark:border-amber-500/25 dark:bg-amber-500/10",
+          "border-amber-200/80 bg-amber-500/[0.06] dark:bg-warning-subtle",
         priority: 4,
         attention: true,
       };
@@ -269,7 +269,7 @@ export function getChannelStatusMeta(
         badgeVariant: "info",
         label: t("status.starting", { defaultValue: "Starting" }),
         surfaceClass:
-          "border-sky-200/80 bg-sky-500/[0.05] dark:border-sky-500/25 dark:bg-sky-500/10",
+          "border-sky-200/80 bg-sky-500/[0.05] dark:bg-info-subtle",
         priority: 3,
         attention: true,
       };
@@ -285,11 +285,11 @@ export function getChannelStatusMeta(
       };
     case "failed":
       return {
-        dotClass: "bg-red-500",
+        dotClass: "bg-destructive",
         badgeVariant: "destructive",
         label: t("status.failed", { defaultValue: "Failed" }),
         surfaceClass:
-          "border-red-200/80 bg-red-500/[0.05] dark:border-red-500/25 dark:bg-red-500/10",
+          "border-red-200/80 bg-red-500/[0.05] dark:bg-destructive-subtle",
         priority: 5,
         attention: true,
       };
@@ -305,11 +305,11 @@ export function getChannelStatusMeta(
     default:
       return status?.running
         ? {
-            dotClass: "bg-emerald-500",
+            dotClass: "bg-success",
             badgeVariant: "success",
             label: t("status.running", { defaultValue: "Running" }),
             surfaceClass:
-              "border-emerald-200/70 bg-emerald-500/[0.04] dark:border-emerald-500/20 dark:bg-emerald-500/10",
+              "border-emerald-200/70 bg-emerald-500/[0.04] dark:bg-success-subtle",
             priority: 0,
             attention: false,
           }

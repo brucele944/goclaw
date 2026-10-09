@@ -25,7 +25,7 @@ export function TtsEmptyState() {
         <line x1="17" y1="9" x2="23" y2="15" />
       </svg>
       <p className="text-xs font-medium text-text-primary">{t('empty_state.title')}</p>
-      <p className="text-[11px] text-text-muted">{t('empty_state.non_owner_hint')}</p>
+      <p className="text-2xs text-text-muted">{t('empty_state.non_owner_hint')}</p>
     </div>
   )
 }

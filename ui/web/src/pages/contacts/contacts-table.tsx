@@ -3,6 +3,7 @@ import { Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/shared/pagination";
 import { formatDate } from "@/lib/format";
+import { getClickableProps } from "@/hooks/use-clickable";
 import type { ChannelContact } from "@/types/contact";
 
 interface ContactsTableProps {
@@ -57,10 +58,11 @@ export function ContactsTable({
           {contacts.map((c) => (
             <tr
               key={c.id}
-              className={`border-b last:border-0 transition-colors cursor-pointer ${
+              className={`border-b last:border-0 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selectedIds.has(c.id) ? "bg-primary/5" : "hover:bg-muted/20"
               }`}
-              onClick={() => onToggleSelect(c.id)}
+              {...getClickableProps(() => onToggleSelect(c.id))}
+              aria-pressed={selectedIds.has(c.id)}
             >
               <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                 <input
@@ -75,7 +77,7 @@ export function ContactsTable({
                   {c.display_name || <span className="text-muted-foreground">—</span>}
                   {c.merged_id && (
                     <span title={t("columns.merged")}>
-                      <Link2 className="h-3 w-3 text-blue-500 shrink-0" />
+                      <Link2 className="h-3 w-3 text-info-text shrink-0" />
                     </span>
                   )}
                 </span>

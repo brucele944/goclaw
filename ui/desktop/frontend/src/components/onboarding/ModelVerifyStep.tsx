@@ -161,7 +161,7 @@ export function ModelVerifyStep({ provider, initialModel, onBack, onComplete }: 
           <button
             onClick={() => onComplete(model.trim())}
             disabled={!verified}
-            className="px-6 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('common:continue')}
           </button>

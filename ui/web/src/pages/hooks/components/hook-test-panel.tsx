@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, FlaskConical, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { TOOL_INPUT_TEMPLATES } from "./tool-input-templates";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useTestHook, type HookConfig, type HookTestResult } from "@/hooks/use-hooks";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { HookDiffViewer } from "./hook-diff-viewer";
 
 interface HookTestPanelProps {
@@ -16,9 +17,9 @@ interface HookTestPanelProps {
 }
 
 const DECISION_STYLES: Record<string, string> = {
-  allow: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  block: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  error: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+  allow: "bg-success-subtle text-success-text",
+  block: "bg-destructive-subtle text-destructive-text",
+  error: "bg-warning-subtle text-warning-text",
   timeout: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
@@ -45,6 +46,7 @@ function saveSample(id: string | undefined, data: unknown) {
 
 export function HookTestPanel({ hook }: HookTestPanelProps) {
   const { t } = useTranslation("hooks");
+  const uid = useId();
   const testMutation = useTestHook();
 
   const isModelResponse = hook.event === "post_model_response";
@@ -66,13 +68,16 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
   );
   const [result, setResult] = useState<HookTestResult | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  /** Template JSON awaiting confirmation before it replaces non-empty input. */
+  const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
 
   const handleToolSelect = (name: string) => {
     const template = TOOL_INPUT_TEMPLATES[name];
     if (!template) return;
     const json = JSON.stringify(template, null, 2);
     if (toolInputRaw.trim() && toolInputRaw.trim() !== "{}") {
-      if (!window.confirm(t("test.overwriteConfirm"))) return;
+      setPendingTemplate(json);
+      return;
     }
     setToolInputRaw(json);
   };
@@ -125,8 +130,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
         {isModelResponse ? (
           <>
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.modelResponse")}</Label>
+              <Label htmlFor={`${uid}-model-response`} className="text-xs">{t("test.modelResponse")}</Label>
               <Textarea
+                id={`${uid}-model-response`}
                 value={modelResponse}
                 onChange={(e) => setModelResponse(e.target.value)}
                 rows={6}
@@ -137,8 +143,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.thinking")}</Label>
+              <Label htmlFor={`${uid}-thinking`} className="text-xs">{t("test.thinking")}</Label>
               <Textarea
+                id={`${uid}-thinking`}
                 value={thinking}
                 onChange={(e) => setThinking(e.target.value)}
                 rows={4}
@@ -149,8 +156,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.toolCalls")}</Label>
+              <Label htmlFor={`${uid}-tool-calls`} className="text-xs">{t("test.toolCalls")}</Label>
               <Textarea
+                id={`${uid}-tool-calls`}
                 value={toolCallsRaw}
                 onChange={(e) => setToolCallsRaw(e.target.value)}
                 rows={4}
@@ -163,8 +171,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
         ) : (
           <>
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.toolName")}</Label>
+              <Label htmlFor={`${uid}-tool-name`} className="text-xs">{t("test.toolName")}</Label>
               <ToolSingleCombobox
+                id={`${uid}-tool-name`}
                 value={toolName}
                 onChange={setToolName}
                 onToolSelect={handleToolSelect}
@@ -174,8 +183,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.toolInput")}</Label>
+              <Label htmlFor={`${uid}-tool-input`} className="text-xs">{t("test.toolInput")}</Label>
               <Textarea
+                id={`${uid}-tool-input`}
                 value={toolInputRaw}
                 onChange={(e) => setToolInputRaw(e.target.value)}
                 rows={10}
@@ -190,8 +200,9 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">{t("test.rawInput")}</Label>
+              <Label htmlFor={`${uid}-raw-input`} className="text-xs">{t("test.rawInput")}</Label>
               <Input
+                id={`${uid}-raw-input`}
                 value={rawInput}
                 onChange={(e) => setRawInput(e.target.value)}
                 placeholder={t("test.rawInputPlaceholder")}
@@ -295,6 +306,20 @@ export function HookTestPanel({ hook }: HookTestPanelProps) {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={pendingTemplate !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingTemplate(null);
+        }}
+        title={t("test.overwriteTitle")}
+        description={t("test.overwriteConfirm")}
+        confirmLabel={t("test.overwriteLabel")}
+        onConfirm={() => {
+          if (pendingTemplate !== null) setToolInputRaw(pendingTemplate);
+          setPendingTemplate(null);
+        }}
+      />
     </div>
   );
 }

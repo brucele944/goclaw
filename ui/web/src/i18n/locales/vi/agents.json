@@ -700,7 +700,8 @@
     "save": "Lưu",
     "saved": "Đã lưu",
     "searchContacts": "Tìm liên hệ để thêm...",
-    "noContactsFound": "Không tìm thấy liên hệ"
+    "noContactsFound": "Không tìm thấy liên hệ",
+    "emptyPlaceholder": "(trống)"
   },
   "summoning": {
     "title": "Đang triệu hồi agent...",
@@ -754,6 +755,10 @@
       "selectToolsAlsoAllow": "Chọn công cụ bổ sung...",
       "toolCallPrefix": "Tiền tố Tool Call",
       "toolCallPrefixHint": "Loại bỏ tiền tố này từ tên tool call của model trước khi tra cứu registry.",
+      "toolCallPrefixPlaceholder": "ví dụ: proxy_",
+      "profileHint": "Hồ sơ công cụ cơ sở. 'full' cho phép tất cả công cụ, 'coding' gồm filesystem/runtime/sessions/memory, 'messaging' gồm messaging/sessions, 'minimal' chỉ cho phép session_status.",
+      "toolCallPrefixTip": "Loại bỏ tiền tố khỏi tên tool call do model trả về trước khi tra cứu registry. Ví dụ: 'proxy_' loại bỏ tiền tố để 'proxy_exec' phân giải thành 'exec'. Hỗ trợ placeholder {tool_name}.",
+      "waitLimitsTip": "Giới hạn công cụ wait tùy chọn cho từng agent, tính bằng mili giây. Giá trị được kẹp theo giới hạn an toàn của server: 100ms đến 300000ms.",
       "waitLimits": "Giới hạn công cụ wait",
       "waitMinPlaceholder": "Min ms",
       "waitMaxPlaceholder": "Max ms",
@@ -767,6 +772,7 @@
       "sharedGroup": "Chia sẻ trong Group",
       "sharedGroupTip": "Tất cả thành viên trong group chat dùng chung thư mục workspace",
       "sharedUsers": "User được chia sẻ",
+      "addUser": "Thêm người dùng",
       "sharedUsersTip": "Danh sách user ID cụ thể luôn dùng chung workspace. Định dạng: channel:userId (vd: telegram:386246614)",
       "userIdPlaceholder": "Nhập user ID (vd: telegram:386246614)",
       "warning": "Khi bật chia sẻ, tất cả người dùng được chia sẻ có thể đọc và ghi file trong cùng thư mục workspace. Chia sẻ bộ nhớ được cài đặt riêng. File ngữ cảnh vẫn được cô lập theo từng người dùng.",
@@ -1026,6 +1032,7 @@
     "denied": "Bi chan",
     "fileWriters": "Người viết file",
     "configPerms": "Quyền cấu hình",
+    "revoke": "Thu hồi",
     "noRules": "Chưa có quy tắc. Chủ sở hữu mặc định có đầy đủ quyền.",
     "userIdPlaceholder": "Tìm liên hệ hoặc nhập ID...",
     "scopePlaceholder": "Chọn hoặc nhập phạm vi...",

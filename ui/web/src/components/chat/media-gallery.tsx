@@ -65,12 +65,11 @@ function isMediaKind(kind: string): "image" | "audio" | "video" | null {
 }
 
 /** Image with blob-cached src to prevent flickering on session switch. */
-function CachedImage({ src, alt, className, loading, onClick }: {
+function CachedImage({ src, alt, className, loading }: {
   src: string; alt: string; className?: string; loading?: "lazy" | "eager";
-  onClick?: () => void;
 }) {
   const cachedSrc = useMediaUrl(src);
-  return <img src={cachedSrc} alt={alt} className={className} loading={loading} onClick={onClick} />;
+  return <img src={cachedSrc} alt={alt} className={className} loading={loading} />;
 }
 
 export function MediaGallery({ items }: MediaGalleryProps) {

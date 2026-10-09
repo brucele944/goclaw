@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { ShieldCheck, KeyRound, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface Props {
 /** Input security settings with visual emphasis on impact. */
 export function BehaviorSecurityCard({ value, onChange }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
 
   const action = value.injection_action ?? "warn";
   const scrub = value.scrub_credentials !== false;
@@ -46,9 +48,9 @@ export function BehaviorSecurityCard({ value, onChange }: Props) {
         <div className="border-b py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-warning-text" />
               <div className="space-y-1">
-                <Label className="text-sm font-medium">{t("gateway.injectionAction")}</Label>
+                <Label htmlFor={`${uid}-injection-action`} className="text-sm font-medium">{t("gateway.injectionAction")}</Label>
                 <p className="text-xs text-muted-foreground">{t("behavior.injectionActionHint")}</p>
               </div>
             </div>
@@ -56,7 +58,7 @@ export function BehaviorSecurityCard({ value, onChange }: Props) {
               value={action}
               onValueChange={(v) => onChange({ ...value, injection_action: v })}
             >
-              <SelectTrigger className="w-32 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectTrigger id={`${uid}-injection-action`} className="w-32 shrink-0"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="off">Off</SelectItem>
                 <SelectItem value="log">Log</SelectItem>
@@ -67,14 +69,14 @@ export function BehaviorSecurityCard({ value, onChange }: Props) {
           </div>
 
           {action === "block" && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-xs text-warning-text">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{t("behavior.injectionBlockInfo")}</span>
             </div>
           )}
 
           {action === "off" && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/25 bg-destructive-subtle px-3 py-2 text-xs text-destructive-text">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{t("behavior.injectionOffInfo")}</span>
             </div>
@@ -85,13 +87,14 @@ export function BehaviorSecurityCard({ value, onChange }: Props) {
         <div className="py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <KeyRound className={cn("h-4 w-4 shrink-0", scrub ? "text-emerald-500" : "text-red-500")} />
+              <KeyRound className={cn("h-4 w-4 shrink-0", scrub ? "text-success-text" : "text-destructive-text")} />
               <div className="space-y-1">
-                <Label className="text-sm font-medium">{t("tools.scrubCredentials")}</Label>
+                <Label htmlFor={`${uid}-scrub-credentials`} className="text-sm font-medium">{t("tools.scrubCredentials")}</Label>
                 <p className="text-xs text-muted-foreground">{t("behavior.scrubCredentialsHint")}</p>
               </div>
             </div>
             <Switch
+              id={`${uid}-scrub-credentials`}
               checked={scrub}
               onCheckedChange={(v) => onChange({ ...value, scrub_credentials: v })}
               className="shrink-0"
@@ -99,14 +102,14 @@ export function BehaviorSecurityCard({ value, onChange }: Props) {
           </div>
 
           {scrub && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-success/25 bg-success-subtle px-3 py-2 text-xs text-success-text dark:bg-emerald-950/30">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{t("behavior.scrubCredentialsInfo")}</span>
             </div>
           )}
 
           {!scrub && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/25 bg-destructive-subtle px-3 py-2 text-xs text-destructive-text">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{t("behavior.scrubCredentialsOffInfo")}</span>
             </div>

@@ -13,7 +13,7 @@ export function EvolutionGuardrailsCard({ guardrails }: Props) {
   return (
     <section className="rounded-lg border p-3 sm:p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Shield className="h-4 w-4 text-green-600 shrink-0" />
+        <Shield className="h-4 w-4 text-success-text shrink-0" />
         <h4 className="text-sm font-medium">{t("detail.evolution.guardrails")}</h4>
       </div>
 

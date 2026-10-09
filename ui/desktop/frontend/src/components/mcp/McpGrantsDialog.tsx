@@ -96,7 +96,7 @@ export function McpGrantsDialog({ open, onOpenChange, server, agents, onLoadGran
             </div>
             <p className="text-xs text-text-muted mt-0.5">{t('grants.addGrant')}</p>
           </div>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
@@ -119,7 +119,7 @@ export function McpGrantsDialog({ open, onOpenChange, server, agents, onLoadGran
                   <span className="text-sm text-text-primary">{agentName(grant.agent_id)}</span>
                   <button
                     onClick={() => handleRevoke(grant.agent_id)}
-                    className="text-[11px] text-text-muted hover:text-error transition-colors flex items-center gap-1"
+                    className="text-2xs text-text-muted hover:text-error transition-colors flex items-center gap-1"
                   >
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 6 6 18" /><path d="m6 6 12 12" />
@@ -148,7 +148,7 @@ export function McpGrantsDialog({ open, onOpenChange, server, agents, onLoadGran
               <button
                 onClick={handleGrant}
                 disabled={!selectedAgent || granting}
-                className="bg-accent text-white rounded-lg px-4 py-2.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors shrink-0"
+                className="bg-accent text-accent-foreground rounded-lg px-4 py-2.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors shrink-0"
               >
                 {granting ? t('common:loading') : t('grants.grant')}
               </button>

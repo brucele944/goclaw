@@ -34,17 +34,23 @@ export function CachedMarkdownImg({
 
   return (
     <span className="group/img relative inline-block overflow-hidden rounded-lg border shadow-sm">
-      <img
-        src={cachedSrc}
-        alt={alt ?? "image"}
-        className="block max-w-sm cursor-pointer hover:opacity-90 transition-opacity"
-        loading="lazy"
+      <button
+        type="button"
+        aria-label={displayName}
+        className="block cursor-pointer p-0 border-0 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={(e: React.MouseEvent) => {
           e.preventDefault();
           if (resolvedSrc) openLightbox(resolvedSrc, alt ?? "image");
         }}
-        {...props}
-      />
+      >
+        <img
+          src={cachedSrc}
+          alt={alt ?? "image"}
+          className="block max-w-sm cursor-pointer hover:opacity-90 transition-opacity"
+          loading="lazy"
+          {...props}
+        />
+      </button>
       {resolvedSrc && (
         <a
           href={toDownloadUrl(resolvedSrc)}

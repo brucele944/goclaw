@@ -39,7 +39,7 @@ export function PersonalitySection({
             maxLength={2}
             className="w-12 h-12 rounded-xl bg-accent/10 border border-border text-2xl text-center focus:outline-none focus:ring-1 focus:ring-accent"
           />
-          <p className="text-[10px] text-text-muted">{t('identity.emoji')}</p>
+          <p className="text-2xs text-text-muted">{t('identity.emoji')}</p>
         </div>
         <div className="space-y-3">
           <div className="space-y-1">
@@ -53,8 +53,8 @@ export function PersonalitySection({
           </div>
           {/* Agent key (read-only) */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-text-muted font-mono bg-surface-tertiary/50 px-2 py-1 rounded">{agentKey}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{agentType}</span>
+            <span className="text-2xs text-text-muted font-mono bg-surface-tertiary/50 px-2 py-1 rounded">{agentKey}</span>
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{agentType}</span>
           </div>
         </div>
       </div>

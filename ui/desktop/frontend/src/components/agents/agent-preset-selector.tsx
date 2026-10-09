@@ -29,7 +29,7 @@ export function AgentPresetSelector({ currentDescription, onSelect }: AgentPrese
             key={p.key}
             type="button"
             onClick={() => onSelect({ description: prompt, emoji: p.emoji, displayName: presetDisplayName, agentKey: p.agentKey })}
-            className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
+            className={`rounded-full border px-2.5 py-1 text-2xs transition-colors ${
               currentDescription === prompt
                 ? 'border-accent bg-accent/10 text-accent font-medium'
                 : 'border-border text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'

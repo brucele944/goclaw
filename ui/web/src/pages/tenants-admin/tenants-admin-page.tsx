@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { useDeferredLoading } from "@/hooks/use-deferred-loading";
 import { useMinLoading } from "@/hooks/use-min-loading";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useTenantsAdmin } from "./hooks/use-tenants-admin";
 import { ROUTES } from "@/lib/constants";
 
@@ -100,8 +101,8 @@ export function TenantsAdminPage() {
                 {tenants.map((tenant) => (
                   <tr
                     key={tenant.id}
-                    className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                    onClick={() => navigate(ROUTES.TENANT_DETAIL.replace(":id", tenant.id))}
+                    className="border-b last:border-0 hover:bg-muted/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    {...getClickableProps(() => navigate(ROUTES.TENANT_DETAIL.replace(":id", tenant.id)))}
                   >
                     <td className="px-4 py-2 font-medium">{tenant.name}</td>
                     <td className="px-4 py-2">

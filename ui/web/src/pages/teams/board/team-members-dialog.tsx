@@ -19,8 +19,8 @@ interface TeamMembersDialogProps {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  lead: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
-  reviewer: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30",
+  lead: "bg-warning-subtle text-warning-text border-warning/25",
+  reviewer: "bg-warning-subtle text-warning-text border-warning/25",
   member: "bg-muted text-muted-foreground",
 };
 

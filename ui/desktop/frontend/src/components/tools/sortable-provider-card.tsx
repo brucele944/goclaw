@@ -43,20 +43,20 @@ export function SortableProviderCard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button type="button" className="cursor-grab text-text-muted hover:text-text-primary shrink-0 touch-none" {...attributes} {...listeners}>
+          <button type="button" aria-label={t('common:dragToReorder')} className="cursor-grab text-text-muted hover:text-text-primary shrink-0 touch-none p-2" {...attributes} {...listeners}>
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
               <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
               <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
             </svg>
           </button>
-          <span className="text-[11px] font-mono text-text-muted bg-surface-tertiary rounded px-1.5 py-0.5">#{index + 1}</span>
+          <span className="text-2xs font-mono text-text-muted bg-surface-tertiary rounded px-1.5 py-0.5">#{index + 1}</span>
           <span className="text-sm font-medium text-text-primary">{entry.provider || t('builtin.mediaChain.newProvider')}</span>
           {entry.model && <span className="text-xs text-text-muted">/ {entry.model}</span>}
         </div>
         <div className="flex items-center gap-2">
           <Switch checked={entry.enabled} onCheckedChange={(v) => onUpdate(entry.id, { enabled: v })} />
-          <button onClick={() => onRemove(entry.id)} className="p-1 text-text-muted hover:text-error transition-colors">
+          <button aria-label={t('common:remove')} onClick={() => onRemove(entry.id)} className="p-2.5 text-text-muted hover:text-error transition-colors">
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>

@@ -17,7 +17,7 @@ import type { CodexPoolActivityPanelProps, CodexPoolRecentRequestsPanelProps } f
 function MonitorStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="h-full rounded-md border bg-background/70 px-2 py-1 xl:px-2.5 xl:py-1.5">
-      <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground xl:text-2xs">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground xl:text-2xs">
         {label}
       </p>
       <p className="mt-0.5 text-[13px] font-semibold leading-tight tabular-nums xl:mt-1 xl:text-sm">

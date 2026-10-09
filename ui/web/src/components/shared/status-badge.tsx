@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 type Status = "success" | "warning" | "error" | "info" | "default";
 
 const statusClasses: Record<Status, string> = {
-  success: "bg-green-500/15 text-green-600 dark:text-green-400",
-  warning: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
-  error: "bg-red-500/15 text-red-600 dark:text-red-400",
-  info: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  success: "bg-success-subtle text-success-text",
+  warning: "bg-warning-subtle text-warning-text",
+  error: "bg-destructive-subtle text-destructive-text",
+  info: "bg-info-subtle text-info-text",
   default: "bg-muted text-muted-foreground",
 };
 
@@ -27,10 +27,10 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
     >
       <span className={cn(
         "h-1.5 w-1.5 rounded-full",
-        status === "success" && "bg-green-500",
-        status === "warning" && "bg-yellow-500",
-        status === "error" && "bg-red-500",
-        status === "info" && "bg-blue-500",
+        status === "success" && "bg-success",
+        status === "warning" && "bg-warning",
+        status === "error" && "bg-destructive",
+        status === "info" && "bg-info",
         status === "default" && "bg-muted-foreground",
       )} />
       {label}

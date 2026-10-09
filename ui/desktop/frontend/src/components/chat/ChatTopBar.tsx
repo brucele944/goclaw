@@ -218,7 +218,7 @@ export function ChatTopBar() {
         {selectedAgent ? (
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-text-primary">{selectedAgent.name}</span>
-            <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">
+            <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">
               {selectedAgent.model}
             </span>
           </div>

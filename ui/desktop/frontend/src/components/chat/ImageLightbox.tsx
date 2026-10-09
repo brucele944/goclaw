@@ -61,7 +61,7 @@ export function ImageLightbox(props: ImageLightboxProps) {
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
           </svg>
         </button>
-        <button type="button" onClick={onClose} className={btnClass}>
+        <button type="button" aria-label={t('close')} onClick={onClose} className={btnClass}>
           {/* X icon */}
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -73,6 +73,7 @@ export function ImageLightbox(props: ImageLightboxProps) {
       {canPrev && (
         <button
           type="button"
+          aria-label={t('previousImage')}
           onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex - 1) }}
           className={`absolute left-4 top-1/2 -translate-y-1/2 ${btnClass}`}
         >
@@ -86,6 +87,7 @@ export function ImageLightbox(props: ImageLightboxProps) {
       {canNext && (
         <button
           type="button"
+          aria-label={t('nextImage')}
           onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex + 1) }}
           className={`absolute right-4 top-1/2 -translate-y-1/2 ${btnClass}`}
         >

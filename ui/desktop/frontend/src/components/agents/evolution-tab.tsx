@@ -54,7 +54,7 @@ export function EvolutionTab({ agentId, agentOtherConfig }: EvolutionTabProps) {
             className={[
               'px-3 py-1 text-xs rounded-lg transition-colors',
               timeRange === r
-                ? 'bg-accent text-white'
+                ? 'bg-accent text-accent-foreground'
                 : 'bg-surface-tertiary text-text-muted hover:text-text-primary',
             ].join(' ')}
           >

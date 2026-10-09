@@ -76,7 +76,7 @@ export function PinnedSkillsSection({ agent, onUpdate }: Props) {
     <section className="space-y-2.5 rounded-lg border p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Pin className="h-4 w-4 text-orange-500 shrink-0" />
+          <Pin className="h-4 w-4 text-warning-text shrink-0" />
           <h3 className="text-sm font-medium">{t("detail.prompt.pinnedLabel", "Pinned Skills")}</h3>
           <span className="text-xs text-muted-foreground">({pinned.length}/{MAX_PINNED})</span>
         </div>

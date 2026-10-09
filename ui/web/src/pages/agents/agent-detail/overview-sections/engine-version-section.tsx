@@ -15,7 +15,7 @@ export function EngineVersionSection({ agentId: _agentId }: EngineVersionSection
     <section className="rounded-lg border p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Cpu className="h-4 w-4 text-blue-500 shrink-0" />
+          <Cpu className="h-4 w-4 text-info-text shrink-0" />
           <h3 className="text-sm font-medium">{t("detail.engine.title")}</h3>
 
           <div className="flex items-center gap-1.5">
@@ -27,7 +27,7 @@ export function EngineVersionSection({ agentId: _agentId }: EngineVersionSection
 
         <button
           onClick={() => setInfoOpen(true)}
-          className="text-xs text-blue-600 hover:underline dark:text-blue-400 cursor-pointer py-1 px-2 -mr-2 shrink-0"
+          className="text-xs text-info-text hover:underline cursor-pointer py-1 px-2 -mr-2 shrink-0"
         >
           {t("detail.engine.learnMore")} &rarr;
         </button>
@@ -40,7 +40,7 @@ export function EngineVersionSection({ agentId: _agentId }: EngineVersionSection
 
 function FeatureBadge({ icon: Icon, label }: { icon: typeof Workflow; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs-plus font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+    <span className="inline-flex items-center gap-1 rounded-full bg-info-subtle px-2 py-0.5 text-xs-plus font-medium text-info-text">
       <Icon className="h-3 w-3" />
       {label}
     </span>

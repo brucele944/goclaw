@@ -2,14 +2,29 @@ import Graph from "graphology";
 import type { KGEntity, KGRelation } from "@/types/knowledge-graph";
 import type { KGGraphNode, KGGraphEdge } from "@/types/graph-dto";
 import { getNodeSize, truncateMiddle } from "@/components/graph/graph-utils";
+import { graphColor, type GraphColorName } from "@/components/graph/graph-color-tokens";
 
-// Solid colors per entity type
-export const KG_TYPE_COLORS: Record<string, string> = {
-  person: "#E85D24", organization: "#ef4444", project: "#22c55e",
-  product: "#f97316", technology: "#3b82f6", task: "#f59e0b",
-  event: "#ec4899", document: "#8b5cf6", concept: "#a78bfa", location: "#14b8a6",
+// Entity type → shared graph palette token (resolved per theme for the canvas).
+export const KG_TYPE_COLOR_NAMES: Record<string, GraphColorName> = {
+  person: "orange", organization: "red", project: "green",
+  product: "teal", technology: "blue", task: "amber",
+  event: "pink", document: "violet", concept: "purple", location: "cyan",
 };
-export const KG_DEFAULT_COLOR = "#9ca3af";
+const KG_DEFAULT_COLOR_NAME: GraphColorName = "slate";
+
+/** Resolved entity type → colour map for the active theme (legend, filters). */
+export function kgTypeColors(isDark: boolean): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [type, name] of Object.entries(KG_TYPE_COLOR_NAMES)) {
+    out[type] = graphColor(name, isDark);
+  }
+  return out;
+}
+
+/** Concrete node colour for an entity type, resolved for the active theme. */
+export function getKgNodeColor(entityType: string, isDark: boolean): string {
+  return graphColor(KG_TYPE_COLOR_NAMES[entityType] ?? KG_DEFAULT_COLOR_NAME, isDark);
+}
 
 /** Compute degree (edge count) for each entity id. */
 export function computeDegreeMap(entities: KGEntity[], relations: KGRelation[]): Map<string, number> {
@@ -23,7 +38,7 @@ export function computeDegreeMap(entities: KGEntity[], relations: KGRelation[]):
 }
 
 /** Build KG graph from compact DTOs. */
-export function buildKGGraphFromDTO(nodes: KGGraphNode[], edges: KGGraphEdge[]): Graph {
+export function buildKGGraphFromDTO(nodes: KGGraphNode[], edges: KGGraphEdge[], isDark: boolean): Graph {
   const graph = new Graph({ multi: false, type: "directed" });
   const nodeIds = new Set(nodes.map((n) => n.id));
 
@@ -39,7 +54,7 @@ export function buildKGGraphFromDTO(nodes: KGGraphNode[], edges: KGGraphEdge[]):
       label: truncateMiddle(n.n, 28),
       x: 0, y: 0,
       size: getNodeSize(deg.get(n.id) ?? 0, nodes.length),
-      color: KG_TYPE_COLORS[n.t] ?? KG_DEFAULT_COLOR,
+      color: getKgNodeColor(n.t, isDark),
       entityType: n.t,
     });
   }
@@ -56,7 +71,7 @@ export function buildKGGraphFromDTO(nodes: KGGraphNode[], edges: KGGraphEdge[]):
 }
 
 /** Build a Graphology graph from KG entities and relations. */
-export function buildKGGraph(entities: KGEntity[], allRelations: KGRelation[]): Graph {
+export function buildKGGraph(entities: KGEntity[], allRelations: KGRelation[], isDark: boolean): Graph {
   const graph = new Graph({ multi: false, type: "directed" });
   const entityIds = new Set(entities.map((e) => e.id));
   const degreeMap = computeDegreeMap(entities, allRelations);
@@ -70,7 +85,7 @@ export function buildKGGraph(entities: KGEntity[], allRelations: KGRelation[]): 
         x: 0,
         y: 0,
         size: getNodeSize(degree, entities.length),
-        color: KG_TYPE_COLORS[e.entity_type] ?? KG_DEFAULT_COLOR,
+        color: getKgNodeColor(e.entity_type, isDark),
         entityType: e.entity_type,
       });
     }

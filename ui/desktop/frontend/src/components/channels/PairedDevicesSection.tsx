@@ -37,33 +37,33 @@ export function PairedDevicesSection() {
       {isEmpty && !loading ? (
         <div className="py-6 text-center">
           <p className="text-xs text-text-muted">{t('pairing.empty')}</p>
-          <p className="text-[11px] text-text-muted/70 mt-1">{t('pairing.emptyDesc')}</p>
+          <p className="text-2xs text-text-muted/70 mt-1">{t('pairing.emptyDesc')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Pending */}
           {pendingPairings.length > 0 && (
             <div>
-              <p className="text-[11px] font-medium text-text-secondary mb-2">{t('pairing.pending', { count: pendingPairings.length })}</p>
+              <p className="text-2xs font-medium text-text-secondary mb-2">{t('pairing.pending', { count: pendingPairings.length })}</p>
               <div className="space-y-2">
                 {pendingPairings.map((p) => (
                   <div key={p.code} className="flex items-center justify-between rounded-lg border border-border p-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-surface-tertiary text-text-secondary border border-border">{p.channel}</span>
+                        <span className="rounded-full px-1.5 py-0.5 text-2xs bg-surface-tertiary text-text-secondary border border-border">{p.channel}</span>
                         <span className="font-mono text-xs font-medium text-text-primary">{p.code}</span>
                       </div>
-                      <div className="mt-1 text-[11px] text-text-muted">
+                      <div className="mt-1 text-2xs text-text-muted">
                         {t('pairing.sender')}{p.sender_id}
                         {p.chat_id && ` | ${t('pairing.chat')}${p.chat_id}`}
                         {' | '}{formatRelativeTime(p.created_at)}
                       </div>
                     </div>
                     <div className="flex gap-1.5 shrink-0">
-                      <button onClick={() => setDenyTarget(p)} className="px-2 py-1 text-[11px] border border-border rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors cursor-pointer">
+                      <button onClick={() => setDenyTarget(p)} className="px-2 py-1 text-2xs border border-border rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors cursor-pointer">
                         {t('pairing.deny')}
                       </button>
-                      <button onClick={() => setApproveTarget(p)} className="px-2 py-1 text-[11px] bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors cursor-pointer">
+                      <button onClick={() => setApproveTarget(p)} className="px-2 py-1 text-2xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors cursor-pointer">
                         {t('pairing.approve')}
                       </button>
                     </div>
@@ -76,15 +76,15 @@ export function PairedDevicesSection() {
           {/* Paired */}
           {pairedDevices.length > 0 && (
             <div>
-              <p className="text-[11px] font-medium text-text-secondary mb-2">{t('pairing.paired', { count: pairedDevices.length })}</p>
+              <p className="text-2xs font-medium text-text-secondary mb-2">{t('pairing.paired', { count: pairedDevices.length })}</p>
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs min-w-[500px]">
                   <thead>
                     <tr className="border-b border-border bg-surface-tertiary/40">
-                      <th className="px-3 py-2 text-left text-[11px] font-medium text-text-muted">Channel</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-medium text-text-muted">Sender ID</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-medium text-text-muted">Paired</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-medium text-text-muted">By</th>
+                      <th className="px-3 py-2 text-left text-2xs font-medium text-text-muted">Channel</th>
+                      <th className="px-3 py-2 text-left text-2xs font-medium text-text-muted">Sender ID</th>
+                      <th className="px-3 py-2 text-left text-2xs font-medium text-text-muted">Paired</th>
+                      <th className="px-3 py-2 text-left text-2xs font-medium text-text-muted">By</th>
                       <th className="px-3 py-2 w-16" />
                     </tr>
                   </thead>
@@ -92,13 +92,13 @@ export function PairedDevicesSection() {
                     {pairedDevices.map((d) => (
                       <tr key={`${d.channel}-${d.sender_id}`} className="border-b border-border last:border-0 hover:bg-surface-tertiary/20">
                         <td className="px-3 py-2">
-                          <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-surface-tertiary text-text-secondary border border-border">{d.channel}</span>
+                          <span className="rounded-full px-1.5 py-0.5 text-2xs bg-surface-tertiary text-text-secondary border border-border">{d.channel}</span>
                         </td>
                         <td className="px-3 py-2 font-mono text-text-primary">{d.sender_id}</td>
                         <td className="px-3 py-2 text-text-muted">{formatDate(d.paired_at)}</td>
                         <td className="px-3 py-2 text-text-muted">{d.paired_by}</td>
                         <td className="px-3 py-2 text-right">
-                          <button onClick={() => setRevokeTarget(d)} className="text-[11px] text-text-muted hover:text-error transition-colors cursor-pointer">
+                          <button onClick={() => setRevokeTarget(d)} className="text-2xs text-text-muted hover:text-error transition-colors cursor-pointer">
                             {t('pairing.revoke')}
                           </button>
                         </td>

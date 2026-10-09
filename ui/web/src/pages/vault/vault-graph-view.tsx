@@ -1,7 +1,7 @@
 import { useRef, useMemo, useState, useCallback } from "react";
 import type Sigma from "sigma";
 import { useTranslation } from "react-i18next";
-import { buildVaultGraphFromDTO, VAULT_TYPE_COLORS_LIGHT, VAULT_TYPE_COLORS_DARK } from "@/adapters/vault-graph-adapter";
+import { buildVaultGraphFromDTO, vaultTypeColors } from "@/adapters/vault-graph-adapter";
 import { useUiStore } from "@/stores/use-ui-store";
 import { SigmaGraphContainer } from "@/components/graph/sigma-graph-container";
 import { SigmaGraphControls } from "@/components/graph/sigma-graph-controls";
@@ -35,7 +35,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark" || (theme === "system"
     && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  const typeColors = isDark ? VAULT_TYPE_COLORS_DARK : VAULT_TYPE_COLORS_LIGHT;
+  const typeColors = useMemo(() => vaultTypeColors(isDark), [isDark]);
 
   const { nodes, edges, totalNodes, totalEdges, loading } = useVaultGraphData(agentId, { teamId, limit: nodeLimit });
 
@@ -43,8 +43,8 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
   const nodeIds = useMemo(() => new Set(nodes.map((n) => n.id)), [nodes]);
   // Only build graph when data loaded — prevents double-render
   const graph = useMemo(
-    () => loading ? buildVaultGraphFromDTO([], []) : buildVaultGraphFromDTO(nodes, edges),
-    [nodes, edges, loading],
+    () => loading ? buildVaultGraphFromDTO([], [], isDark) : buildVaultGraphFromDTO(nodes, edges, isDark),
+    [nodes, edges, loading, isDark],
   );
 
   const handleNodeDoubleClick = useCallback((nodeId: string) => {
@@ -67,7 +67,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
       ref={containerRef}
       tabIndex={0}
       role="application"
-      aria-label={`Vault knowledge graph with ${totalNodes} documents and ${totalEdges} links`}
+      aria-label={t("graphAriaLabel", { nodes: totalNodes, edges: totalEdges })}
       className="flex h-full flex-col overflow-hidden bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       {/* Top bar — responsive: stacks on narrow screens */}
@@ -76,7 +76,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
           {Object.entries(typeColors).map(([type, color]) => (
             <span key={type} className="flex items-center gap-1">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-              {type}
+              {t(`type.${type}`)}
             </span>
           ))}
         </div>
@@ -86,7 +86,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
               sigma={sigma}
               graph={graph}
               onNodeSelect={onNodeSelect}
-              placeholder={t("graphSearch", { defaultValue: "Search docs..." })}
+              placeholder={t("graphSearch")}
             />
             <SigmaGraphFilters
               graph={graph}
@@ -106,7 +106,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
         {loading && nodes.length === 0 ? (
           <div className="h-full animate-pulse rounded-md bg-muted" />
         ) : !hasData ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No documents</div>
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t("noDocuments")}</div>
         ) : (
           <>
             <SigmaGraphContainer
@@ -119,7 +119,7 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
               hiddenTypes={hiddenTypes}
             />
             <div className="absolute bottom-2 right-2 z-10 hidden sm:block">
-              <SigmaGraphMinimap sigma={sigma} graph={graph} size={120} />
+              <SigmaGraphMinimap sigma={sigma} graph={graph} size={120} isDark={isDark} />
             </div>
           </>
         )}
@@ -132,10 +132,10 @@ export function VaultGraphView({ agentId, teamId, selectedDocId, onNodeSelect, o
         isLimited={isLimited}
         onNodeLimitChange={setNodeLimit}
         labels={{
-          nodes: t("graphDocs", { count: totalNodes, defaultValue: "{{count}} docs" }),
-          edges: t("graphLinks", { count: totalEdges, defaultValue: "{{count}} links" }),
+          nodes: t("graphDocs", { count: totalNodes }),
+          edges: t("graphLinks", { count: totalEdges }),
           limitNote: isLimited
-            ? t("graphLimitNote", { limit: nodeLimit, total: totalNodes, defaultValue: "showing {{limit}} of {{total}}" })
+            ? t("graphLimitNote", { limit: nodeLimit, total: totalNodes })
             : undefined,
         }}
       />

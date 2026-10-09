@@ -108,14 +108,14 @@ export function AgentIdentityAndModelFields({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>{t("create.provider")}</Label>
+          <Label htmlFor="provider">{t("create.provider")}</Label>
           {enabledProviders.length > 0 ? (
             <Controller
               control={control}
               name="provider"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={onProviderChange}>
-                  <SelectTrigger>
+                  <SelectTrigger id="provider">
                     <SelectValue placeholder={t("create.selectProvider")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -136,7 +136,7 @@ export function AgentIdentityAndModelFields({
               )}
             />
           ) : (
-            <Input {...register("provider")} placeholder="openrouter" />
+            <Input {...register("provider")} id="provider" placeholder="openrouter" />
           )}
           {errors.provider && (
             <p className="text-xs text-destructive">{errors.provider.message}</p>
@@ -144,7 +144,7 @@ export function AgentIdentityAndModelFields({
         </div>
 
         <div className="space-y-2">
-          <Label>{t("create.model")}</Label>
+          <Label htmlFor="model">{t("create.model")}</Label>
           <div className="flex gap-2">
             <div className="flex-1">
               <Controller
@@ -152,6 +152,7 @@ export function AgentIdentityAndModelFields({
                 name="model"
                 render={({ field }) => (
                   <Combobox
+                    id="model"
                     value={field.value}
                     onChange={(v) => setValue("model", v, { shouldValidate: true })}
                     options={modelOptions}

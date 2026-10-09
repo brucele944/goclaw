@@ -51,7 +51,7 @@ function VoiceOption({ voice, selected }: { voice: PortalVoice; selected: boolea
     <span className={['flex items-center gap-1 w-full', selected ? 'text-accent' : ''].join(' ')}>
       <span className="flex-1 truncate" title={voice.name}>{voice.name}</span>
       {labelEntries.slice(0, 1).map((label) => (
-        <span key={label} className="text-[10px] px-1 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0">
+        <span key={label} className="text-2xs px-1 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0">
           {label}
         </span>
       ))}
@@ -253,7 +253,7 @@ export function PortalVoicePicker({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('voice_placeholder')}
-          className="flex-1 bg-transparent text-xs outline-none placeholder:text-text-muted"
+          className="flex-1 bg-transparent text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset rounded placeholder:text-text-muted"
         />
         {onRefresh && (
           <button
@@ -280,9 +280,9 @@ export function PortalVoicePicker({
 
       <div className="max-h-52 overflow-y-auto p-1">
         {isLoading ? (
-          <p className="py-3 text-center text-[11px] text-text-muted">{t('voice_loading')}</p>
+          <p className="py-3 text-center text-2xs text-text-muted">{t('voice_loading')}</p>
         ) : filtered.length === 0 ? (
-          <p className="py-3 text-center text-[11px] text-text-muted">
+          <p className="py-3 text-center text-2xs text-text-muted">
             {voices.length === 0 ? t('voice_save_config_first') : search ? t('voice_no_voices') : t('voice_loading')}
           </p>
         ) : (

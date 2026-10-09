@@ -91,6 +91,7 @@
   "actions": {
     "install": "安装",
     "uninstall": "卸载",
+    "uninstallPackage": "卸载 {{name}}",
     "installing": "安装中...",
     "uninstalling": "卸载中..."
   },

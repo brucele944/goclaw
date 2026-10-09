@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const providerTypeId = useId();
+  const nameId = useId();
+  const oauthDisplayNameId = useId();
+  const apiKeyId = useId();
+  const apiBaseId = useId();
 
   const isOAuth = providerType === "chatgpt_oauth";
   const isCLI = providerType === "claude_cli";
@@ -145,12 +151,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="inline-flex items-center gap-1.5">
-                {t("provider.providerType")}
+              <span className="inline-flex items-center gap-1.5">
+                <Label htmlFor={providerTypeId}>{t("provider.providerType")}</Label>
                 <InfoTip text={t("provider.providerTypeHint")} />
-              </Label>
+              </span>
               <Select value={providerType} onValueChange={handleTypeChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id={providerTypeId}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PROVIDER_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -159,11 +165,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="inline-flex items-center gap-1.5">
-                {isOAuth ? t("provider.oauthAlias") : t("provider.name")}
+              <span className="inline-flex items-center gap-1.5">
+                <Label htmlFor={nameId}>{isOAuth ? t("provider.oauthAlias") : t("provider.name")}</Label>
                 <InfoTip text={isOAuth ? t("provider.oauthAliasHint") : t("provider.nameHint")} />
-              </Label>
+              </span>
               <Input
+                id={nameId}
                 value={name}
                 onChange={(e) => setName(slugify(e.target.value))}
                 placeholder={isOAuth ? t("provider.oauthAliasPlaceholder") : undefined}
@@ -174,11 +181,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
           {isOAuth ? (
             <>
               <div className="space-y-2">
-                <Label className="inline-flex items-center gap-1.5">
-                  {t("provider.displayName")}
+                <span className="inline-flex items-center gap-1.5">
+                  <Label htmlFor={oauthDisplayNameId}>{t("provider.displayName")}</Label>
                   <InfoTip text={t("provider.displayNameHint")} />
-                </Label>
+                </span>
                 <Input
+                  id={oauthDisplayNameId}
                   value={oauthDisplayName}
                   onChange={(e) => setOauthDisplayName(e.target.value)}
                   placeholder={t("provider.displayNamePlaceholder")}
@@ -198,11 +206,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
           ) : (
             <>
               <div className="space-y-2">
-                <Label className="inline-flex items-center gap-1.5">
-                  {t("provider.apiKey")}
+                <span className="inline-flex items-center gap-1.5">
+                  <Label htmlFor={apiKeyId}>{t("provider.apiKey")}</Label>
                   <InfoTip text={t("provider.apiKeyHint")} />
-                </Label>
+                </span>
                 <Input
+                  id={apiKeyId}
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
@@ -211,11 +220,12 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
               </div>
 
               <div className="space-y-2">
-                <Label className="inline-flex items-center gap-1.5">
-                  {t("provider.apiBase")}
+                <span className="inline-flex items-center gap-1.5">
+                  <Label htmlFor={apiBaseId}>{t("provider.apiBase")}</Label>
                   <InfoTip text={t("provider.apiBaseHint")} />
-                </Label>
+                </span>
                 <Input
+                  id={apiBaseId}
                   value={apiBase}
                   onChange={(e) => setApiBase(e.target.value)}
                   placeholder={apiBasePlaceholder}

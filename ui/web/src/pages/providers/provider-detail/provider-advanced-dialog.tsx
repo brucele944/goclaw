@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,8 @@ export function ProviderAdvancedDialog({
   onUpdate,
 }: ProviderAdvancedDialogProps) {
   const { t } = useTranslation("providers");
+  const nameId = useId();
+  const permModeId = useId();
 
   const isACP = provider.provider_type === "acp";
   const isCLI = provider.provider_type === "claude_cli";
@@ -142,8 +144,9 @@ export function ProviderAdvancedDialog({
             description={t("detail.identityDesc")}
           />
           <div className="space-y-2">
-            <Label>{isOAuth ? t("form.oauthAlias") : t("form.name")}</Label>
+            <Label htmlFor={nameId}>{isOAuth ? t("form.oauthAlias") : t("form.name")}</Label>
             <Input
+              id={nameId}
               value={provider.name}
               disabled
               className="text-base md:text-sm font-mono"
@@ -267,9 +270,9 @@ export function ProviderAdvancedDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("acp.permMode")}</Label>
+                  <Label htmlFor={permModeId}>{t("acp.permMode")}</Label>
                   <Select value={acpPermMode} onValueChange={setAcpPermMode}>
-                    <SelectTrigger className="text-base md:text-sm">
+                    <SelectTrigger id={permModeId} className="text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

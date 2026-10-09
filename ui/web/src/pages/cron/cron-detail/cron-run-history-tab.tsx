@@ -23,7 +23,7 @@ function formatDuration(ms?: number): string {
 
 function StatusIcon({ status }: { status?: string }) {
   const isSuccess = status === "ok" || status === "success";
-  if (isSuccess) return <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />;
+  if (isSuccess) return <CheckCircle2 className="h-4 w-4 text-success-text shrink-0" />;
   return <XCircle className="h-4 w-4 text-destructive shrink-0" />;
 }
 

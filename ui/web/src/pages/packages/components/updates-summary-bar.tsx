@@ -54,7 +54,7 @@ export function UpdatesSummaryBar({
   const hasMultiSource = visibleSources.filter((s) => (countBySrc[s] ?? 0) > 0).length > 1;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-sky-200/70 bg-sky-50/70 dark:border-sky-900/50 dark:bg-sky-950/20 px-4 py-2.5 mb-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-sky-200/70 bg-sky-50/70 dark:bg-sky-950/20 px-4 py-2.5 mb-3">
       {/* Badge + last-checked + per-source breakdown */}
       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
         {hasUpdates ? (

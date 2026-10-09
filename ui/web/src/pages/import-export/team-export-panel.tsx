@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useId, useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Package, Info, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -60,8 +60,8 @@ function ExportTree({ steps, elapsed, teamLabel }: { steps: ProgressStep[]; elap
 }
 
 function StepIcon({ status }: { status: string }) {
-  if (status === "done") return <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />;
-  return <Loader2 className="h-4 w-4 shrink-0 text-blue-500 animate-spin" />;
+  if (status === "done") return <CheckCircle2 className="h-4 w-4 shrink-0 text-success-text" />;
+  return <Loader2 className="h-4 w-4 shrink-0 text-info-text animate-spin" />;
 }
 
 interface TeamExportPanelProps {
@@ -73,6 +73,7 @@ interface TeamExportPanelProps {
 export function TeamExportPanel({ teams, loading, loadTeams }: TeamExportPanelProps) {
   const { t } = useTranslation("import-export");
   const [teamId, setTeamId] = useState("");
+  const teamFieldId = useId();
 
   useEffect(() => { loadTeams(); }, [loadTeams]);
 
@@ -118,8 +119,9 @@ export function TeamExportPanel({ teams, loading, loadTeams }: TeamExportPanelPr
       </div>
 
       <div>
-        <Label className="mb-1.5">{t("tabs.teams")}</Label>
+        <Label htmlFor={teamFieldId} className="mb-1.5">{t("tabs.teams")}</Label>
         <Combobox
+          id={teamFieldId}
           value={teamId}
           onChange={setTeamId}
           options={teamOptions}

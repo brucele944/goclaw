@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useId, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Package, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ export function AgentExportPanel() {
   const { t } = useTranslation("import-export");
   const { agents } = useAgents();
   const [agentId, setAgentId] = useState("");
+  const agentFieldId = useId();
   const [selected, setSelected] = useState<Set<string>>(new Set(PRESETS.standard));
 
   const agent = agents.find((a) => a.id === agentId);
@@ -76,8 +77,8 @@ export function AgentExportPanel() {
         </div>
 
         <div>
-          <Label className="mb-1.5">{t("export.agent")}</Label>
-          <Combobox value={agentId} onChange={setAgentId} options={agentOptions} placeholder={t("export.agentPlaceholder")} />
+          <Label htmlFor={agentFieldId} className="mb-1.5">{t("export.agent")}</Label>
+          <Combobox id={agentFieldId} value={agentId} onChange={setAgentId} options={agentOptions} placeholder={t("export.agentPlaceholder")} />
         </div>
 
         {agentId && (

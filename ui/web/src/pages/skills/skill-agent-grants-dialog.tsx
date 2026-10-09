@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, ShieldCheck } from "lucide-react";
 import {
@@ -39,6 +39,7 @@ export function SkillAgentGrantsDialog({
   onRevoke,
 }: SkillAgentGrantsDialogProps) {
   const { t } = useTranslation("skills");
+  const uid = useId();
   const { agents } = useAgents();
   const [grants, setGrants] = useState<SkillAgentGrant[]>([]);
   const [agentId, setAgentId] = useState("");
@@ -153,7 +154,7 @@ export function SkillAgentGrantsDialog({
                       <div className="mt-1 flex items-center gap-1.5">
                         <Badge variant="secondary" className="text-2xs">v{grant.pinned_version}</Badge>
                         {grant.can_manage && (
-                          <Badge variant="outline" className="text-2xs border-emerald-500 text-emerald-600">
+                          <Badge variant="outline" className="text-2xs border-success/25 text-success-text">
                             {t("grants.canManage")}
                           </Badge>
                         )}
@@ -177,9 +178,9 @@ export function SkillAgentGrantsDialog({
           </div>
 
           <div className="space-y-3 rounded-md border p-3">
-            <Label>{selectedGrant ? t("grants.update") : t("grants.add")}</Label>
+            <Label htmlFor={`${uid}-grantAgent`}>{selectedGrant ? t("grants.update") : t("grants.add")}</Label>
             <Select value={agentId} onValueChange={setAgentId}>
-              <SelectTrigger>
+              <SelectTrigger id={`${uid}-grantAgent`}>
                 <SelectValue placeholder={t("grants.selectAgent")} />
               </SelectTrigger>
               <SelectContent>
@@ -192,7 +193,7 @@ export function SkillAgentGrantsDialog({
             </Select>
             <label className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
               <span className="flex min-w-0 items-center gap-2 text-sm">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                <ShieldCheck className="h-4 w-4 text-success-text" />
                 {t("grants.allowManage")}
               </span>
               <Switch checked={canManage} onCheckedChange={setCanManage} />

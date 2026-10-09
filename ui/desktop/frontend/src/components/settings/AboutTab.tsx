@@ -163,7 +163,7 @@ function ResetConfirmModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={handleReset}
             disabled={!isConfirmed || resetting}
-            className="bg-error rounded-lg px-4 py-1.5 text-sm text-white hover:bg-error/90 disabled:opacity-50 transition-colors"
+            className="bg-error rounded-lg px-4 py-1.5 text-sm text-error-foreground hover:bg-error/90 disabled:opacity-50 transition-colors"
           >
             {resetting ? t('about.reset.resetting') : t('about.reset.confirm')}
           </button>

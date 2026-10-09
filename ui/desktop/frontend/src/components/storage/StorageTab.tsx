@@ -145,7 +145,7 @@ export function StorageTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">{t('title')}</h2>
-          <p className="text-[11px] text-text-muted mt-0.5">
+          <p className="text-2xs text-text-muted mt-0.5">
             {baseDir ? t('descriptionWithPath', { path: baseDir, size: sizeStr }) : t('description')}
           </p>
         </div>

@@ -111,7 +111,7 @@ export function ModelBudgetSection({
             </span>
           )}
           {!verifyResult && (
-            <span className="text-[11px] text-warning">{t('common:checkAndCreate')}</span>
+            <span className="text-2xs text-warning">{t('common:checkAndCreate')}</span>
           )}
         </div>
       )}
@@ -127,7 +127,7 @@ export function ModelBudgetSection({
             placeholder="200000"
             className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
-          <p className="text-[10px] text-text-muted">{t('agents:llmConfig.contextWindowHint')}</p>
+          <p className="text-2xs text-text-muted">{t('agents:llmConfig.contextWindowHint')}</p>
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-text-secondary">{t('agents:llmConfig.maxToolIterations')}</label>
@@ -138,7 +138,7 @@ export function ModelBudgetSection({
             placeholder="25"
             className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
-          <p className="text-[10px] text-text-muted">{t('agents:llmConfig.maxToolIterationsHint')}</p>
+          <p className="text-2xs text-text-muted">{t('agents:llmConfig.maxToolIterationsHint')}</p>
         </div>
       </div>
     </div>

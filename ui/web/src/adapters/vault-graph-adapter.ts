@@ -2,36 +2,34 @@ import Graph from "graphology";
 import type { VaultDocument, VaultLink } from "@/types/vault";
 import type { VaultGraphNode, VaultGraphEdge } from "@/types/graph-dto";
 import { getNodeSize, truncateMiddle } from "@/components/graph/graph-utils";
+import { graphColor, type GraphColorName } from "@/components/graph/graph-color-tokens";
 
-// Colors per vault document type — matches DOC_TYPE_ICONS in vault-tree.tsx
-// Light mode: Tailwind -600 variants for contrast on white/light backgrounds
-// Dark mode: Tailwind -400 variants for visibility on dark backgrounds
-export const VAULT_TYPE_COLORS_LIGHT: Record<string, string> = {
-  context: "#2563eb",  // blue-600 (matches text-blue-600)
-  memory: "#9333ea",   // purple-600 (matches text-purple-600)
-  note: "#d97706",     // amber-600 (matches text-amber-600)
-  skill: "#059669",    // emerald-600 (matches text-emerald-600)
-  episodic: "#ea580c", // orange-600 (matches text-orange-600)
-  media: "#e11d48",    // rose-600 (matches text-rose-600)
-  document: "#0891b2", // cyan-600 (matches text-cyan-600)
+// Node colours per vault document type — matches DOC_TYPE_ICONS in vault-tree.tsx.
+// Names map onto the shared graph palette tokens in index.css; the concrete hex is
+// resolved per theme because sigma's canvas cannot read CSS variables.
+export const VAULT_TYPE_COLOR_NAMES: Record<string, GraphColorName> = {
+  context: "blue",
+  memory: "purple",
+  note: "amber",
+  skill: "emerald",
+  episodic: "orange",
+  media: "rose",
+  document: "cyan",
 };
-export const VAULT_TYPE_COLORS_DARK: Record<string, string> = {
-  context: "#60a5fa",  // blue-400 (matches dark:text-blue-400)
-  memory: "#c084fc",   // purple-400 (matches dark:text-purple-400)
-  note: "#fbbf24",     // amber-400 (matches dark:text-amber-400)
-  skill: "#34d399",    // emerald-400 (matches dark:text-emerald-400)
-  episodic: "#fb923c", // orange-400 (matches dark:text-orange-400)
-  media: "#fb7185",    // rose-400 (matches dark:text-rose-400)
-  document: "#22d3ee", // cyan-400 (matches dark:text-cyan-400)
-};
-const DEFAULT_COLOR_LIGHT = "#475569"; // slate-600
-const DEFAULT_COLOR_DARK = "#94a3b8";  // slate-400
+const DEFAULT_COLOR_NAME: GraphColorName = "slate";
+
+/** Resolved type → colour map for the active theme (legend dots, filters). */
+export function vaultTypeColors(isDark: boolean): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [type, name] of Object.entries(VAULT_TYPE_COLOR_NAMES)) {
+    out[type] = graphColor(name, isDark);
+  }
+  return out;
+}
 
 /** Get node color based on doc type and theme */
 export function getVaultNodeColor(docType: string, isDark: boolean): string {
-  const colors = isDark ? VAULT_TYPE_COLORS_DARK : VAULT_TYPE_COLORS_LIGHT;
-  const fallback = isDark ? DEFAULT_COLOR_DARK : DEFAULT_COLOR_LIGHT;
-  return colors[docType] ?? fallback;
+  return graphColor(VAULT_TYPE_COLOR_NAMES[docType] ?? DEFAULT_COLOR_NAME, isDark);
 }
 
 /** Limit documents by degree centrality (highest-connected first). */
@@ -51,7 +49,7 @@ export function limitVaultDocsByDegree(
 }
 
 /** Build graph from lightweight DTOs (degree pre-computed, no client loop). */
-export function buildVaultGraphFromDTO(nodes: VaultGraphNode[], edges: VaultGraphEdge[]): Graph {
+export function buildVaultGraphFromDTO(nodes: VaultGraphNode[], edges: VaultGraphEdge[], isDark: boolean): Graph {
   const graph = new Graph({ multi: false, type: "directed" });
   const nodeIds = new Set(nodes.map((n) => n.id));
 
@@ -60,7 +58,7 @@ export function buildVaultGraphFromDTO(nodes: VaultGraphNode[], edges: VaultGrap
       label: truncateMiddle(n.t || n.p.split("/").pop() || n.id.slice(0, 8), 28),
       x: 0, y: 0,
       size: getNodeSize(n.deg, nodes.length),
-      color: VAULT_TYPE_COLORS_LIGHT[n.dt] ?? DEFAULT_COLOR_LIGHT,
+      color: getVaultNodeColor(n.dt, isDark),
       docType: n.dt,
     });
   }
@@ -69,7 +67,7 @@ export function buildVaultGraphFromDTO(nodes: VaultGraphNode[], edges: VaultGrap
     if (nodeIds.has(e.from) && nodeIds.has(e.to) && !graph.hasEdge(e.from, e.to)) {
       graph.addEdgeWithKey(e.id, e.from, e.to, {
         label: e.type, type: "curvedArrow",
-        color: "#a1a1aa", size: 0.4,
+        color: graphColor("slate", isDark), size: 0.4,
       });
     }
   }
@@ -81,6 +79,7 @@ export function buildVaultGraphFromDTO(nodes: VaultGraphNode[], edges: VaultGrap
 export function buildVaultGraph(
   documents: VaultDocument[],
   links: VaultLink[],
+  isDark: boolean,
 ): Graph {
   const graph = new Graph({ multi: false, type: "directed" });
   const docIds = new Set(documents.map((d) => d.id));
@@ -103,8 +102,8 @@ export function buildVaultGraph(
       x: 0,
       y: 0,
       size: getNodeSize(degree, documents.length),
-      // Color set by nodeReducer based on theme; use light as initial fallback
-      color: VAULT_TYPE_COLORS_LIGHT[doc.doc_type] ?? DEFAULT_COLOR_LIGHT,
+      // Color set by nodeReducer based on theme; resolved here as a fallback
+      color: getVaultNodeColor(doc.doc_type, isDark),
       docType: doc.doc_type,
     });
   }
@@ -117,7 +116,7 @@ export function buildVaultGraph(
         graph.addEdgeWithKey(link.id, link.from_doc_id, link.to_doc_id, {
           label: link.link_type,
           type: "curvedArrow",
-          color: "#a1a1aa", // zinc-400, lighter gray
+          color: graphColor("slate", isDark),
           size: 0.4,
         });
       }

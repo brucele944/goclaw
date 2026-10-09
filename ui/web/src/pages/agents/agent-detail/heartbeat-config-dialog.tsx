@@ -204,7 +204,7 @@ export function HeartbeatConfigDialog({
       <DialogContent className="max-h-[90vh] w-[95vw] flex flex-col sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Heart className="h-4 w-4 text-rose-500" />
+            <Heart className="h-4 w-4 text-destructive-text" />
             {t("heartbeat.configTitle")}
             <Badge variant={enabled ? "success" : "secondary"} className="text-2xs">
               {enabled ? t("heartbeat.on") : t("heartbeat.off")}
@@ -252,7 +252,7 @@ export function HeartbeatConfigDialog({
           {/* Provider / Model override */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Cpu className="h-3.5 w-3.5 text-orange-500" />
+              <Cpu className="h-3.5 w-3.5 text-warning-text" />
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("heartbeat.sectionModel")}
               </h4>
@@ -294,7 +294,7 @@ export function HeartbeatConfigDialog({
           {/* Checklist */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <FileText className="h-3.5 w-3.5 text-emerald-500" />
+              <FileText className="h-3.5 w-3.5 text-success-text" />
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("heartbeat.checklist")}
               </h4>

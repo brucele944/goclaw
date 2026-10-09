@@ -31,9 +31,9 @@ export function ToolSettingsDialog({ open, onOpenChange, tool, onSave }: ToolSet
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <h3 className="text-sm font-semibold text-text-primary">{t('builtin.settingsDialog.title', { name: tool.display_name })}</h3>
-            <p className="font-mono text-[11px] text-text-muted mt-0.5">{tool.name}</p>
+            <p className="font-mono text-2xs text-text-muted mt-0.5">{tool.name}</p>
           </div>
-          <button onClick={handleClose} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={handleClose} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>

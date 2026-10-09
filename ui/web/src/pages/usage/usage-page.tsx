@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Pagination } from "@/components/shared/pagination";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { formatTokens, formatApiCost } from "@/lib/format";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useAgents } from "@/pages/agents/hooks/use-agents";
 import { useUsage } from "./hooks/use-usage";
 import { useUsageAnalytics } from "./hooks/use-usage-analytics";
@@ -185,8 +186,9 @@ function AnalyticsDashboard() {
                   {records.map((r, i) => (
                     <tr
                       key={i}
-                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                      onClick={() => setFilter("agentId", r.agentId)}
+                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-pressed={filters.agentId === r.agentId}
+                      {...getClickableProps(() => setFilter("agentId", r.agentId))}
                     >
                       <td className="px-4 py-3 font-medium">{r.agentId}</td>
                       <td className="px-4 py-3"><Badge variant="outline">{r.model}</Badge></td>

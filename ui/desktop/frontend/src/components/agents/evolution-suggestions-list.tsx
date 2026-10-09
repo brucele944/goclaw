@@ -39,26 +39,26 @@ export function EvolutionSuggestionsList({ suggestions, loading, onUpdateStatus 
           <div key={s.id} className="rounded-lg border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[s.suggestion_type] ?? 'bg-surface-tertiary text-text-muted'}`}>
+                <span className={`text-2xs px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[s.suggestion_type] ?? 'bg-surface-tertiary text-text-muted'}`}>
                   {s.suggestion_type}
                 </span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded ${STATUS_COLORS[s.status] ?? 'bg-surface-tertiary text-text-muted'}`}>
+                <span className={`text-2xs px-1.5 py-0.5 rounded ${STATUS_COLORS[s.status] ?? 'bg-surface-tertiary text-text-muted'}`}>
                   {s.status}
                 </span>
               </div>
-              <span className="text-[10px] text-text-muted">{formatRelativeTime(s.created_at)}</span>
+              <span className="text-2xs text-text-muted">{formatRelativeTime(s.created_at)}</span>
             </div>
             <p className="text-xs text-text-primary line-clamp-2">{s.suggestion}</p>
-            {s.rationale && <p className="text-[11px] text-text-muted line-clamp-1">{s.rationale}</p>}
+            {s.rationale && <p className="text-2xs text-text-muted line-clamp-1">{s.rationale}</p>}
             <div className="flex justify-end gap-1.5">
               {s.status === 'pending' && (
                 <>
-                  <button onClick={() => setConfirm({ id: s.id, action: 'approved' })} className="px-2 py-1 text-[10px] rounded bg-success/10 text-success hover:bg-success/20 transition-colors">{t('detail.evolutionTab.approve')}</button>
-                  <button onClick={() => setConfirm({ id: s.id, action: 'rejected' })} className="px-2 py-1 text-[10px] rounded bg-error/10 text-error hover:bg-error/20 transition-colors">{t('detail.evolutionTab.reject')}</button>
+                  <button onClick={() => setConfirm({ id: s.id, action: 'approved' })} className="px-2 py-1 text-2xs rounded bg-success/10 text-success hover:bg-success/20 transition-colors">{t('detail.evolutionTab.approve')}</button>
+                  <button onClick={() => setConfirm({ id: s.id, action: 'rejected' })} className="px-2 py-1 text-2xs rounded bg-error/10 text-error hover:bg-error/20 transition-colors">{t('detail.evolutionTab.reject')}</button>
                 </>
               )}
               {s.status === 'applied' && (
-                <button onClick={() => setConfirm({ id: s.id, action: 'rolled_back' })} className="px-2 py-1 text-[10px] rounded bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors">{t('detail.evolutionTab.rollback')}</button>
+                <button onClick={() => setConfirm({ id: s.id, action: 'rolled_back' })} className="px-2 py-1 text-2xs rounded bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors">{t('detail.evolutionTab.rollback')}</button>
               )}
             </div>
           </div>

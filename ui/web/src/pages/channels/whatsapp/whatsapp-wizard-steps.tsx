@@ -29,7 +29,7 @@ export function WhatsAppAuthStep({ instanceId, onComplete, onSkip }: WizardAuthS
     <>
       <div className="flex flex-col items-center gap-4 py-4 min-h-0">
         {status === "done" && (
-          <p className="text-sm text-green-600 font-medium">
+          <p className="text-sm text-success-text font-medium">
             {t("whatsapp.loginSuccessLoading")}
           </p>
         )}

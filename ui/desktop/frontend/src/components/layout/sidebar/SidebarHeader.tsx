@@ -32,7 +32,7 @@ export function SidebarHeader() {
             <span className="text-base font-semibold text-text-primary">GoClaw</span>
             <button
               onClick={() => setEditionOpen(true)}
-              className="text-[10px] font-medium bg-accent/15 text-accent px-1.5 py-0.5 rounded hover:bg-accent/25 transition-colors cursor-pointer"
+              className="text-2xs font-medium bg-accent/15 text-accent px-1.5 py-0.5 rounded hover:bg-accent/25 transition-colors cursor-pointer"
             >
               Lite{version ? ` - v${version}` : ''}
             </button>
@@ -42,7 +42,7 @@ export function SidebarHeader() {
 
       {/* Section title + add button */}
       <div className="flex items-center justify-between px-1 pt-1">
-        <span className="text-[10px] text-text-muted font-medium tracking-wide">
+        <span className="text-2xs text-text-muted font-medium tracking-wide">
           {t('title', 'Agents')} ({agents.length}/{MAX_AGENTS_LITE})
         </span>
         <button

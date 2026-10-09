@@ -41,15 +41,15 @@ export function KanbanCard({ task, ownerName, ownerEmoji, onClick }: KanbanCardP
       {/* Top row: identifier + priority + running */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono text-[10px] text-text-muted">
+          <span className="font-mono text-2xs text-text-muted">
             {task.identifier || `#${task.task_number ?? ''}`}
           </span>
-          <span className={`font-mono text-[10px] font-medium ${prio.color}`}>
+          <span className={`font-mono text-2xs font-medium ${prio.color}`}>
             {prio.label}
           </span>
         </div>
         {locked && (
-          <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
+          <span className="flex items-center gap-1 text-2xs text-green-600 dark:text-green-400">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
             Running
           </span>
@@ -63,7 +63,7 @@ export function KanbanCard({ task, ownerName, ownerEmoji, onClick }: KanbanCardP
 
       {/* Blocked indicator */}
       {hasBlockers && (
-        <p className="mt-1 flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+        <p className="mt-1 flex items-center gap-1 text-2xs text-amber-600 dark:text-amber-400">
           <IconBlocked size={10} className="shrink-0" />
           <span className="truncate">
             {task.blocked_by!.map((id) => id.slice(0, 8)).join(', ')}
@@ -78,13 +78,13 @@ export function KanbanCard({ task, ownerName, ownerEmoji, onClick }: KanbanCardP
           {ownerName || task.owner_agent_key || 'Unassigned'}
         </span>
         {(task.comment_count ?? 0) > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-text-muted shrink-0">
+          <span className="flex items-center gap-0.5 text-2xs text-text-muted shrink-0">
             <IconChat size={10} />
             {task.comment_count}
           </span>
         )}
         {(task.attachment_count ?? 0) > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-text-muted shrink-0">
+          <span className="flex items-center gap-0.5 text-2xs text-text-muted shrink-0">
             <IconPaperclip size={10} />
             {task.attachment_count}
           </span>
@@ -97,7 +97,7 @@ export function KanbanCard({ task, ownerName, ownerEmoji, onClick }: KanbanCardP
           <div className="h-1.5 flex-1 rounded-full bg-surface-tertiary overflow-hidden">
             <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${Math.min(task.progress_percent, 100)}%` }} />
           </div>
-          <span className="text-[10px] text-text-muted">{task.progress_percent}%</span>
+          <span className="text-2xs text-text-muted">{task.progress_percent}%</span>
         </div>
       )}
     </motion.button>

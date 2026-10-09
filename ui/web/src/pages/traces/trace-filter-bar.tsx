@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Filter, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ const STATUS_OPTIONS = ["running", "completed", "error", "cancelled"];
 export function TraceFilterBar({ filters, agents, channels, onChange }: TraceFilterBarProps) {
   const { t } = useTranslation("traces");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const hasToolCallsId = useId();
   const chips = useMemo(() => getActiveTraceFilterChips(filters), [filters]);
 
   const update = (patch: Partial<TraceFilters>) => {
@@ -99,9 +100,9 @@ export function TraceFilterBar({ filters, agents, channels, onChange }: TraceFil
           <FilterField label={t("filters.maxToolCalls")} type="number" value={filters.maxToolCalls} onChange={(maxToolCalls) => update({ maxToolCalls })} />
           <FilterField label={t("filters.toolName")} value={filters.toolName} onChange={(toolName) => update({ toolName })} />
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">{t("filters.hasToolCalls")}</Label>
+            <Label htmlFor={hasToolCallsId} className="text-xs text-muted-foreground">{t("filters.hasToolCalls")}</Label>
             <Select value={filters.hasToolCalls ?? "__all__"} onValueChange={(v) => update({ hasToolCalls: v === "__all__" ? undefined : v as "true" | "false" })}>
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger id={hasToolCallsId} className="h-9 text-xs">
                 <SelectValue placeholder={t("filters.hasToolCalls")} />
               </SelectTrigger>
               <SelectContent>
@@ -132,10 +133,11 @@ export function TraceFilterBar({ filters, agents, channels, onChange }: TraceFil
 }
 
 function FilterField({ label, value, onChange, type = "text" }: { label: string; value?: string; onChange: (value: string) => void; type?: string }) {
+  const id = useId();
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input type={type} value={value ?? ""} min={type === "number" ? 0 : undefined} onChange={(e) => onChange(e.target.value)} className="text-base md:text-sm" />
+      <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
+      <Input id={id} type={type} value={value ?? ""} min={type === "number" ? 0 : undefined} onChange={(e) => onChange(e.target.value)} className="text-base md:text-sm" />
     </div>
   );
 }

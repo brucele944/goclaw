@@ -82,31 +82,31 @@ export function ChannelDetailPanel({
             <span className="text-sm font-medium text-text-primary truncate">
               {instance.display_name || instance.name}
             </span>
-            <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-surface-tertiary text-text-secondary border border-border shrink-0">
+            <span className="rounded-full px-1.5 py-0.5 text-2xs bg-surface-tertiary text-text-secondary border border-border shrink-0">
               {t(`channelTypes.${instance.channel_type}`)}
             </span>
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
-            <span className="text-[11px] text-text-muted shrink-0">
+            <span className="text-2xs text-text-muted shrink-0">
               {statusText}
             </span>
-            <span className="text-[11px] text-text-muted shrink-0">
+            <span className="text-2xs text-text-muted shrink-0">
               · {agentName}
             </span>
           </div>
           {(status?.summary || status?.detail) && (
             <div className="space-y-1">
               {status?.summary && (
-                <div className="text-[11px] text-text-muted break-words">
+                <div className="text-2xs text-text-muted break-words">
                   {status.summary}
                 </div>
               )}
               {status?.detail && (
-                <div className="text-[11px] text-text-muted break-words">
+                <div className="text-2xs text-text-muted break-words">
                   {status.detail}
                 </div>
               )}
               {status?.checked_at && (
-                <div className="text-[11px] text-text-muted">
+                <div className="text-2xs text-text-muted">
                   {t("detail.lastChecked", {
                     defaultValue: "Last checked: {{value}}",
                     value: new Date(status.checked_at).toLocaleString(),
@@ -118,7 +118,7 @@ export function ChannelDetailPanel({
         </div>
         <button
           onClick={onDelete}
-          className="px-2.5 py-1 text-[11px] border border-border rounded-lg text-error hover:bg-error/10 transition-colors cursor-pointer shrink-0"
+          className="px-2.5 py-1 text-2xs border border-border rounded-lg text-error hover:bg-error/10 transition-colors cursor-pointer shrink-0"
         >
           {t("delete.confirmLabel")}
         </button>

@@ -143,7 +143,7 @@ export function BitrixPortalSelect({ value, onChange, onCreateRequest, onResumeA
                   <span className="text-xs text-muted-foreground">({p.domain})</span>
                   {!p.installed && (
                     <>
-                      <span className="text-xs text-amber-600">
+                      <span className="text-xs text-warning-text">
                         ⚠ {t("bitrix24.portalSelect.pendingBadge", { defaultValue: "Pending install — click to resume" })}
                       </span>
                       <button

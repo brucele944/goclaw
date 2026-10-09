@@ -1,6 +1,7 @@
 {
   "deleteChat": "Delete chat",
   "deleteChatConfirm": "This will permanently delete this conversation and all its messages.",
+  "dropFilesHere": "Drop files here",
   "newChat": "New Chat",
   "openSessions": "Open sessions",
   "readOnly": "Read-only — this session belongs to another user",
@@ -40,5 +41,8 @@
   },
   "turnModel": {
     "tooltip": "Answered by {{model}}"
-  }
+  },
+  "runningTasks": "Running tasks",
+  "runningTasksCount": "Running tasks ({{count}})",
+  "noActiveTasks": "No active tasks"
 }

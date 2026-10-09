@@ -56,7 +56,7 @@ export function TaskCreateDialog({ teamId, members, onClose, onCreate }: TaskCre
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="text-sm font-semibold text-text-primary">{t('createTask', 'Create Task')}</h3>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer">
+          <button aria-label={t('common:close')} onClick={onClose} className="text-text-muted hover:text-text-primary cursor-pointer p-2">
             <IconClose size={16} />
           </button>
         </div>
@@ -120,7 +120,7 @@ export function TaskCreateDialog({ teamId, members, onClose, onCreate }: TaskCre
             <button
               type="submit"
               disabled={!subject.trim() || saving}
-              className="text-xs font-medium bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 cursor-pointer"
+              className="text-xs font-medium bg-accent text-accent-foreground px-4 py-1.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 cursor-pointer"
             >
               {saving ? t('creating', 'Creating...') : t('create', 'Create')}
             </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Merge } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ export function MergeContactsDialog({
 }: MergeContactsDialogProps) {
   const { t } = useTranslation("contacts");
   const { merge } = useContactMerge();
+  const displayNameId = useId();
+  const userIdFieldId = useId();
 
   const [mode, setMode] = useState<MergeMode>("existing");
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -136,8 +138,9 @@ export function MergeContactsDialog({
             {mode === "create" && (
               <div className="ml-6 space-y-3">
                 <div>
-                  <Label className="text-xs">{t("merge.displayName")}</Label>
+                  <Label htmlFor={displayNameId} className="text-xs">{t("merge.displayName")}</Label>
                   <Input
+                    id={displayNameId}
                     value={newDisplayName}
                     onChange={(e) => setNewDisplayName(e.target.value)}
                     placeholder={t("merge.displayNamePlaceholder")}
@@ -145,8 +148,9 @@ export function MergeContactsDialog({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">{t("merge.userId")}</Label>
+                  <Label htmlFor={userIdFieldId} className="text-xs">{t("merge.userId")}</Label>
                   <Input
+                    id={userIdFieldId}
                     value={newUserId}
                     onChange={(e) => setNewUserId(e.target.value)}
                     placeholder={defaultUserId || t("merge.userIdPlaceholder")}

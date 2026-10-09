@@ -6,19 +6,20 @@ import { useTranslation } from "react-i18next";
 import { isTaskLocked } from "./board-utils";
 import { isTerminalStatus } from "../task-sections/task-utils";
 import type { TeamTaskData } from "@/types/team";
+import { getClickableProps } from "@/hooks/use-clickable";
 
 const PRIORITY_LABELS: Record<number, { label: string; color: string }> = {
   0: { label: "P-0", color: "text-slate-400" },
-  1: { label: "P-1", color: "text-blue-500" },
-  2: { label: "P-2", color: "text-amber-500" },
-  3: { label: "P-3", color: "text-red-500" },
+  1: { label: "P-1", color: "text-info-text" },
+  2: { label: "P-2", color: "text-warning-text" },
+  3: { label: "P-3", color: "text-destructive-text" },
 };
 
-const PRIORITY_TOOLTIPS: Record<number, string> = {
-  0: "Low",
-  1: "Medium",
-  2: "High",
-  3: "Critical",
+const PRIORITY_TOOLTIP_KEYS: Record<number, string> = {
+  0: "board.priorityLow",
+  1: "board.priorityMedium",
+  2: "board.priorityHigh",
+  3: "board.priorityCritical",
 };
 
 interface KanbanCardProps {
@@ -48,10 +49,10 @@ export const KanbanCard = memo(function KanbanCard({ task, isTeamV2, emojiLookup
       initial={false}
       transition={{ type: "spring", stiffness: 350, damping: 30 }}
       className={
-        "group relative cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-accent/50" +
+        "group relative cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" +
         (locked ? " border-l-2 border-l-green-500" : blocked ? " border-l-2 border-l-amber-500" : "")
       }
-      onClick={onClick}
+      {...getClickableProps(onClick)}
     >
       {/* Top row: identifier + priority + running badge + delete button */}
       <div className="mb-1 flex items-center justify-between">
@@ -61,15 +62,15 @@ export const KanbanCard = memo(function KanbanCard({ task, isTeamV2, emojiLookup
           </span>
           <span
             className={`font-mono text-2xs font-medium ${prio.color}`}
-            title={`${PRIORITY_TOOLTIPS[task.priority] ?? "Low"} priority`}
+            title={t("board.priorityTooltip", { level: t(PRIORITY_TOOLTIP_KEYS[task.priority] ?? "board.priorityLow") })}
           >
             {prio.label}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           {locked && (
-            <span className="flex items-center gap-1 text-2xs text-green-600 dark:text-green-400">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+            <span className="flex items-center gap-1 text-2xs text-success-text">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
               {t("board.running")}
             </span>
           )}
@@ -89,7 +90,7 @@ export const KanbanCard = memo(function KanbanCard({ task, isTeamV2, emojiLookup
 
       {/* Blocked-by row */}
       {hasBlockers && (
-        <p className="mt-1 flex items-center gap-1 text-2xs text-amber-600 dark:text-amber-400">
+        <p className="mt-1 flex items-center gap-1 text-2xs text-warning-text">
           <Ban className="h-3 w-3 shrink-0" />
           <span className="truncate">
             {task.blocked_by!.map((id) => taskLookup?.get(id) || id.slice(0, 8)).join(", ")}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface Props {
 
 export function TelemetrySection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<TelemetryData>(data ?? DEFAULT);
   const [headers, setHeaders] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
@@ -57,23 +58,24 @@ export function TelemetrySection({ data, onSave, saving }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <InfoLabel tip={t("telemetry.enabledTip")}>{t("telemetry.enabled")}</InfoLabel>
-          <Switch checked={draft.enabled ?? false} onCheckedChange={(v) => update({ enabled: v })} />
+          <InfoLabel tip={t("telemetry.enabledTip")} htmlFor={`${uid}-enabled`}>{t("telemetry.enabled")}</InfoLabel>
+          <Switch id={`${uid}-enabled`} checked={draft.enabled ?? false} onCheckedChange={(v) => update({ enabled: v })} />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("telemetry.endpointTip")}>{t("telemetry.endpoint")}</InfoLabel>
+            <InfoLabel tip={t("telemetry.endpointTip")} htmlFor={`${uid}-endpoint`}>{t("telemetry.endpoint")}</InfoLabel>
             <Input
+              id={`${uid}-endpoint`}
               value={draft.endpoint ?? ""}
               onChange={(e) => update({ endpoint: e.target.value })}
               placeholder="localhost:4317"
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("telemetry.protocolTip")}>{t("telemetry.protocol")}</InfoLabel>
+            <InfoLabel tip={t("telemetry.protocolTip")} htmlFor={`${uid}-protocol`}>{t("telemetry.protocol")}</InfoLabel>
             <Select value={draft.protocol ?? "grpc"} onValueChange={(v) => update({ protocol: v })}>
-              <SelectTrigger>
+              <SelectTrigger id={`${uid}-protocol`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -86,20 +88,21 @@ export function TelemetrySection({ data, onSave, saving }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("telemetry.serviceNameTip")}>{t("telemetry.serviceName")}</InfoLabel>
+            <InfoLabel tip={t("telemetry.serviceNameTip")} htmlFor={`${uid}-service-name`}>{t("telemetry.serviceName")}</InfoLabel>
             <Input
+              id={`${uid}-service-name`}
               value={draft.service_name ?? ""}
               onChange={(e) => update({ service_name: e.target.value })}
               placeholder="goclaw-gateway"
             />
           </div>
           <div className="flex items-center justify-between">
-            <InfoLabel tip={t("telemetry.insecureTip")}>{t("telemetry.insecure")}</InfoLabel>
-            <Switch checked={draft.insecure ?? false} onCheckedChange={(v) => update({ insecure: v })} />
+            <InfoLabel tip={t("telemetry.insecureTip")} htmlFor={`${uid}-insecure`}>{t("telemetry.insecure")}</InfoLabel>
+            <Switch id={`${uid}-insecure`} checked={draft.insecure ?? false} onCheckedChange={(v) => update({ insecure: v })} />
           </div>
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="grid gap-1.5" role="group" aria-label={t("telemetry.headers")}>
           <InfoLabel tip={t("telemetry.headersTip")}>{t("telemetry.headers")}</InfoLabel>
           <KeyValueEditor
             value={headers}

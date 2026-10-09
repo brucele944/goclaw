@@ -127,7 +127,7 @@ export function TeamSettingsModal({ teamId, onClose, onSaved }: TeamSettingsModa
         {/* Header */}
         <div className="px-6 pt-5 pb-4 border-b border-border shrink-0 flex items-center justify-between">
           <h2 className="text-base font-semibold text-text-primary">{t('teamSettings', 'Team Settings')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1.5 cursor-pointer rounded-lg hover:bg-surface-tertiary"><IconClose /></button>
+          <button aria-label={t('common:close')} onClick={onClose} className="text-text-muted hover:text-text-primary p-2.5 cursor-pointer rounded-lg hover:bg-surface-tertiary"><IconClose /></button>
         </div>
 
         {/* Scrollable body */}
@@ -171,7 +171,7 @@ export function TeamSettingsModal({ teamId, onClose, onSaved }: TeamSettingsModa
               {NOTIFY_KEYS.map((key) => (
                 <div key={key} className="flex items-center justify-between py-1.5">
                   <span className="text-sm text-text-secondary">{t(`settings.notify_${key}`, key)}</span>
-                  <button type="button" onClick={() => toggleNotify(key)} className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${notify[key] ? 'bg-accent' : 'bg-surface-tertiary border border-border'}`}>
+                  <button type="button" role="switch" aria-checked={notify[key]} aria-label={t(`settings.notify_${key}`, key)} onClick={() => toggleNotify(key)} className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${notify[key] ? 'bg-accent' : 'bg-surface-tertiary border border-border'}`}>
                     <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notify[key] ? 'translate-x-4' : ''}`} />
                   </button>
                 </div>
@@ -184,7 +184,7 @@ export function TeamSettingsModal({ teamId, onClose, onSaved }: TeamSettingsModa
                   <button type="button" key={mode} onClick={() => setValue('notifyMode', mode)}
                     className={`text-left rounded-lg border p-3 transition-colors cursor-pointer ${notifyMode === mode ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/30'}`}>
                     <div className="text-sm font-medium text-text-primary">{t(`settings.notifyMode_${mode}`, mode)}</div>
-                    <div className="text-[11px] text-text-muted mt-0.5">{t(`settings.notifyMode_${mode}_desc`)}</div>
+                    <div className="text-2xs text-text-muted mt-0.5">{t(`settings.notifyMode_${mode}_desc`)}</div>
                   </button>
                 ))}
               </div>
@@ -195,8 +195,8 @@ export function TeamSettingsModal({ teamId, onClose, onSaved }: TeamSettingsModa
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-border shrink-0 flex justify-end">
-          <button onClick={handleSubmit(onValid)} disabled={isSubmitting || !watch('name').trim()} className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 cursor-pointer flex items-center gap-2">
-            {isSubmitting && <IconSpinner size={14} className="border-white" />}
+          <button onClick={handleSubmit(onValid)} disabled={isSubmitting || !watch('name').trim()} className="px-4 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 disabled:opacity-50 cursor-pointer flex items-center gap-2">
+            {isSubmitting && <IconSpinner size={14} className="border-accent-foreground" />}
             {t('settings.save', 'Save')}
           </button>
         </div>

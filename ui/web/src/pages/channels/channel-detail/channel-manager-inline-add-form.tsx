@@ -4,7 +4,7 @@
  * - with groupId prop: compact inline form (no group ID field)
  * - showGroupField: expanded form with group ID + user ID fields
  */
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ export function InlineAddForm({ groupId, showGroupField, onAdd }: InlineAddFormP
   const [userId, setUserId] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const groupIdInputId = useId();
+  const userIdInputId = useId();
 
   const handleSubmit = async () => {
     const gid = groupId || formGroupId.trim();
@@ -52,8 +54,9 @@ export function InlineAddForm({ groupId, showGroupField, onAdd }: InlineAddFormP
         <p className="text-xs text-muted-foreground">{t("detail.managers.addForm.hint")}</p>
         <div className="flex flex-wrap items-end gap-2">
           <div className="grid gap-1.5 flex-1 min-w-[180px]">
-            <Label className="text-xs">{t("detail.managers.addForm.groupId")}</Label>
+            <Label htmlFor={groupIdInputId} className="text-xs">{t("detail.managers.addForm.groupId")}</Label>
             <Input
+              id={groupIdInputId}
               value={formGroupId}
               onChange={(e) => setFormGroupId(e.target.value)}
               placeholder={t("detail.managers.addForm.groupIdPlaceholder")}
@@ -61,8 +64,9 @@ export function InlineAddForm({ groupId, showGroupField, onAdd }: InlineAddFormP
             />
           </div>
           <div className="grid gap-1.5 flex-1 min-w-[180px]">
-            <Label className="text-xs">{t("detail.managers.addForm.userId")}</Label>
+            <Label htmlFor={userIdInputId} className="text-xs">{t("detail.managers.addForm.userId")}</Label>
             <UserPickerCombobox
+              id={userIdInputId}
               value={userId}
               onChange={setUserId}
               placeholder={t("detail.managers.addForm.userIdPlaceholder")}
@@ -86,8 +90,9 @@ export function InlineAddForm({ groupId, showGroupField, onAdd }: InlineAddFormP
   return (
     <div className="flex items-end gap-2">
       <div className="grid gap-1 flex-1 min-w-[140px]">
-        <Label className="text-xs text-muted-foreground">{t("detail.managers.addForm.userId")}</Label>
+        <Label htmlFor={userIdInputId} className="text-xs text-muted-foreground">{t("detail.managers.addForm.userId")}</Label>
         <UserPickerCombobox
+          id={userIdInputId}
           value={userId}
           onChange={setUserId}
           placeholder={t("detail.managers.addForm.userIdPlaceholder")}

@@ -23,9 +23,9 @@ function StatusDot({ ok }: { ok: boolean | undefined }) {
   if (ok === undefined)
     return <Minus className="h-3.5 w-3.5 text-muted-foreground/40" />;
   return ok ? (
-    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+    <CheckCircle2 className="h-3.5 w-3.5 text-success-text" />
   ) : (
-    <XCircle className="h-3.5 w-3.5 text-red-500" />
+    <XCircle className="h-3.5 w-3.5 text-destructive-text" />
   );
 }
 
@@ -102,10 +102,10 @@ export function SystemHealthCard({
                 {cleanVersion(health.version)}
               </span>
               {health.updateAvailable === false && (
-                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                <CheckCircle2 className="h-3 w-3 text-success-text" />
               )}
               {health.updateAvailable && health.latestVersion && (
-                <span className="ml-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                <span className="ml-1 rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-text">
                   {health.latestVersion} available
                 </span>
               )}
@@ -171,7 +171,7 @@ export function SystemHealthCard({
                   className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1 text-xs"
                 >
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${rt.available ? "bg-emerald-500" : "bg-red-400"}`}
+                    className={`h-1.5 w-1.5 rounded-full ${rt.available ? "bg-success" : ""}`}
                   />
                   {rt.name}
                   {rt.version && (

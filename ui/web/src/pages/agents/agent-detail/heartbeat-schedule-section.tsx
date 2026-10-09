@@ -27,7 +27,7 @@ export function HeartbeatScheduleSection({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Clock className="h-3.5 w-3.5 text-amber-500" />
+        <Clock className="h-3.5 w-3.5 text-warning-text" />
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("heartbeat.sectionSchedule")}
         </h4>
@@ -54,8 +54,9 @@ export function HeartbeatScheduleSection({
           />
         </div>
         <div className="space-y-1 flex-1 min-w-[160px]">
-          <Label className="text-xs">{t("heartbeat.timezone")}</Label>
+          <Label htmlFor="hb-timezone" className="text-xs">{t("heartbeat.timezone")}</Label>
           <Combobox
+            id="hb-timezone"
             value={timezone || "__auto__"}
             onChange={(v) => setTimezone(v === "__auto__" ? "" : v)}
             options={[{ value: "__auto__", label: defaultTz }, ...getAllIanaTimezones()]}

@@ -50,11 +50,11 @@ export function PromptModeSection({ mode, onModeChange }: PromptModeSectionProps
             <div className="flex items-center gap-1.5">
               <span className="text-base">{MODE_ICONS[m]}</span>
               <span className="text-xs font-medium text-text-primary capitalize">{m}</span>
-              <span className="text-[9px] px-1 py-0.5 rounded bg-surface-tertiary text-text-muted ml-auto">
+              <span className="text-2xs px-1 py-0.5 rounded bg-surface-tertiary text-text-muted ml-auto">
                 {MODE_TOKENS[m]}
               </span>
             </div>
-            <p className="text-[10px] text-text-muted leading-tight">{MODE_DESC[m]}</p>
+            <p className="text-2xs text-text-muted leading-tight">{MODE_DESC[m]}</p>
           </button>
         ))}
       </div>
@@ -63,7 +63,7 @@ export function PromptModeSection({ mode, onModeChange }: PromptModeSectionProps
       {sections.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {sections.map((s) => (
-            <span key={s} className="rounded bg-surface-tertiary px-1.5 py-0.5 text-[9px] text-text-muted">
+            <span key={s} className="rounded bg-surface-tertiary px-1.5 py-0.5 text-2xs text-text-muted">
               {s}
             </span>
           ))}

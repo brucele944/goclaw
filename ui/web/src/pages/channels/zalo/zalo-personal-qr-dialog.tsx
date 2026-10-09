@@ -54,7 +54,7 @@ export function ZaloPersonalQRDialog({
 
         <div className="flex flex-col items-center gap-4 py-4">
           {status === "done" && (
-            <p className="text-sm text-green-600 font-medium">{t("zalo.loginSuccessful")}</p>
+            <p className="text-sm text-success-text font-medium">{t("zalo.loginSuccessful")}</p>
           )}
           {status === "error" && (
             <p className="text-sm text-destructive">{errorMsg}</p>

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface McpConnectionFieldsProps {
 /** Renders transport selector plus stdio command/args or HTTP url/headers fields. */
 export function McpConnectionFields({ form }: McpConnectionFieldsProps) {
   const { t } = useTranslation("mcp");
+  const uid = useId();
   const { register, watch, setValue, formState: { errors } } = form;
   const transport = watch("transport");
   const name = watch("name");
@@ -53,8 +55,8 @@ export function McpConnectionFields({ form }: McpConnectionFieldsProps) {
       </div>
 
       <div className="grid gap-1.5">
-        <Label>{t("form.transport")}</Label>
-        <div className="flex gap-2">
+        <Label id={`${uid}-transport`}>{t("form.transport")}</Label>
+        <div role="group" aria-labelledby={`${uid}-transport`} className="flex gap-2">
           {TRANSPORTS.map((tr) => (
             <Button
               key={tr.value}
@@ -86,8 +88,8 @@ export function McpConnectionFields({ form }: McpConnectionFieldsProps) {
             <Label htmlFor="mcp-url">{t("form.url")}</Label>
             <Input id="mcp-url" placeholder="http://localhost:3001/sse" className="font-mono" {...register("url")} />
           </div>
-          <div className="grid gap-1.5">
-            <Label>{t("form.headers")}</Label>
+          <div role="group" aria-labelledby={`${uid}-headers`} className="grid gap-1.5">
+            <Label id={`${uid}-headers`}>{t("form.headers")}</Label>
             <KeyValueEditor
               value={headers}
               onChange={(v) => setValue("headers", v, { shouldDirty: true, shouldValidate: true })}

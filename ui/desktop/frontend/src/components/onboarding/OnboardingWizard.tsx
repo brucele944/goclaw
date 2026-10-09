@@ -68,7 +68,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 className={[
                   'rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
                   locale === lang.value
-                    ? 'bg-accent text-white'
+                    ? 'bg-accent text-accent-foreground'
                     : 'text-text-secondary hover:bg-surface-tertiary',
                 ].join(' ')}
               >

@@ -114,7 +114,7 @@ export function McpFormDialog({ open, onOpenChange, server, onSubmit, onTest }: 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <span className="text-sm font-semibold text-text-primary">{isEdit ? t('form.editTitle') : t('form.createTitle')}</span>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
@@ -133,7 +133,7 @@ export function McpFormDialog({ open, onOpenChange, server, onSubmit, onTest }: 
               placeholder="my-mcp-server"
               className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
             />
-            <p className="text-[11px] text-text-muted">{t('form.nameHint')}</p>
+            <p className="text-2xs text-text-muted">{t('form.nameHint')}</p>
             {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
           </div>
 
@@ -175,7 +175,7 @@ export function McpFormDialog({ open, onOpenChange, server, onSubmit, onTest }: 
                 className="flex-1 min-w-0 bg-surface-tertiary border border-border rounded-r-lg px-3 py-2 text-base md:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
-            <p className="text-[11px] text-text-muted">{t('form.toolPrefixHint')}</p>
+            <p className="text-2xs text-text-muted">{t('form.toolPrefixHint')}</p>
           </div>
 
           {/* Timeout */}
@@ -205,7 +205,7 @@ export function McpFormDialog({ open, onOpenChange, server, onSubmit, onTest }: 
             </button>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => onOpenChange(false)} className="border border-border rounded-lg px-4 py-1.5 text-sm text-text-secondary hover:bg-surface-tertiary transition-colors">{t('form.cancel')}</button>
-              <button type="button" onClick={handleSubmit(onValid)} disabled={!canSubmit || isSubmitting} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
+              <button type="button" onClick={handleSubmit(onValid)} disabled={!canSubmit || isSubmitting} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-accent-foreground hover:bg-accent-hover disabled:opacity-50 transition-colors">
                 {isSubmitting ? t('form.saving') : isEdit ? t('form.update') : t('form.create')}
               </button>
             </div>

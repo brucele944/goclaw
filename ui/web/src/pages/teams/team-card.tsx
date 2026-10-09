@@ -28,7 +28,7 @@ function MemberChip({ member, isLead }: { member: TeamMemberData; isLead: boolea
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1">
           <span className="truncate text-xs font-medium">{name}</span>
-          {isLead && <Crown className="h-3 w-3 shrink-0 text-amber-500" />}
+          {isLead && <Crown className="h-3 w-3 shrink-0 text-warning-text" />}
         </div>
         {member.frontmatter && (
           <p className="line-clamp-2 text-xs-plus leading-snug text-muted-foreground">
@@ -115,6 +115,7 @@ export function TeamCard({ team, onClick, onDelete }: TeamCardProps) {
               variant="ghost"
               size="xs"
               className="text-muted-foreground hover:text-destructive"
+              aria-label={t("common:delete")}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();

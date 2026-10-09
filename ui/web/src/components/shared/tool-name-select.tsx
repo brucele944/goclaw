@@ -11,6 +11,8 @@ interface ToolNameSelectProps {
   onChange: (value: string[]) => void;
   placeholder?: string;
   className?: string;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 interface ToolOption {
@@ -24,6 +26,7 @@ export function ToolNameSelect({
   onChange,
   placeholder,
   className,
+  id,
 }: ToolNameSelectProps) {
   const { t } = useTranslation("common");
   const { tools: builtinTools } = useBuiltinTools();
@@ -101,7 +104,7 @@ export function ToolNameSelect({
     <div ref={containerRef} className={cn("relative", className)}>
       <div
         className={cn(
-          "border-input dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
+          "border-control-border dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
           "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-2",
         )}
         onClick={() => inputRef.current?.focus()}
@@ -115,6 +118,7 @@ export function ToolNameSelect({
             <button
               type="button"
               className="hover:text-destructive ml-0.5"
+              aria-label={t("remove")}
               onClick={(e) => { e.stopPropagation(); removeTool(name); }}
             >
               <X className="h-3 w-3" />
@@ -122,6 +126,7 @@ export function ToolNameSelect({
           </span>
         ))}
         <input
+          id={id}
           ref={inputRef}
           value={search}
           onChange={(e) => {

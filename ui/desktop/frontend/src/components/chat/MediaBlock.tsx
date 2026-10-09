@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ImageLightbox } from './ImageLightbox'
 import type { LightboxImage } from './ImageLightbox'
 import { FileButton } from './FileButton'
@@ -29,6 +30,7 @@ function AuthVideo({ src }: { src: string }) {
 }
 
 export function MediaBlock({ items }: MediaBlockProps) {
+  const { t } = useTranslation('common')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const images = items.filter((i) => i.type.startsWith('image/'))
@@ -45,6 +47,7 @@ export function MediaBlock({ items }: MediaBlockProps) {
             <button
               key={i}
               type="button"
+              aria-label={t('viewImage')}
               onClick={() => setLightboxIndex(i)}
               className="group relative overflow-hidden rounded-lg border border-border cursor-pointer"
             >

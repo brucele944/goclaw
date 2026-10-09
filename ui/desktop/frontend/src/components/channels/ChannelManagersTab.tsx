@@ -121,7 +121,7 @@ export function ChannelManagersTab({
       {groups.length === 0 ? (
         <div className="py-6 text-center">
           <p className="text-xs text-text-muted">{t('detail.managers.noManagerGroups')}</p>
-          <p className="text-[11px] text-text-muted/70 mt-1">{t('detail.managers.noManagerGroupsHint')}</p>
+          <p className="text-2xs text-text-muted/70 mt-1">{t('detail.managers.noManagerGroupsHint')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -149,7 +149,7 @@ export function ChannelManagersTab({
       {/* Standalone add form for new groups */}
       <div className="border border-border rounded-lg p-4 space-y-3">
         <p className="text-xs font-medium text-text-secondary">{t('detail.managers.addForm.title')}</p>
-        <p className="text-[11px] text-text-muted">{t('detail.managers.addForm.hint')}</p>
+        <p className="text-2xs text-text-muted">{t('detail.managers.addForm.hint')}</p>
         <div className="space-y-2">
           <input
             value={newGroupId}
@@ -169,7 +169,7 @@ export function ChannelManagersTab({
             <button
               onClick={handleStandaloneAdd}
               disabled={addingMap['_new'] || !newGroupId.trim() || !newUserId.trim()}
-              className="px-3 py-1.5 bg-accent text-white text-xs rounded-lg disabled:opacity-50 cursor-pointer hover:bg-accent-hover transition-colors shrink-0"
+              className="px-3 py-1.5 bg-accent text-accent-foreground text-xs rounded-lg disabled:opacity-50 cursor-pointer hover:bg-accent-hover transition-colors shrink-0"
             >
               {t('detail.managers.addForm.addManager')}
             </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Cookie, Globe2, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ const toNumber = (value: string) => {
 
 export function ToolsBrowserSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ToolsData>(data ?? {});
   const [dirty, setDirty] = useState(false);
 
@@ -71,33 +72,35 @@ export function ToolsBrowserSection({ data, onSave, saving }: Props) {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5">
             <div className="space-y-1">
-              <Label className="text-sm font-medium">{t("browser.enabled")}</Label>
+              <Label htmlFor={`${uid}-enabled`} className="text-sm font-medium">{t("browser.enabled")}</Label>
               <p className="text-xs text-muted-foreground">{t("browser.enabledHint")}</p>
             </div>
-            <Switch checked={browser.enabled !== false} onCheckedChange={(v) => updateBrowser({ enabled: v })} />
+            <Switch id={`${uid}-enabled`} checked={browser.enabled !== false} onCheckedChange={(v) => updateBrowser({ enabled: v })} />
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5">
             <div className="space-y-1">
-              <Label className="text-sm font-medium">{t("browser.headless")}</Label>
+              <Label htmlFor={`${uid}-headless`} className="text-sm font-medium">{t("browser.headless")}</Label>
               <p className="text-xs text-muted-foreground">{t("browser.headlessHint")}</p>
             </div>
-            <Switch checked={browser.headless !== false} onCheckedChange={(v) => updateBrowser({ headless: v })} />
+            <Switch id={`${uid}-headless`} checked={browser.headless !== false} onCheckedChange={(v) => updateBrowser({ headless: v })} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("browser.remoteUrlTip")}>{t("browser.remoteUrl")}</InfoLabel>
+            <InfoLabel tip={t("browser.remoteUrlTip")} htmlFor={`${uid}-remote-url`}>{t("browser.remoteUrl")}</InfoLabel>
             <Input
+              id={`${uid}-remote-url`}
               value={browser.remote_url ?? ""}
               onChange={(e) => updateBrowser({ remote_url: e.target.value })}
               placeholder="ws://chrome:9222"
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("browser.maxPagesTip")}>{t("browser.maxPages")}</InfoLabel>
+            <InfoLabel tip={t("browser.maxPagesTip")} htmlFor={`${uid}-max-pages`}>{t("browser.maxPages")}</InfoLabel>
             <Input
+              id={`${uid}-max-pages`}
               type="number"
               min={1}
               value={browser.max_pages ?? ""}
@@ -106,8 +109,9 @@ export function ToolsBrowserSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("browser.actionTimeoutTip")}>{t("browser.actionTimeout")}</InfoLabel>
+            <InfoLabel tip={t("browser.actionTimeoutTip")} htmlFor={`${uid}-action-timeout`}>{t("browser.actionTimeout")}</InfoLabel>
             <Input
+              id={`${uid}-action-timeout`}
               type="number"
               min={1000}
               value={browser.action_timeout_ms ?? ""}
@@ -116,8 +120,9 @@ export function ToolsBrowserSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("browser.idleTimeoutTip")}>{t("browser.idleTimeout")}</InfoLabel>
+            <InfoLabel tip={t("browser.idleTimeoutTip")} htmlFor={`${uid}-idle-timeout`}>{t("browser.idleTimeout")}</InfoLabel>
             <Input
+              id={`${uid}-idle-timeout`}
               type="number"
               min={0}
               value={browser.idle_timeout_ms ?? ""}
@@ -129,13 +134,14 @@ export function ToolsBrowserSection({ data, onSave, saving }: Props) {
 
         <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5">
           <div className="flex items-start gap-3">
-            <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-warning-text" />
             <div className="space-y-1">
-              <Label className="text-sm font-medium">{t("browser.cookieSync")}</Label>
+              <Label htmlFor={`${uid}-cookie-sync`} className="text-sm font-medium">{t("browser.cookieSync")}</Label>
               <p className="text-xs text-muted-foreground">{t("browser.cookieSyncHint")}</p>
             </div>
           </div>
           <Switch
+            id={`${uid}-cookie-sync`}
             checked={browser.cookie_sync_enabled !== false}
             onCheckedChange={(v) => updateBrowser({ cookie_sync_enabled: v })}
             className="shrink-0"

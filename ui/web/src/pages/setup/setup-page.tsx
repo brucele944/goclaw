@@ -9,6 +9,7 @@ import { StepModel } from "./step-model";
 import { StepAgent } from "./step-agent";
 import { StepChannel } from "./step-channel";
 import { SetupCompleteModal } from "./setup-complete-modal";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Building2 } from "lucide-react";
 import { ROUTES, SUPPORTED_LANGUAGES, LANGUAGE_LABELS, LOCAL_STORAGE_KEYS } from "@/lib/constants";
 import { markSetupSkipped } from "@/lib/setup-skip";
@@ -91,6 +92,7 @@ export function SetupPage() {
   const [createdAgent, setCreatedAgent] = useState<AgentData | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
 
   // Initialize step from server state (only on first load, not on refetches)
   useEffect(() => {
@@ -183,12 +185,7 @@ export function SetupPage() {
           <button
             type="button"
             className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
-            onClick={() => {
-              if (window.confirm(t("skipSetupConfirm"))) {
-                markSetupSkipped({ userId, tenantId: currentTenantId, tenantSlug: currentTenantSlug });
-                navigate(ROUTES.OVERVIEW, { replace: true });
-              }
-            }}
+            onClick={() => setSkipConfirmOpen(true)}
           >
             {t("skipSetup")}
           </button>
@@ -202,6 +199,19 @@ export function SetupPage() {
       <SetupCompleteModal
         open={showComplete}
         onGoToDashboard={() => navigate(ROUTES.OVERVIEW, { replace: true })}
+      />
+
+      <ConfirmDialog
+        open={skipConfirmOpen}
+        onOpenChange={setSkipConfirmOpen}
+        title={t("skipSetup")}
+        description={t("skipSetupConfirm")}
+        confirmLabel={t("confirmSkip")}
+        onConfirm={() => {
+          setSkipConfirmOpen(false);
+          markSetupSkipped({ userId, tenantId: currentTenantId, tenantSlug: currentTenantSlug });
+          navigate(ROUTES.OVERVIEW, { replace: true });
+        }}
       />
     </SetupLayout>
   );

@@ -165,10 +165,10 @@ export function SummoningModal({
             <motion.div
               className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full text-3xl ${
                 status === "completed"
-                  ? "bg-emerald-100 dark:bg-emerald-900/30"
+                  ? "bg-success-subtle"
                   : status === "failed"
-                    ? "bg-red-100 dark:bg-red-900/30"
-                    : "bg-orange-100 dark:bg-orange-900/30"
+                    ? "bg-destructive-subtle"
+                    : "bg-warning-subtle"
               }`}
               animate={
                 status === "summoning"
@@ -190,11 +190,11 @@ export function SummoningModal({
           {/* Agent name */}
           <p className="text-sm text-foreground">
             {status === "completed" ? (
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="font-medium text-success-text">
                 {t("summoning.agentReady", { name: agentName })}
               </span>
             ) : status === "failed" ? (
-              <span className="font-medium text-red-600 dark:text-red-400">
+              <span className="font-medium text-destructive-text">
                 {errorMsg || t("summoning.failed")}
               </span>
             ) : (
@@ -218,7 +218,7 @@ export function SummoningModal({
                     <motion.div
                       className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
                         done
-                          ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400"
+                          ? "bg-warning-subtle text-warning-text"
                           : "bg-muted text-muted-foreground"
                       }`}
                       animate={done ? { scale: [0.8, 1.2, 1] } : {}}
@@ -236,7 +236,7 @@ export function SummoningModal({
                       <motion.span
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="text-xs text-orange-600 dark:text-orange-400"
+                        className="text-xs text-warning-text"
                       >
                         {t("summoning.done")}
                       </motion.span>

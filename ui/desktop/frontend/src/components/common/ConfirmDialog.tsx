@@ -46,7 +46,7 @@ export function ConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`px-3 py-1.5 text-xs text-white rounded-lg transition-opacity disabled:opacity-50 ${
+            className={`px-3 py-1.5 text-xs text-accent-foreground rounded-lg transition-opacity disabled:opacity-50 ${
               variant === 'destructive' ? 'bg-error hover:opacity-90' : 'bg-accent hover:bg-accent-hover'
             }`}
           >

@@ -135,7 +135,7 @@ export function StorageUploadDialog({
             <p className="text-xs text-text-muted">
               {dragging ? t('upload.dropHere') : t('upload.dropOrClick')}
             </p>
-            <p className="text-[10px] text-text-muted/60">{t('upload.maxSize')}</p>
+            <p className="text-2xs text-text-muted/60">{t('upload.maxSize')}</p>
             <input ref={inputRef} type="file" multiple className="hidden" onChange={handleInputChange} />
           </div>
         )}
@@ -145,7 +145,7 @@ export function StorageUploadDialog({
 
         {/* Summary */}
         {entries.length > 0 && !done && !uploading && (
-          <p className="text-[10px] text-text-muted shrink-0">
+          <p className="text-2xs text-text-muted shrink-0">
             {t('upload.readyCount', { ready: readyCount, total: entries.length })}
           </p>
         )}
@@ -167,7 +167,7 @@ export function StorageUploadDialog({
           {done ? (
             <button
               onClick={() => handleClose(false)}
-              className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+              className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg hover:bg-accent-hover transition-colors"
             >
               {t('done', 'Done')}
             </button>
@@ -175,7 +175,7 @@ export function StorageUploadDialog({
             <button
               onClick={handleSubmit}
               disabled={readyCount === 0 || uploading}
-              className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {uploading
                 ? t('upload.uploading')

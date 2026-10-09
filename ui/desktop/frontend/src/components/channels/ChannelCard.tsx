@@ -63,20 +63,20 @@ export function ChannelCard({
             <span className="text-sm font-medium text-text-primary truncate">
               {instance.display_name || instance.name}
             </span>
-            <span className="rounded-full px-1.5 py-0.5 text-[10px] bg-surface-tertiary text-text-secondary border border-border shrink-0">
+            <span className="rounded-full px-1.5 py-0.5 text-2xs bg-surface-tertiary text-text-secondary border border-border shrink-0">
               {t(`channelTypes.${instance.channel_type}`)}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-            <span className="text-[11px] text-text-muted">{statusText}</span>
-            <span className="text-[11px] text-text-muted">·</span>
-            <span className="text-[11px] text-text-muted truncate">
+            <span className="text-2xs text-text-muted">{statusText}</span>
+            <span className="text-2xs text-text-muted">·</span>
+            <span className="text-2xs text-text-muted truncate">
               {agentName}
             </span>
           </div>
           {summaryHint && (
-            <div className="mt-1 truncate text-[11px] text-text-muted">
+            <div className="mt-1 truncate text-2xs text-text-muted">
               {summaryHint}
             </div>
           )}

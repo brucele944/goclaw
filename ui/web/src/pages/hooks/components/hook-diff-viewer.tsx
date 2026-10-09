@@ -53,7 +53,7 @@ export function HookDiffViewer({ before, after }: HookDiffViewerProps) {
   if (isIdentical) {
     return (
       <div className="rounded border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-        {t("test.updatedInput")} — no changes
+        {t("test.updatedInput")} {t("test.diffNoChanges")}
       </div>
     );
   }
@@ -61,15 +61,15 @@ export function HookDiffViewer({ before, after }: HookDiffViewerProps) {
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{t("test.updatedInput")}</p>
-      <div className="grid grid-cols-2 gap-1 overflow-x-auto rounded border text-xs font-mono">
+      <div className="grid grid-cols-1 gap-1 overflow-x-auto rounded border text-xs font-mono sm:grid-cols-2">
         {/* Before */}
-        <div className="min-w-0 border-r">
-          <div className="border-b bg-muted/50 px-3 py-1 text-2xs font-sans text-muted-foreground">Before</div>
+        <div className="min-w-0 border-b pb-1 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-1">
+          <div className="border-b bg-muted/50 px-3 py-1 text-2xs font-sans text-muted-foreground">{t("test.diffBefore")}</div>
           <div className="overflow-x-auto">
             {beforeLines.map((line, i) => (
               <div
                 key={i}
-                className={`px-3 py-px leading-5 whitespace-pre ${line.changed ? "bg-red-50 dark:bg-red-950/20" : ""}`}
+                className={`px-3 py-px leading-5 whitespace-pre ${line.changed ? "bg-destructive-subtle" : ""}`}
                 // highlight.js output is safe escaped HTML
                 dangerouslySetInnerHTML={{ __html: highlight(line.text) || "\u00a0" }}
               />
@@ -78,12 +78,12 @@ export function HookDiffViewer({ before, after }: HookDiffViewerProps) {
         </div>
         {/* After */}
         <div className="min-w-0">
-          <div className="border-b bg-muted/50 px-3 py-1 text-2xs font-sans text-muted-foreground">After</div>
+          <div className="border-b bg-muted/50 px-3 py-1 text-2xs font-sans text-muted-foreground">{t("test.diffAfter")}</div>
           <div className="overflow-x-auto">
             {afterLines.map((line, i) => (
               <div
                 key={i}
-                className={`px-3 py-px leading-5 whitespace-pre ${line.changed ? "bg-green-50 dark:bg-green-950/20" : ""}`}
+                className={`px-3 py-px leading-5 whitespace-pre ${line.changed ? "bg-success-subtle dark:bg-green-950/20" : ""}`}
                 dangerouslySetInnerHTML={{ __html: highlight(line.text) || "\u00a0" }}
               />
             ))}

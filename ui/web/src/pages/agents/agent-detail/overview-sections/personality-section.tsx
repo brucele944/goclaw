@@ -58,6 +58,7 @@ export function PersonalitySection({
             onClick={() => setEmojiEditing(true)}
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
             title={t("identity.emojiHint")}
+            aria-label={t("identity.emojiHint")}
           >
             {emoji
               ? <span className="text-2xl leading-none">{emoji}</span>
@@ -112,9 +113,9 @@ export function PersonalitySection({
       {/* Status + Default on same row */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs">{t("identity.status")}</Label>
+          <Label htmlFor="identityStatus" className="text-xs">{t("identity.status")}</Label>
           <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger className="text-base md:text-sm">
+            <SelectTrigger id="identityStatus" className="text-base md:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -141,9 +142,9 @@ export function PersonalitySection({
           <span className="flex-1 rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-xs text-muted-foreground truncate">
             {agentKey}
           </span>
-          <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={copyAgentKey}>
+          <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={copyAgentKey} aria-label={t("common:copy")}>
             {copied
-              ? <Check className="h-3 w-3 text-green-500" />
+              ? <Check className="h-3 w-3 text-success-text" />
               : <Copy className="h-3 w-3" />}
           </Button>
         </div>

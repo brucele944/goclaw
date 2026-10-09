@@ -42,14 +42,14 @@ export function McpToolsDialog({ open, onOpenChange, server, onLoadTools }: McpT
               </svg>
               <span className="text-sm font-semibold text-text-primary">{t('tools.title', { name: displayName })}</span>
               {!loading && tools.length > 0 && (
-                <span className="bg-surface-tertiary text-text-secondary rounded-full px-2 py-0.5 text-[11px]">
+                <span className="bg-surface-tertiary text-text-secondary rounded-full px-2 py-0.5 text-2xs">
                   {tools.length} tool{tools.length !== 1 ? 's' : ''}
                 </span>
               )}
             </div>
-            <p className="font-mono text-[11px] text-text-muted mt-0.5">{t('tools.prefix')} mcp_{server.name}</p>
+            <p className="font-mono text-2xs text-text-muted mt-0.5">{t('tools.prefix')} mcp_{server.name}</p>
           </div>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>

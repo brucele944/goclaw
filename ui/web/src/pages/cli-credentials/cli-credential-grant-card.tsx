@@ -3,6 +3,7 @@ import { Trash2, Pencil, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getClickableProps } from "@/hooks/use-clickable";
 import type { CLIAgentGrant } from "./hooks/use-cli-credentials";
 
 interface Props {
@@ -25,10 +26,11 @@ export function CliCredentialGrantCard({ grant, agentName, isActive, disabled, o
   return (
     <div
       className={cn(
-        "rounded-md border px-3 py-2.5 cursor-pointer transition-colors",
+        "rounded-md border px-3 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         isActive ? "border-ring bg-accent/50 ring-1 ring-ring/30" : "bg-muted/30 hover:bg-muted/50",
       )}
-      onClick={onSelect}
+      {...getClickableProps(onSelect)}
+      aria-pressed={isActive}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -73,6 +75,7 @@ export function CliCredentialGrantCard({ grant, agentName, isActive, disabled, o
           className="h-7 w-7 shrink-0"
           onClick={(e) => { e.stopPropagation(); onRevoke(); }}
           disabled={disabled}
+          aria-label={t("grants.revoke")}
         >
           <Trash2 className="h-3.5 w-3.5 text-destructive" />
         </Button>

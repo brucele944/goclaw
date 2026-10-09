@@ -123,7 +123,7 @@ export function AgentFilesTab({ agentId, agentKey, agentType }: AgentFilesTabPro
                 <span className="truncate">{file.name}</span>
               </div>
               {file.missing && (
-                <span className="text-[10px] text-text-muted ml-5.5 block">Not created</span>
+                <span className="text-2xs text-text-muted ml-5.5 block">Not created</span>
               )}
             </button>
           ))}
@@ -136,14 +136,14 @@ export function AgentFilesTab({ agentId, agentKey, agentType }: AgentFilesTabPro
               <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-tertiary/30">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-text-primary">{selectedFile}</span>
-                  {dirty && <span className="text-[10px] text-warning font-medium">Unsaved</span>}
+                  {dirty && <span className="text-2xs text-warning font-medium">Unsaved</span>}
                 </div>
                 <button
                   onClick={handleSave}
                   disabled={!dirty || saving}
-                  className="px-3 py-1 text-[11px] bg-accent text-white rounded-md font-medium hover:bg-accent-hover transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                  className="px-3 py-1 text-2xs bg-accent text-accent-foreground rounded-md font-medium hover:bg-accent-hover transition-colors disabled:opacity-40 flex items-center gap-1.5"
                 >
-                  {saving && <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {saving && <span className="w-3 h-3 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />}
                   {saving ? t('files.saving') : t('files.save')}
                 </button>
               </div>
@@ -155,7 +155,7 @@ export function AgentFilesTab({ agentId, agentKey, agentType }: AgentFilesTabPro
                 <textarea
                   value={content}
                   onChange={(e) => { setContent(e.target.value); setDirty(true) }}
-                  className="flex-1 bg-surface-primary px-3 py-3 text-xs font-mono text-text-primary leading-relaxed resize-none focus:outline-none"
+                  className="flex-1 bg-surface-primary px-3 py-3 text-xs font-mono text-text-primary leading-relaxed resize-none focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-inset"
                   spellCheck={false}
                 />
               )}

@@ -9,9 +9,9 @@ import { formatRelativeTime } from "@/lib/format";
 import type { EpisodicSummary, EpisodicSearchResult } from "@/types/memory";
 
 const SOURCE_COLORS: Record<string, string> = {
-  session: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  session: "bg-info-subtle text-info-text",
   v2_daily: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  manual: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  manual: "bg-success-subtle text-success-text",
 };
 
 interface Props {
@@ -102,7 +102,7 @@ export function EpisodicTab({ agentId }: Props) {
           className="text-base md:text-sm"
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <Button size="sm" variant="outline" onClick={handleSearch} disabled={searching}>
+        <Button size="sm" variant="outline" onClick={handleSearch} disabled={searching} aria-label={t("common:search")}>
           <Search className="h-4 w-4" />
         </Button>
         {searchResults && (

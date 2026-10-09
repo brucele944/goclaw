@@ -123,6 +123,7 @@ export function CliCredentialEnvVarsSection({
                 size="icon"
                 className="mt-0.5 h-8 w-8 shrink-0"
                 onClick={() => removeEntry(idx)}
+                aria-label={tc("remove")}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -142,7 +143,7 @@ export function CliCredentialEnvVarsSection({
               </label>
             </RadioGroup>
             {entry.kind === "value" && (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
+              <p className="text-xs text-warning-text">
                 {isSuspiciousPlaintextEnv(entry.key, entry.value)
                   ? t("form.envValueSuspicious")
                   : t("form.envValueWarning")}

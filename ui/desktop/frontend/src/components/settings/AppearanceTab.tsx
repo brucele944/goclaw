@@ -67,7 +67,7 @@ export function AppearanceTab() {
         <div className="px-3 py-2 rounded-lg border border-border bg-surface-tertiary/50 text-xs text-text-primary">
           {useUiStore.getState().timezone}
         </div>
-        <p className="text-[11px] text-text-muted mt-1">{t('settings.timezoneHint')}</p>
+        <p className="text-2xs text-text-muted mt-1">{t('settings.timezoneHint')}</p>
       </div>
     </div>
   )

@@ -16,12 +16,12 @@ const STATUS_CLASSES: Record<AgentStatus, string> = {
 
 export function AgentAvatar({ name, status, size = 'sm', emoji }: AgentAvatarProps) {
   const dim = size === 'sm' ? 28 : 36
-  const textSize = size === 'sm' ? 'text-[11px]' : 'text-sm'
+  const textSize = size === 'sm' ? 'text-2xs' : 'text-sm'
 
   return (
     <div className="relative shrink-0" style={{ width: dim, height: dim }}>
       <div
-        className={`flex items-center justify-center rounded-full ${emoji ? 'bg-accent/10' : 'bg-accent text-white'} font-semibold select-none ${textSize}`}
+        className={`flex items-center justify-center rounded-full ${emoji ? 'bg-accent/10' : 'bg-accent text-accent-foreground'} font-semibold select-none ${textSize}`}
         style={{ width: dim, height: dim }}
       >
         {emoji || name.charAt(0).toUpperCase()}

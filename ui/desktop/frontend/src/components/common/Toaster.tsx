@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useToastStore, type Toast } from '../../stores/toast-store'
 
 const styles: Record<Toast['variant'], string> = {
@@ -23,6 +24,7 @@ function ToastIcon({ variant }: { variant: Toast['variant'] }) {
 
 function ToastItem({ toast }: { toast: Toast }) {
   const dismiss = useToastStore((s) => s.dismiss)
+  const { t } = useTranslation('common')
 
   return (
     <div
@@ -38,8 +40,9 @@ function ToastItem({ toast }: { toast: Toast }) {
         )}
       </div>
       <button
+        aria-label={t('close')}
         onClick={() => dismiss(toast.id)}
-        className="shrink-0 rounded-sm opacity-50 hover:opacity-100 transition-opacity"
+        className="shrink-0 rounded-sm opacity-50 hover:opacity-100 transition-opacity p-2.5"
       >
         <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 6 6 18" /><path d="m6 6 12 12" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,13 @@ export function validateSttProviders(providers: string[]): boolean {
 export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
   const { t } = useTranslation("tools");
   const init = resolveInitial(initialSettings);
+  const fieldId = useId();
+  const providersLabelId = `${fieldId}-providers`;
+  const elApiKeyId = `${fieldId}-el-api-key`;
+  const elLangId = `${fieldId}-el-lang`;
+  const proxyUrlId = `${fieldId}-proxy-url`;
+  const proxyApiKeyId = `${fieldId}-proxy-api-key`;
+  const proxyTenantFieldId = `${fieldId}-proxy-tenant-id`;
 
   const [providers, setProviders] = useState<SttProviderName[]>(init.providers);
   const [elApiKey, setElApiKey] = useState(init.elevenlabs.api_key);
@@ -107,8 +114,8 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
       <div className="space-y-5 my-4">
         {/* Providers */}
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">{t("builtin.sttForm.providersLabel")}</Label>
-          <div className="flex flex-wrap gap-2">
+          <Label id={providersLabelId} className="text-sm font-medium">{t("builtin.sttForm.providersLabel")}</Label>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby={providersLabelId}>
             {ALL_STT_PROVIDERS.map((p) => (
               <label key={p} className="flex items-center gap-1.5 cursor-pointer select-none">
                 <input
@@ -128,8 +135,9 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
         <div className="space-y-3">
           <p className="text-sm font-semibold">{t("builtin.sttForm.elevenlabsSectionTitle")}</p>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("builtin.sttForm.elevenlabsApiKeyLabel")}</Label>
+            <Label htmlFor={elApiKeyId} className="text-sm font-medium">{t("builtin.sttForm.elevenlabsApiKeyLabel")}</Label>
             <Input
+              id={elApiKeyId}
               type="password"
               value={elApiKey}
               onChange={(e) => setElApiKey(e.target.value)}
@@ -138,8 +146,9 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("builtin.sttForm.elevenlabsDefaultLanguageLabel")}</Label>
+            <Label htmlFor={elLangId} className="text-sm font-medium">{t("builtin.sttForm.elevenlabsDefaultLanguageLabel")}</Label>
             <Input
+              id={elLangId}
               type="text"
               value={elLang}
               onChange={(e) => setElLang(e.target.value)}
@@ -153,8 +162,9 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
         <div className="space-y-3">
           <p className="text-sm font-semibold">{t("builtin.sttForm.proxySectionTitle")}</p>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("builtin.sttForm.proxyUrlLabel")}</Label>
+            <Label htmlFor={proxyUrlId} className="text-sm font-medium">{t("builtin.sttForm.proxyUrlLabel")}</Label>
             <Input
+              id={proxyUrlId}
               type="url"
               value={proxyUrl}
               onChange={(e) => setProxyUrl(e.target.value)}
@@ -163,8 +173,9 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("builtin.sttForm.proxyApiKeyLabel")}</Label>
+            <Label htmlFor={proxyApiKeyId} className="text-sm font-medium">{t("builtin.sttForm.proxyApiKeyLabel")}</Label>
             <Input
+              id={proxyApiKeyId}
               type="password"
               value={proxyApiKey}
               onChange={(e) => setProxyApiKey(e.target.value)}
@@ -172,8 +183,9 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("builtin.sttForm.proxyTenantIdLabel")}</Label>
+            <Label htmlFor={proxyTenantFieldId} className="text-sm font-medium">{t("builtin.sttForm.proxyTenantIdLabel")}</Label>
             <Input
+              id={proxyTenantFieldId}
               type="text"
               value={proxyTenantId}
               onChange={(e) => setProxyTenantId(e.target.value)}
@@ -185,7 +197,7 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
         {/* WhatsApp toggle */}
         <div className="space-y-2">
           {/* Privacy banner */}
-          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+          <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-sm">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span data-testid="whatsapp-privacy-banner">{t("builtin.sttForm.whatsappPrivacyWarning")}</span>
           </div>

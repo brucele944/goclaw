@@ -28,12 +28,12 @@ interface ChatGPTOAuthRoutingSummarySectionProps {
 
 function statusBadgeClass(availability: ChatGPTOAuthAvailability): string {
   if (availability === "ready") {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    return "border-success/25 bg-success-subtle text-success-text";
   }
   if (availability === "disabled") {
     return "border-muted-foreground/30 bg-muted text-muted-foreground";
   }
-  return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  return "border-warning/25 bg-warning-subtle text-warning-text";
 }
 
 

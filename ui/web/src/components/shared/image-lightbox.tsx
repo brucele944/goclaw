@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatSize, toDownloadUrl } from "@/lib/file-helpers";
 import { useMediaUrl } from "@/hooks/use-media-url";
@@ -39,6 +40,7 @@ function resolveCurrentImage(props: ImageLightboxProps): LightboxImage {
 
 export function ImageLightbox(props: ImageLightboxProps) {
   const { onClose, images, currentIndex, onNavigate } = props;
+  const { t } = useTranslation("common");
   const current = resolveCurrentImage(props);
   const isGallery = images && images.length > 1 && onNavigate && currentIndex != null;
   const canPrev = isGallery && currentIndex > 0;
@@ -79,7 +81,7 @@ export function ImageLightbox(props: ImageLightboxProps) {
         >
           <Download className="h-5 w-5" />
         </a>
-        <button type="button" onClick={onClose} className={toolbarBtnClass}>
+        <button type="button" onClick={onClose} aria-label={t("close")} className={toolbarBtnClass}>
           <X className="h-5 w-5" />
         </button>
       </div>

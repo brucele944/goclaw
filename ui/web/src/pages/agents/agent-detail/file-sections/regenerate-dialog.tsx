@@ -136,8 +136,8 @@ export function RegenerateDialog({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-8">
-            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-8 w-8 text-success-text" />
+            <p className="text-sm font-medium text-success-text">
               {t("fileEditor.regenerateCompleted")}
             </p>
           </div>

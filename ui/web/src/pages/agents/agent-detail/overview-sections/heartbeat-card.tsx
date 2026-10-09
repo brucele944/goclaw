@@ -72,7 +72,7 @@ export function HeartbeatCard({ heartbeat }: HeartbeatCardProps) {
       <div className="rounded-lg border p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Heart className={`h-4 w-4 ${config.enabled ? "fill-rose-500 text-rose-500 animate-pulse" : "text-rose-400"}`} />
+            <Heart className={`h-4 w-4 ${config.enabled ? "fill-rose-500 text-destructive-text animate-pulse" : ""}`} />
             <span className="text-sm font-medium">{t("heartbeat.title")}</span>
           </div>
           <Switch
@@ -94,7 +94,7 @@ export function HeartbeatCard({ heartbeat }: HeartbeatCardProps) {
               <span>{config.channel}{config.chatId ? `/${config.chatId}` : ""}</span>
             )}
             {config.model && (
-              <span className="text-orange-600 dark:text-orange-400">{config.model}</span>
+              <span className="text-warning-text">{config.model}</span>
             )}
           </div>
 

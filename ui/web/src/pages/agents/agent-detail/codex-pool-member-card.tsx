@@ -48,7 +48,7 @@ function poolRoleBadgeClass(role: CodexPoolEntry["role"]): string {
 function MemberMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex h-full items-center justify-between gap-1 rounded-md border bg-background/70 px-2 py-1 xl:px-2.5">
-      <p className="truncate text-[9px] font-medium text-muted-foreground xl:text-2xs">
+      <p className="truncate text-xs font-medium text-muted-foreground xl:text-2xs">
         {label}
       </p>
       <p className="shrink-0 text-[12px] font-semibold leading-tight tabular-nums xl:text-[13px]">
@@ -214,7 +214,7 @@ export function CodexPoolMemberCard({
             {totalOutcomes > 0 ? (
               <>
                 <div
-                  className="h-full bg-emerald-500 transition-all"
+                  className="h-full bg-success transition-all"
                   style={{ width: `${barWidths.success}%` }}
                 />
                 {barWidths.failure > 0 && (

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ interface TeamMembersTabProps {
 
 export function TeamMembersTab({ members, onAddMember, onRemoveMember }: TeamMembersTabProps) {
   const { t } = useTranslation("teams");
+  const addMemberFieldId = useId();
   const { agents, refresh: refreshAgents } = useAgents();
   const [selectedAgent, setSelectedAgent] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
@@ -62,7 +63,7 @@ export function TeamMembersTab({ members, onAddMember, onRemoveMember }: TeamMem
     <div className="space-y-6">
       {onAddMember && (
         <div className="space-y-2">
-          <Label className="inline-flex items-center gap-1">
+          <Label htmlFor={addMemberFieldId} className="inline-flex items-center gap-1">
             {t("members.addMember")}
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -78,6 +79,7 @@ export function TeamMembersTab({ members, onAddMember, onRemoveMember }: TeamMem
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox
+                id={addMemberFieldId}
                 value={selectedAgent}
                 onChange={setSelectedAgent}
                 options={availableAgents}

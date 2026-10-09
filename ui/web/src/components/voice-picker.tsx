@@ -33,6 +33,7 @@ import type { TtsProviderId } from "@/data/tts-providers";
 import { usePortalDropdownClose } from "@/hooks/use-portal-dropdown-close";
 
 interface Props {
+  id?: string;
   value?: string;
   onChange: (id: string) => void;
   disabled?: boolean;
@@ -94,11 +95,11 @@ function VoiceRow({ voice, selected, onSelect }: { voice: PortalVoice; selected:
 }
 
 /** Top-level dispatcher — capabilities-aware routing. */
-export function VoicePicker({ value, onChange, disabled, provider, placeholder }: Props) {
+export function VoicePicker({ id, value, onChange, disabled, provider, placeholder }: Props) {
   const { data: caps = [] } = useTtsCapabilities();
 
   if (provider === "") {
-    return <EmptyStatePicker placeholder={placeholder} />;
+    return <EmptyStatePicker id={id} placeholder={placeholder} />;
   }
 
   // Find capabilities for the current provider
@@ -113,6 +114,7 @@ export function VoicePicker({ value, onChange, disabled, provider, placeholder }
   if (provider === "gemini" && staticVoices.length > 0) {
     return (
       <PortalVoicePicker
+        id={id}
         voices={staticVoices.map(mapCapVoiceToPortal)}
         value={value}
         onChange={onChange}
@@ -126,6 +128,7 @@ export function VoicePicker({ value, onChange, disabled, provider, placeholder }
     // Static catalog available from capabilities (OpenAI path → Radix Select)
     return (
       <StaticVoicePicker
+        id={id}
         value={value}
         onChange={onChange}
         disabled={disabled}
@@ -139,6 +142,7 @@ export function VoicePicker({ value, onChange, disabled, provider, placeholder }
     // MiniMax and any voices_dynamic provider: use dynamic picker with free-text fallback
     return (
       <DynamicVoicePicker
+        id={id}
         value={value}
         onChange={onChange}
         disabled={disabled}
@@ -150,6 +154,7 @@ export function VoicePicker({ value, onChange, disabled, provider, placeholder }
   // Default: ElevenLabs and other dynamic providers
   return (
     <DynamicVoicePicker
+      id={id}
       value={value}
       onChange={onChange}
       disabled={disabled}
@@ -158,14 +163,15 @@ export function VoicePicker({ value, onChange, disabled, provider, placeholder }
   );
 }
 
-function EmptyStatePicker({ placeholder }: { placeholder?: string }) {
+function EmptyStatePicker({ id, placeholder }: { id?: string; placeholder?: string }) {
   const { t } = useTranslation("tts");
   return (
     <button
       type="button"
+      id={id}
       disabled
       className={cn(
-        "border-input dark:bg-input/30 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs outline-none",
+        "border-control-border dark:bg-input/30 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs outline-none",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "text-muted-foreground",
       )}
@@ -179,12 +185,14 @@ function EmptyStatePicker({ placeholder }: { placeholder?: string }) {
 }
 
 function StaticVoicePicker({
+  id,
   value,
   onChange,
   disabled,
   voices,
   placeholder,
 }: {
+  id?: string;
   value?: string;
   onChange: (id: string) => void;
   disabled?: boolean;
@@ -194,7 +202,7 @@ function StaticVoicePicker({
   const { t } = useTranslation("tts");
   return (
     <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={placeholder ?? t("voice_placeholder")} />
       </SelectTrigger>
       <SelectContent>
@@ -209,10 +217,12 @@ function StaticVoicePicker({
 }
 
 function FreeTextVoicePicker({
+  id,
   value,
   onChange,
   disabled,
 }: {
+  id?: string;
   value?: string;
   onChange: (id: string) => void;
   disabled?: boolean;
@@ -221,7 +231,8 @@ function FreeTextVoicePicker({
   return (
     <input
       type="text"
-      className="border-input dark:bg-input/30 flex h-9 w-full rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
+      id={id}
+      className="border-control-border dark:bg-input/30 flex h-9 w-full rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -241,6 +252,7 @@ function FreeTextVoicePicker({
  * Owns: open/search state, triggerRef/dropdownRef, usePortalDropdownClose, createPortal.
  */
 export function PortalVoicePicker({
+  id,
   voices,
   value,
   onChange,
@@ -250,6 +262,7 @@ export function PortalVoicePicker({
   allowFreeText: _allowFreeText,
   placeholder,
 }: {
+  id?: string;
   voices: PortalVoice[];
   value?: string;
   onChange: (voice_id: string) => void;
@@ -368,13 +381,14 @@ export function PortalVoicePicker({
     <div ref={triggerRef} className="relative">
       <button
         type="button"
+        id={id}
         disabled={disabled}
         onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         className={cn(
-          "border-input dark:bg-input/30 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs transition-[color,box-shadow] outline-none",
+          "border-control-border dark:bg-input/30 flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-base md:text-sm shadow-xs transition-[color,box-shadow] outline-none",
           "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1",
           "disabled:cursor-not-allowed disabled:opacity-50",
           !selected && "text-muted-foreground",
@@ -396,11 +410,13 @@ export function PortalVoicePicker({
  * Handles free-text fallback for MiniMax on fetch error.
  */
 function DynamicVoicePicker({
+  id,
   value,
   onChange,
   disabled,
   allowFreeText,
 }: {
+  id?: string;
   value?: string;
   onChange: (id: string) => void;
   disabled?: boolean;
@@ -411,11 +427,12 @@ function DynamicVoicePicker({
 
   // Fall back to free-text input when MiniMax voices fetch failed and list is empty
   if (allowFreeText && isError && voices.length === 0) {
-    return <FreeTextVoicePicker value={value} onChange={onChange} disabled={disabled} />;
+    return <FreeTextVoicePicker id={id} value={value} onChange={onChange} disabled={disabled} />;
   }
 
   return (
     <PortalVoicePicker
+      id={id}
       voices={voices}
       value={value}
       onChange={onChange}

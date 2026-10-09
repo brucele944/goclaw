@@ -175,7 +175,7 @@ export function SkillSubtitle({
     );
   }
   if (skill.status === "warning") {
-    return <p className="text-xs text-amber-600 truncate">{skill.error ?? t("upload.failed")}</p>;
+    return <p className="text-xs text-warning-text truncate">{skill.error ?? t("upload.failed")}</p>;
   }
   if (skill.status === "validating") {
     return <p className="text-xs text-muted-foreground">{t("upload.validating")}</p>;
@@ -198,15 +198,15 @@ export function SkillSubtitle({
 // ---------------------------------------------------------------------------
 
 export function SkillBadge({ status, t }: { status: SkillStatus; t: TFunc }) {
-  const base = "shrink-0 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded";
+  const base = "shrink-0 text-xs font-semibold uppercase px-1.5 py-0.5 rounded";
   switch (status) {
     case "valid":
-      return <span className={`${base} bg-green-50 text-green-700 border border-green-200`}>{t("upload.new")}</span>;
+      return <span className={`${base} bg-success-subtle text-success-text border border-success/25`}>{t("upload.new")}</span>;
     case "unchanged":
       return <span className={`${base} bg-purple-50 text-purple-700 border border-purple-200`}>{t("upload.unchanged")}</span>;
     case "invalid":
     case "error":
-      return <span className={`${base} bg-red-50 text-red-700 border border-red-200`}>{t("upload.failed")}</span>;
+      return <span className={`${base} bg-destructive-subtle text-destructive-text border border-destructive/25`}>{t("upload.failed")}</span>;
     default:
       return null;
   }
@@ -226,9 +226,9 @@ export function SkillStatusIcon({ status }: { status: SkillStatus }) {
     case "unchanged":
       return <CheckCircle2 className="h-4 w-4 shrink-0 text-muted-foreground" />;
     case "success":
-      return <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />;
+      return <CheckCircle2 className="h-4 w-4 shrink-0 text-success-text" />;
     case "warning":
-      return <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600" />;
+      return <TriangleAlert className="h-4 w-4 shrink-0 text-warning-text" />;
     case "invalid":
     case "error":
       return <XCircle className="h-4 w-4 shrink-0 text-destructive" />;

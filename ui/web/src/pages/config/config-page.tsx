@@ -82,7 +82,7 @@ export function ConfigPage() {
         }
       />
 
-      <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400">
+      <div className="mt-4 flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2.5 text-sm text-warning-text">
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
         <span>{t("warning")}</span>
       </div>

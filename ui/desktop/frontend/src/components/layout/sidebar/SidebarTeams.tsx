@@ -29,7 +29,7 @@ export function SidebarTeams() {
     <div className="px-3 py-2 space-y-1">
       {/* Section header + add button */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] text-text-muted font-medium tracking-wide">
+        <span className="text-2xs text-text-muted font-medium tracking-wide">
           {t('title', 'Teams')} ({teams.length}/{MAX_TEAMS_LITE})
         </span>
         <button
@@ -66,14 +66,14 @@ export function SidebarTeams() {
           </div>
           <span className="truncate flex-1 text-xs font-medium">{team.name}</span>
           {team.member_count != null && (
-            <span className="text-[10px] text-text-muted">{team.member_count}</span>
+            <span className="text-2xs text-text-muted">{team.member_count}</span>
           )}
         </button>
       ))}
 
       {/* Empty state */}
       {teams.length === 0 && (
-        <p className="text-[10px] text-text-muted px-1">{t('noTeams', 'No teams yet')}</p>
+        <p className="text-2xs text-text-muted px-1">{t('noTeams', 'No teams yet')}</p>
       )}
 
       {/* Create team dialog */}

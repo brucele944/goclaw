@@ -34,7 +34,9 @@
     "tokenPlaceholder": "Bearer token",
     "userId": "User ID",
     "userIdPlaceholder": "your-user-id",
-    "userIdHint": "Dùng \"system\" để có toàn quyền hệ thống"
+    "userIdHint": "Dùng \"system\" để có toàn quyền hệ thống",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "noAccessHint": "Yêu cầu quản trị viên thêm bạn vào tenant, hoặc đăng nhập bằng tài khoản khác.",
   "logout": "Đăng xuất"

@@ -5,8 +5,8 @@ import { ChartWrapper } from "./chart-wrapper";
 import type { SnapshotBreakdown } from "../hooks/use-usage-analytics";
 
 const PALETTE = [
-  "#E85D24", "#10b981", "#E87820", "#ef4444", "#F0A020",
-  "#ec4899", "#f59e0b", "#84cc16", "#F8D080", "#f97316",
+  "var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)",
+  "var(--chart-5)", "var(--chart-6)", "var(--chart-7)", "var(--chart-8)",
 ];
 
 const MAX_SLICES = 8;
@@ -78,7 +78,7 @@ export function DistributionDonut({
               <Cell
                 key={entry.name}
                 fill={PALETTE[idx % PALETTE.length]}
-                stroke={activeValue === entry.name ? "#B83D10" : "transparent"}
+                stroke={activeValue === entry.name ? "var(--foreground)" : "transparent"}
                 strokeWidth={activeValue === entry.name ? 3 : 0}
                 opacity={activeValue && activeValue !== entry.name ? 0.5 : 1}
               />

@@ -154,13 +154,13 @@ export function GitHubBinariesSection({ packages, onInstall, onUninstall }: Prop
       />
 
       {!dismissed && (
-        <Alert className="mb-3 border-amber-200/70 bg-amber-50/70 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
-          <Info className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-          <AlertDescription className="flex items-start justify-between gap-2 text-xs text-amber-800 dark:text-amber-200">
+        <Alert className="mb-3 border-amber-200/70 bg-amber-50/70 text-amber-950 dark:text-amber-100">
+          <Info className="h-4 w-4 text-warning-text" />
+          <AlertDescription className="flex items-start justify-between gap-2 text-xs dark:text-amber-200">
             <span className="flex-1">{t("github.muslWarning")}</span>
             <button
               onClick={handleDismiss}
-              className="shrink-0 rounded p-1 hover:bg-amber-100 dark:hover:bg-amber-900"
+              className="shrink-0 rounded p-1 hover:bg-warning-subtle"
               aria-label={t("github.muslDismiss")}
             >
               <X className="h-3.5 w-3.5" />
@@ -172,7 +172,7 @@ export function GitHubBinariesSection({ packages, onInstall, onUninstall }: Prop
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <input
           type="text"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 rounded-md border border-control-border bg-background px-3 py-2 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           placeholder={t("github.placeholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -255,6 +255,7 @@ export function GitHubBinariesSection({ packages, onInstall, onUninstall }: Prop
                         size="sm"
                         className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => setUninstallTarget(pkg.name)}
+                        aria-label={t("actions.uninstallPackage", { name: pkg.name })}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -353,7 +354,7 @@ function GitHubReleasePicker({ repo, open, onClose, onSelect }: PickerProps) {
                     <div className="font-medium font-mono text-sm flex items-center gap-2">
                       {rel.tag}
                       {rel.prerelease && (
-                        <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 rounded px-1.5 py-0.5">
+                        <span className="text-xs bg-warning-subtle dark:text-amber-200 rounded px-1.5 py-0.5">
                           {t("github.pickerPrerelease")}
                         </span>
                       )}

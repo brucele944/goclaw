@@ -4,7 +4,7 @@
  * Expanded by default for visibility; users can collapse if needed.
  * Uses local useState + chevron (no Radix Collapsible dependency needed).
  */
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface Props {
 
 export function BehaviorSection({ draft, onUpdate }: Props) {
   const { t } = useTranslation("tts");
+  const uid = useId();
   const [open, setOpen] = useState(true);
 
   return (
@@ -51,8 +52,8 @@ export function BehaviorSection({ draft, onUpdate }: Props) {
         <CardContent className="space-y-4">
           {/* Auto mode */}
           <div className="grid gap-1.5">
-            <Label>{t("general.autoApplyMode")}</Label>
-            <div className="flex flex-wrap gap-2">
+            <Label id={`${uid}-autoMode`}>{t("general.autoApplyMode")}</Label>
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby={`${uid}-autoMode`}>
               {AUTO_MODE_VALUES.map((v) => (
                 <Button
                   key={v}
@@ -74,8 +75,8 @@ export function BehaviorSection({ draft, onUpdate }: Props) {
 
           {/* Reply mode */}
           <div className="grid gap-1.5">
-            <Label>{t("general.replyMode")}</Label>
-            <div className="flex flex-wrap gap-2">
+            <Label id={`${uid}-replyMode`}>{t("general.replyMode")}</Label>
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby={`${uid}-replyMode`}>
               {REPLY_MODE_VALUES.map((v) => (
                 <Button
                   key={v}

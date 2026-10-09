@@ -9,6 +9,7 @@
   "noMatchDescription": "Thử từ khóa tìm kiếm khác.",
   "viewCard": "Dạng thẻ",
   "viewList": "Dạng danh sách",
+  "viewBoard": "Dạng bảng",
   "scope": {
     "all": "Tất cả phạm vi",
     "label": "Phạm vi"
@@ -363,7 +364,12 @@
     "locked": "Agent đang chạy",
     "emptyColumn": "Không có task",
     "unassigned": "Chưa gán",
-    "createViaChat": "Chat với agent của team để tạo task"
+    "createViaChat": "Chat với agent của team để tạo task",
+    "priorityLow": "Thấp",
+    "priorityMedium": "Trung bình",
+    "priorityHigh": "Cao",
+    "priorityCritical": "Nghiêm trọng",
+    "priorityTooltip": "Mức ưu tiên {{level}}"
   },
   "sidebar": {
     "members": "Thành viên",

@@ -89,7 +89,7 @@ export function TraceDetailDialog({ traceId, onClose, getTrace, onNavigateTrace,
           <DialogTitle className="flex items-center gap-2 pr-8">
             {t("detail.title")}
             <button type="button" onClick={() => copy(traceId)} className="ml-auto flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-success-text" /> : <Copy className="h-3.5 w-3.5" />}
               {t("detail.copyTraceId")}
             </button>
             <button type="button" onClick={handleExport} disabled={exporting || !trace} className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50">
@@ -116,8 +116,8 @@ export function TraceDetailDialog({ traceId, onClose, getTrace, onNavigateTrace,
               {trace.input_preview && <TracePreviewBlock label={t("detail.input")} content={trace.input_preview} />}
               {trace.output_preview && <TracePreviewBlock label={t("detail.output")} content={trace.output_preview} />}
               {trace.error && (
-                <div className="rounded-md border border-red-400/30 bg-red-500/10 p-3">
-                  <p className="break-all text-sm text-red-300">{trace.error}</p>
+                <div className="rounded-md border border-destructive/25 bg-destructive-subtle p-3">
+                  <p className="break-all text-sm">{trace.error}</p>
                 </div>
               )}
 
@@ -150,7 +150,7 @@ function TraceSummaryGrid({ trace, tz, onNavigateTrace }: { trace: TraceData; tz
         <span className="text-muted-foreground">{t("detail.tokens")}</span>{" "}
         {formatTokens(trace.total_input_tokens)} in / {formatTokens(trace.total_output_tokens)} out
         {((trace.metadata?.total_cache_read_tokens ?? 0) > 0) && (
-          <span className="ml-1 text-xs text-green-400">{formatTokens(trace.metadata!.total_cache_read_tokens!)} {t("span.cached")}</span>
+          <span className="ml-1 text-xs">{formatTokens(trace.metadata!.total_cache_read_tokens!)} {t("span.cached")}</span>
         )}
       </div>
       <div><span className="text-muted-foreground">{t("detail.spans")}</span> {trace.span_count} ({trace.llm_call_count} {t("detail.llmCalls")}, {trace.tool_call_count} {t("detail.toolCalls")})</div>

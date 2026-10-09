@@ -47,7 +47,7 @@ export function McpServerList() {
           <button
             onClick={openCreate}
             disabled={atLimit}
-            className="bg-accent text-white rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center gap-1.5"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" /><path d="M12 5v14" />
@@ -59,7 +59,7 @@ export function McpServerList() {
       </div>
 
       {atLimit && (
-        <p className="text-[11px] text-amber-600 dark:text-amber-400">
+        <p className="text-2xs text-amber-600 dark:text-amber-400">
           {t('noMatchTitle')} ({MAX_MCP_LITE}). {t('noMatchDescription')}
         </p>
       )}

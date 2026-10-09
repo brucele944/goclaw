@@ -144,8 +144,8 @@ export function TaskPanel({ sessionKey, onTaskClick }: TaskPanelProps) {
                 onClick={() => onTaskClick?.(task)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-surface-secondary border border-border/50 hover:border-accent/30 transition-colors text-left cursor-pointer"
               >
-                <span className={`text-[9px] font-medium px-1 py-0.5 rounded shrink-0 ${prio.cls}`}>{prio.label}</span>
-                <span className="text-[11px] text-text-primary truncate flex-1">{task.subject}</span>
+                <span className={`text-2xs font-medium px-1 py-0.5 rounded shrink-0 ${prio.cls}`}>{prio.label}</span>
+                <span className="text-2xs text-text-primary truncate flex-1">{task.subject}</span>
                 {task.progress_percent != null && task.progress_percent > 0 && (
                   <div className="w-12 h-1 rounded-full bg-surface-tertiary overflow-hidden shrink-0">
                     <div className="h-full rounded-full bg-accent" style={{ width: `${task.progress_percent}%` }} />

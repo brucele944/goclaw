@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ export function ProviderModelSelect({
   disabled,
 }: ProviderModelSelectProps) {
   const { t } = useTranslation("common");
+  const uid = useId();
   const { providers } = useProviders();
   const poolOwnership = useMemo(() => getChatGPTOAuthPoolOwnership(providers), [providers]);
 
@@ -168,10 +169,10 @@ export function ProviderModelSelect({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="grid gap-1.5">
-        <InfoLabel tip={providerTip ?? t("providerTip")}>{providerLabel ?? t("provider")}</InfoLabel>
+        <InfoLabel tip={providerTip ?? t("providerTip")} htmlFor={`${uid}-provider`}>{providerLabel ?? t("provider")}</InfoLabel>
         {enabledProviders.length > 0 ? (
           <Select value={provider || "__empty__"} onValueChange={(v) => handleProviderChange(v === "__empty__" ? "" : v)} disabled={disabled}>
-            <SelectTrigger>
+            <SelectTrigger id={`${uid}-provider`}>
               <SelectValue placeholder={providerPlaceholder ?? t("selectProvider")} />
             </SelectTrigger>
             <SelectContent>
@@ -194,6 +195,7 @@ export function ProviderModelSelect({
           </Select>
         ) : (
           <Input
+            id={`${uid}-provider`}
             value={provider}
             onChange={(e) => handleProviderChange(e.target.value)}
             placeholder={t("noProvidersConfigured")}
@@ -202,10 +204,11 @@ export function ProviderModelSelect({
         )}
       </div>
       <div className="grid gap-1.5">
-        <InfoLabel tip={modelTip ?? t("modelTip")}>{modelLabel ?? t("model")}</InfoLabel>
+        <InfoLabel tip={modelTip ?? t("modelTip")} htmlFor={`${uid}-model`}>{modelLabel ?? t("model")}</InfoLabel>
         <div className="flex gap-2">
           <div className="flex-1">
             <Combobox
+              id={`${uid}-model`}
               value={model}
               onChange={onModelChange}
               options={modelOptions}

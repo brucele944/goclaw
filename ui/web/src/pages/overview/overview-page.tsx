@@ -146,7 +146,7 @@ export function OverviewPage() {
                 href={health.updateUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                className="inline-flex items-center gap-1 rounded-full bg-info-subtle px-2 py-0.5 text-xs font-medium text-info-text hover:bg-info-subtle"
               >
                 {health.latestVersion} available
               </a>

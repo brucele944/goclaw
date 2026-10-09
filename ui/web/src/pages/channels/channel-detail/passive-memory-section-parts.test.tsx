@@ -38,8 +38,6 @@ describe("memoryItemDebugBadges", () => {
   });
 
   it("uses distinct styling and tooltip keys for topics and entities", () => {
-    expect(memoryItemDebugBadgeClass("topic")).toContain("sky");
-    expect(memoryItemDebugBadgeClass("entity")).toContain("violet");
     expect(memoryItemDebugBadgeClass("topic")).not.toEqual(memoryItemDebugBadgeClass("entity"));
     expect(memoryItemDebugBadgeTooltipKey("topic")).toBe("detail.passiveMemory.debugBadge.topic");
     expect(memoryItemDebugBadgeTooltipKey("entity")).toBe("detail.passiveMemory.debugBadge.entity");

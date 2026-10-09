@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ export function TenantBackupSection() {
   const { tenants } = useTenantsAdmin();
   const backup = useTenantBackup();
   const [tenantId, setTenantId] = useState("");
+  const tenantFieldId = useId();
 
   const tenantOptions = tenants.map((t) => ({ value: t.id, label: t.name || t.slug }));
 
@@ -33,7 +34,7 @@ export function TenantBackupSection() {
     const tableCounts = (r.table_counts ?? {}) as Record<string, number>;
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-green-600">{t("tenant.backup.complete")}</h3>
+        <h3 className="text-sm font-medium text-success-text">{t("tenant.backup.complete")}</h3>
         <OperationProgress steps={backup.steps} elapsed={backup.elapsed} />
 
         {Object.keys(tableCounts).length > 0 && (
@@ -86,8 +87,9 @@ export function TenantBackupSection() {
   return (
     <div className="space-y-4">
       <div>
-        <Label className="mb-1.5">{t("tenant.selectTenant")}</Label>
+        <Label htmlFor={tenantFieldId} className="mb-1.5">{t("tenant.selectTenant")}</Label>
         <Combobox
+          id={tenantFieldId}
           value={tenantId}
           onChange={setTenantId}
           options={tenantOptions}

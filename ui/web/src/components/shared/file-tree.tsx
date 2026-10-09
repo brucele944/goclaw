@@ -5,6 +5,8 @@ import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { Folder, FolderOpen, ChevronRight, Loader2, Trash2 } from "lucide-react";
 import { formatSize, type TreeNode } from "@/lib/file-helpers";
 import { useTreeDnd } from "@/hooks/use-tree-dnd";
+import { getClickableProps } from "@/hooks/use-clickable";
+import { getTreeProps } from "@/hooks/use-tree-nav";
 import { DragPreview } from "@/components/shared/drag-preview";
 import { FileIcon } from "./file-tree-file-icon";
 import { DraggableItem, DroppableFolder, RootDropZone } from "./file-tree-dnd-wrappers";
@@ -73,19 +75,22 @@ export function TreeItem({
     const folderContent = (isDropTargetActive: boolean) => (
       <>
         <div
-          className={`group/tree-item flex w-full items-center gap-1 rounded px-2 py-1 text-left text-sm cursor-pointer ${
+          className={`group/tree-item flex w-full items-center gap-1 rounded px-2 py-1 text-left text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             isDropTargetActive ? "bg-primary/10 ring-1 ring-primary" : "hover:bg-accent"
           }`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
-          onClick={handleToggle}
+          {...getClickableProps(handleToggle)}
+          role="treeitem"
+          tabIndex={-1}
+          aria-expanded={expanded}
         >
           <ChevronRight
             className={`h-3 w-3 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`}
           />
           {expanded ? (
-            <FolderOpen className="h-4 w-4 shrink-0 text-yellow-600" />
+            <FolderOpen className="h-4 w-4 shrink-0 text-warning-text" />
           ) : (
-            <Folder className="h-4 w-4 shrink-0 text-yellow-600" />
+            <Folder className="h-4 w-4 shrink-0 text-warning-text" />
           )}
           <span className="truncate">{node.name}</span>
           {node.loading && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground ml-1" />}
@@ -109,9 +114,11 @@ export function TreeItem({
         ))}
         {expanded && node.hasChildren && node.children.length === 0 && !node.loading && (
           <div
-            className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground"
+            className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             style={{ paddingLeft: `${(depth + 1) * 16 + 20}px` }}
-            onClick={() => onLoadMore?.(node.path)}
+            {...getClickableProps(() => onLoadMore?.(node.path))}
+            role="treeitem"
+            tabIndex={-1}
           >
             <Loader2 className="h-3 w-3" />
             <span>{t("loadMore")}</span>
@@ -136,11 +143,14 @@ export function TreeItem({
   // File node
   const fileContent = (
     <div
-      className={`group/tree-item flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm cursor-pointer ${
+      className={`group/tree-item flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
       }`}
       style={{ paddingLeft: `${depth * 16 + 20}px` }}
-      onClick={() => onSelect(node.path)}
+      {...getClickableProps(() => onSelect(node.path))}
+      role="treeitem"
+      tabIndex={-1}
+      aria-selected={isActive}
     >
       <FileIcon name={node.name} />
       <span className="truncate">{node.name}</span>
@@ -213,7 +223,11 @@ export function FileTreePanel({
   }
 
   const treeContent = (
-    <div className="flex-1 min-h-0">
+    <div
+      className="flex-1 min-h-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      {...getTreeProps()}
+      aria-label={t("fileTree")}
+    >
       {/* Root-level drop target for moving to root */}
       {dndEnabled ? (
         <RootDropZone>

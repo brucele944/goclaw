@@ -163,6 +163,7 @@ export function AgentsPage() {
                   size="xs"
                   className="h-7 w-7 p-0"
                   onClick={() => setViewMode("card")}
+                  aria-label={t("viewCard")}
                 >
                   <LayoutGrid className="h-3.5 w-3.5" />
                 </Button>
@@ -176,6 +177,7 @@ export function AgentsPage() {
                   size="xs"
                   className="h-7 w-7 p-0"
                   onClick={() => setViewMode("list")}
+                  aria-label={t("viewList")}
                 >
                   <List className="h-3.5 w-3.5" />
                 </Button>

@@ -56,7 +56,7 @@ export function ChannelCredentialsTab({ instance, onUpdate }: ChannelCredentials
       <button
         onClick={handleSave}
         disabled={saving}
-        className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
+        className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
       >
         {saving ? t('detail.credentials.saving') : t('detail.credentials.updateCredentials')}
       </button>

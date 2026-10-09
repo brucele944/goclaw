@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function ACPSection({
   workDir, onWorkDirChange,
 }: ACPSectionProps) {
   const { t } = useTranslation("providers");
+  const permModeId = useId();
 
   return (
     <div className="space-y-4">
@@ -70,9 +72,9 @@ export function ACPSection({
         </div>
 
         <div className="space-y-2">
-          <Label>{t("acp.permMode")}</Label>
+          <Label htmlFor={permModeId}>{t("acp.permMode")}</Label>
           <Select value={permMode} onValueChange={onPermModeChange}>
-            <SelectTrigger>
+            <SelectTrigger id={permModeId}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

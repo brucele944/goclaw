@@ -257,7 +257,7 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
           <Label>{isOAuth ? t("form.oauthAlias") : t("form.name")}</Label>
           <div className="flex items-center gap-2">
             <code className="flex-1 rounded-md border bg-muted px-3 py-2 font-mono text-sm text-muted-foreground">{provider.name}</code>
-            <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={() => { navigator.clipboard.writeText(provider.name).catch(() => {}); toast.success(tc("copy")); }}>
+            <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" aria-label={tc("copy")} onClick={() => { navigator.clipboard.writeText(provider.name).catch(() => {}); toast.success(tc("copy")); }}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>

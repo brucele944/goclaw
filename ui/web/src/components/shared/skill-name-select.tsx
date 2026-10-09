@@ -84,7 +84,7 @@ export function SkillNameSelect({
     <div ref={containerRef} className={cn("relative", className)}>
       <div
         className={cn(
-          "border-input dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
+          "border-control-border dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
           "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-2",
         )}
         onClick={() => inputRef.current?.focus()}
@@ -98,6 +98,7 @@ export function SkillNameSelect({
             <button
               type="button"
               className="hover:text-destructive ml-0.5"
+              aria-label={t("remove")}
               onClick={(e) => { e.stopPropagation(); removeSkill(name); }}
             >
               <X className="h-3 w-3" />

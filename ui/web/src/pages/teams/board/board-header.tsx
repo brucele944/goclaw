@@ -36,7 +36,7 @@ export function BoardHeader({ team, members, onBack, onDelete, onSettings, onMem
 
   return (
     <div className="flex items-center gap-3 border-b bg-card px-4 py-2.5 landscape-compact">
-      <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+      <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0" aria-label={i18next.t("common:back")}>
         <ArrowLeft className="h-4 w-4" />
       </Button>
 

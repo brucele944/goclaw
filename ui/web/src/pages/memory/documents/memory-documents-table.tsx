@@ -114,13 +114,14 @@ export function MemoryDocumentsTable({
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onReindex(doc)} className="gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => onReindex(doc)} className="gap-1" aria-label={t("reindexDocument")}>
                     <RotateCw className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onDeleteTarget(doc)}
+                    aria-label={t("common:delete")}
                     className="gap-1 text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

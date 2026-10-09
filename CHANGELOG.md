@@ -6,6 +6,39 @@ All notable changes to GoClaw are documented here. For full documentation, see [
 
 ### Changed
 
+- **Dashboard accessibility and theming pass (web + desktop UI).** Dark and light
+  themes now meet WCAG 2.2 AA for text (`primary`, `destructive`, `success`, `warning`,
+  `sidebar-accent` pairs) and for form-control boundaries via a new `--control-border`
+  token — `--input` is unchanged so existing `dark:bg-input/30` fills keep working. A
+  new `ui/web/src/__tests__/theme-contrast.test.ts` parses the OKLCH tokens and fails if
+  any pair regresses. `prefers-reduced-motion` is honoured globally (spinners stay
+  visible, slowed) and `MotionConfig reducedMotion="user"` covers Framer Motion.
+  Icon-only buttons, clickable rows/cards/tree nodes, and `<Label>`/`<InfoLabel>`
+  associations were swept across both frontends: triggers are `role="button"` with
+  Enter/Space activation (`getClickableProps`/`useClickable`), trees use
+  `role="tree"`/`treeitem` with roving `tabIndex` and arrow keys (`use-tree-nav`), and
+  the file tree's dnd-kit drag no longer starts on activation. Mobile drawers
+  (app nav, chat sessions, task panel, vault) use a new `components/ui/sheet.tsx`
+  (focus trap, Escape, focus restoration), the app shell gained a skip link and
+  route-change focus on `<main>`, connection banners are live regions, `window.confirm`
+  was replaced with the in-app dialog, and the login forms gained `autoComplete`,
+  password toggles and `aria-describedby` error links. `ui/web/scripts/a11y-audit.mjs`
+  (TypeScript-AST audit, `pnpm a11y:audit`, wired into CI) gates 3 issue classes against
+  a reviewed allowlist. Inter and KaTeX are self-hosted (`@fontsource-variable/inter`,
+  `katex`) — the Google Fonts/jsDelivr `<link>`s and their CSP origins are gone, with
+  the pre-paint theme applied by `public/theme-init.js`.
+
+- **Semantic status colour tokens.** Web and desktop themes now expose
+  `--success-text`/`--success-subtle`, `--warning-text`/`--warning-subtle`,
+  `--info`/`--info-text`/`--info-subtle`, and `--destructive-text`/`--destructive-subtle`
+  (desktop: `--color-error-text`/`-subtle`) that meet WCAG 2.2 AA on both
+  background and card in light and dark. `Badge` success/warning/info variants and
+  `StatusBadge` consume them. Hardcoded Tailwind palette text (`text-green-600`,
+  `text-amber-700`, …) was migrated off the dashboard surfaces that failed 4.5:1.
+  New `Spinner` primitive and `focus-ring` utility. Desktop `text-[11px]`/`text-[8px]`
+  map to `--text-2xs` (11px).
+
+
 - **Provider declaration scaffolding (no behaviour change yet).** Providers now declare
   *what they are* instead of it being inferred in Go: `llm_providers` gains `wire_api`
   (transport family), `auth_kind` (how credentials are obtained), `exec_path` and a

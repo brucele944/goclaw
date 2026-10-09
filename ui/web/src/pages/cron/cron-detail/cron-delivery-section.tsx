@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,11 +42,12 @@ export function CronDeliverySection({
   readonly,
 }: CronDeliverySectionProps) {
   const { t } = useTranslation("cron");
+  const uid = useId();
 
   return (
     <section className="space-y-3 rounded-lg border p-3 sm:p-4 overflow-hidden">
       <div className="flex items-center gap-2">
-        <Send className="h-4 w-4 text-blue-500" />
+        <Send className="h-4 w-4 text-info-text" />
         <h3 className="text-sm font-medium">{t("detail.delivery")}</h3>
       </div>
       <p className="text-xs text-muted-foreground">{t("detail.deliveryDesc")}</p>
@@ -58,11 +60,11 @@ export function CronDeliverySection({
       {deliver && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr]">
           <div className="space-y-2 min-w-0">
-            <Label>{t("detail.channelLabel")}</Label>
+            <Label htmlFor={`${uid}-channel`}>{t("detail.channelLabel")}</Label>
             {channelNames.length > 0 ? (
               <Select value={channel || "__none__"}
                 onValueChange={(v) => { setChannel(v === "__none__" ? "" : v); setTo(""); }}>
-                <SelectTrigger className="text-base md:text-sm">
+                <SelectTrigger id={`${uid}-channel`} className="text-base md:text-sm">
                   <SelectValue placeholder={t("detail.channelPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -73,20 +75,21 @@ export function CronDeliverySection({
                 </SelectContent>
               </Select>
             ) : (
-              <Input value={channel} onChange={(e) => setChannel(e.target.value)}
+              <Input id={`${uid}-channel`} value={channel} onChange={(e) => setChannel(e.target.value)}
                 placeholder={t("detail.channelPlaceholder")} className="text-base md:text-sm" />
             )}
           </div>
           <div className="space-y-2 min-w-0">
-            <Label>{t("detail.toLabel")}</Label>
+            <Label htmlFor={`${uid}-to`}>{t("detail.toLabel")}</Label>
             {(() => {
               if (!channel) {
-                return <Input placeholder={t("detail.channelPlaceholder")} disabled className="text-base md:text-sm" />;
+                return <Input id={`${uid}-to`} placeholder={t("detail.channelPlaceholder")} disabled className="text-base md:text-sm" />;
               }
               const filtered = targets.filter((tgt) => tgt.channel === channel);
               if (filtered.length > 0) {
                 return (
                   <Combobox
+                    id={`${uid}-to`}
                     value={to}
                     onChange={setTo}
                     options={filtered.map((target) => ({
@@ -99,7 +102,7 @@ export function CronDeliverySection({
                   />
                 );
               }
-              return <Input value={to} onChange={(e) => setTo(e.target.value)}
+              return <Input id={`${uid}-to`} value={to} onChange={(e) => setTo(e.target.value)}
                 placeholder={t("detail.toPlaceholder")} className="text-base md:text-sm" />;
             })()}
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +62,7 @@ export function MCPUserCredentialsDialog({
   onRevokeOAuth,
 }: MCPUserCredentialsDialogProps) {
   const { t } = useTranslation("mcp");
+  const uid = useId();
   const role = useAuthStore((s) => s.role);
   const currentUserId = useAuthStore((s) => s.userId);
   const { currentTenant } = useTenants();
@@ -275,8 +276,9 @@ export function MCPUserCredentialsDialog({
             {/* User selector — admin only */}
             {canManageUsers && (
               <div className="flex flex-col gap-1.5">
-                <Label>{t("userCredentials.selectUser")}</Label>
+                <Label htmlFor={`${uid}-user`}>{t("userCredentials.selectUser")}</Label>
                 <UserPickerCombobox
+                  id={`${uid}-user`}
                   value={userSearchText}
                   onChange={setUserSearchText}
                   onSelect={(val) => { setSelectedUserId(val); setUserSearchText(val); }}
@@ -286,7 +288,7 @@ export function MCPUserCredentialsDialog({
                 {selectedUserId && selectedUserId !== userSearchText && (
                   <p className="text-xs text-muted-foreground font-mono">{selectedUserId}</p>
                 )}
-                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-md px-2.5 py-1.5 border border-amber-200 dark:border-amber-800">{t("userCredentials.mergeHint")}</p>
+                <p className="text-xs text-warning-text bg-warning-subtle rounded-md px-2.5 py-1.5 border border-warning/25">{t("userCredentials.mergeHint")}</p>
               </div>
             )}
 
@@ -308,9 +310,9 @@ export function MCPUserCredentialsDialog({
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2 text-xs">
                         {oauthIsExpired
-                          ? <ShieldX className="h-3.5 w-3.5 text-amber-500" />
-                          : <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />}
-                        <span className={oauthIsExpired ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>
+                          ? <ShieldX className="h-3.5 w-3.5 text-warning-text" />
+                          : <ShieldCheck className="h-3.5 w-3.5 text-success-text" />}
+                        <span className={oauthIsExpired ? "text-warning-text" : "text-success-text"}>
                           {oauthIsExpired ? t("form.oauth.expired") : t("form.oauth.authorized")}
                         </span>
                       </div>
@@ -395,8 +397,8 @@ export function MCPUserCredentialsDialog({
             </div>
 
             {/* Headers */}
-            <div className="flex flex-col gap-1.5">
-              <Label>{t("userCredentials.headers")}</Label>
+            <div role="group" aria-labelledby={`${uid}-headers`} className="flex flex-col gap-1.5">
+              <Label id={`${uid}-headers`}>{t("userCredentials.headers")}</Label>
               <KeyValueEditor
                 value={headers}
                 onChange={(v) => setValue("headers", v)}
@@ -408,8 +410,8 @@ export function MCPUserCredentialsDialog({
             </div>
 
             {/* Env vars */}
-            <div className="flex flex-col gap-1.5">
-              <Label>{t("userCredentials.env")}</Label>
+            <div role="group" aria-labelledby={`${uid}-env`} className="flex flex-col gap-1.5">
+              <Label id={`${uid}-env`}>{t("userCredentials.env")}</Label>
               <KeyValueEditor
                 value={env}
                 onChange={(v) => setValue("env", v)}

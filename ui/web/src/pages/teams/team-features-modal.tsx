@@ -68,7 +68,7 @@ export function TeamFeaturesModal({ open, onOpenChange }: TeamFeaturesModalProps
                     </div>
                   </div>
                   <div className="flex justify-center">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <Check className="h-4 w-4 text-success-text" />
                   </div>
                 </div>
               );

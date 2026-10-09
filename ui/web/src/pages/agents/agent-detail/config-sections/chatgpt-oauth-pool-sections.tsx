@@ -106,13 +106,13 @@ export function MembershipSection({
                     "border-primary/50 bg-primary/12 text-foreground shadow-sm dark:border-primary/40 dark:bg-primary/8",
                   selected &&
                     failureKind &&
-                    "border-amber-500/50 bg-amber-500/8 text-amber-900 dark:border-amber-500/40 dark:text-amber-200",
+                    "border-warning/25 bg-amber-500/8 dark:text-amber-200",
                   !selected &&
                     !failureKind &&
                     "border-dashed border-primary/30 bg-primary/5 text-foreground hover:border-solid hover:border-primary/60 hover:bg-primary/10 hover:shadow-sm active:scale-[0.98] dark:border-primary/25 dark:bg-primary/4 dark:hover:border-primary/50 dark:hover:bg-primary/8",
                   !selected &&
                     failureKind &&
-                    "border-dashed border-amber-500/30 bg-amber-500/5 text-foreground hover:border-solid hover:border-amber-500/60 hover:bg-amber-500/10 active:scale-[0.98] dark:border-amber-500/25 dark:bg-amber-500/4",
+                    "border-dashed border-warning/25 bg-warning-subtle text-foreground hover:border-solid hover:border-warning/25 hover:bg-warning-subtle active:scale-[0.98] dark:bg-amber-500/4",
                 )}
                 onClick={() => onToggleProvider(provider.name)}
                 disabled={!canEditMembership || mode === "inherit"}

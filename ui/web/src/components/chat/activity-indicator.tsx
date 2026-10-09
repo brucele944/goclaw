@@ -37,27 +37,27 @@ export function ActivityIndicator({ activity, isRunning }: ActivityIndicatorProp
 function getPhaseConfig(activity: RunActivity) {
   switch (activity.phase) {
     case "thinking":
-      return { icon: Brain, animation: "animate-pulse", color: "text-amber-500", label: "Thinking..." };
+      return { icon: Brain, animation: "animate-pulse", color: "text-warning-text", label: "Thinking..." };
     case "tool_exec":
       return {
         icon: Wrench,
         animation: "animate-wobble",
-        color: "text-blue-500",
+        color: "text-info-text",
         label: activity.tool ? `Running ${activity.tool}...` : "Running tools...",
       };
     case "streaming":
       return { icon: Pencil, animation: "", color: "text-foreground", label: "Writing..." };
     case "compacting":
-      return { icon: Archive, animation: "animate-pulse", color: "text-amber-500", label: "Optimizing context..." };
+      return { icon: Archive, animation: "animate-pulse", color: "text-warning-text", label: "Optimizing context..." };
     case "retrying":
       return {
         icon: RefreshCw,
         animation: "animate-spin",
-        color: "text-amber-500",
+        color: "text-warning-text",
         label: `Retrying (${activity.retryAttempt ?? 0}/${activity.retryMax ?? 0})...`,
       };
     case "leader_processing":
-      return { icon: Users, animation: "animate-pulse", color: "text-emerald-500", label: "Processing team results..." };
+      return { icon: Users, animation: "animate-pulse", color: "text-success-text", label: "Processing team results..." };
     default:
       return { icon: Brain, animation: "animate-pulse", color: "text-muted-foreground", label: "Working..." };
   }

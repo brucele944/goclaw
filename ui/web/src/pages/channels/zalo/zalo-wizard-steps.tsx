@@ -28,7 +28,7 @@ export function ZaloAuthStep({ instanceId, onComplete, onSkip }: WizardAuthStepP
   return (
     <>
       <div className="flex flex-col items-center gap-4 py-4 min-h-0">
-        {status === "done" && <p className="text-sm text-green-600 font-medium">{t("zalo.loginSuccessLoading")}</p>}
+        {status === "done" && <p className="text-sm text-success-text font-medium">{t("zalo.loginSuccessLoading")}</p>}
         {status === "error" && <p className="text-sm text-destructive">{errorMsg}</p>}
         {qrPng && status === "waiting" && <img src={`data:image/png;base64,${qrPng}`} alt="Zalo QR Code" className="w-48 h-48 border rounded" />}
         {status === "waiting" && !qrPng && <p className="text-sm text-muted-foreground">{t("zalo.generatingQr")}</p>}

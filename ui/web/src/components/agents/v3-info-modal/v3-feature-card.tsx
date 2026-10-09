@@ -20,7 +20,7 @@ export function V3FeatureCard({ icon: Icon, iconColor, title, stat, comparison, 
           <p className="text-sm font-medium">{title}</p>
           <Badge variant="outline" className="text-2xs px-1.5 py-0">{stat}</Badge>
         </div>
-        <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-0.5">{comparison}</p>
+        <p className="text-xs text-warning-text mt-0.5">{comparison}</p>
         <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </div>
     </div>

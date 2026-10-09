@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { formatUserLabel } from "@/lib/format-user-label";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -33,6 +33,7 @@ interface MemoryCreateDialogProps {
 export function MemoryCreateDialog({ open, onOpenChange, agentId: parentAgentId, knownUserIds = [] }: MemoryCreateDialogProps) {
   const { t } = useTranslation("memory");
   const { t: tc } = useTranslation("common");
+  const scopeLabelId = useId();
   const { agents } = useAgents();
 
   // UI-only state
@@ -148,8 +149,8 @@ export function MemoryCreateDialog({ open, onOpenChange, agentId: parentAgentId,
 
           {/* Scope selector */}
           <div className="grid gap-1.5">
-            <Label>{t("createDialog.scope")}</Label>
-            <div className="flex gap-2">
+            <Label id={scopeLabelId}>{t("createDialog.scope")}</Label>
+            <div className="flex gap-2" role="group" aria-labelledby={scopeLabelId}>
               <Button
                 type="button"
                 variant={scopeMode === "global" ? "default" : "outline"}
@@ -182,6 +183,7 @@ export function MemoryCreateDialog({ open, onOpenChange, agentId: parentAgentId,
                 value={selectedUserId}
                 onChange={(e) => setValue("selectedUserId", e.target.value)}
                 className="h-9 rounded-md border bg-background px-3 text-base md:text-sm"
+                aria-labelledby={scopeLabelId}
               >
                 <option value="">{t("createDialog.selectGroupUser")}</option>
                 {knownUserIds.map((uid) => (
@@ -195,6 +197,7 @@ export function MemoryCreateDialog({ open, onOpenChange, agentId: parentAgentId,
               <Input
                 placeholder="e.g. group:telegram:-100123456"
                 className="font-mono text-sm"
+                aria-labelledby={scopeLabelId}
                 {...register("customUserId")}
               />
             )}

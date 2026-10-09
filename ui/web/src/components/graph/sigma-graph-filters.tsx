@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type Graph from "graphology";
 import { Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,11 @@ interface SigmaGraphFiltersProps {
 }
 
 export function SigmaGraphFilters({
-  graph, typeColors, defaultColor = "#9ca3af",
+  graph, typeColors, defaultColor = "var(--muted-foreground)",
   hiddenTypes, onHiddenTypesChange,
   collapsed, onCollapsedChange,
 }: SigmaGraphFiltersProps) {
+  const { t } = useTranslation("common");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Memoize type counts to avoid iterating all nodes on every render
@@ -80,15 +82,15 @@ export function SigmaGraphFilters({
         size="sm"
         className="h-7 gap-1 text-xs text-muted-foreground"
         onClick={() => onCollapsedChange(!collapsed)}
-        aria-label={`Filter by type${hiddenTypes.size > 0 ? ` (${hiddenTypes.size} hidden)` : ""}`}
+        aria-label={`${t("graph.filterByType")}${hiddenTypes.size > 0 ? ` (${t("graph.hiddenCount", { count: hiddenTypes.size })})` : ""}`}
         aria-expanded={!collapsed}
         aria-haspopup="menu"
       >
         <Filter className="h-3 w-3" />
-        Filter
+        {t("graph.filter")}
         {hiddenTypes.size > 0 && (
           <span className="ml-1 text-2xs rounded-full bg-primary/10 text-primary px-1.5">
-            {hiddenTypes.size} hidden
+            {t("graph.hiddenCount", { count: hiddenTypes.size })}
           </span>
         )}
         {collapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}

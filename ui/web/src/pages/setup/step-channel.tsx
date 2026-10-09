@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,10 @@ export function StepChannel({ agent, onComplete, onSkip, onBack }: StepChannelPr
   const [credsValues, setCredsValues] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const channelTypeId = useId();
+  const nameId = useId();
+  const displayNameId = useId();
 
   const credsFields = credentialsSchema[channelType] ?? [];
 
@@ -116,12 +120,12 @@ export function StepChannel({ agent, onComplete, onSkip, onBack }: StepChannelPr
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1.5">
-              {t("channel.channelType")}
+            <span className="inline-flex items-center gap-1.5">
+              <Label htmlFor={channelTypeId}>{t("channel.channelType")}</Label>
               <InfoTip text={t("channel.channelTypeHint")} />
-            </Label>
+            </span>
             <Select value={channelType} onValueChange={handleTypeChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id={channelTypeId}><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CHANNEL_TYPES.map((ct) => (
                   <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
@@ -131,21 +135,21 @@ export function StepChannel({ agent, onComplete, onSkip, onBack }: StepChannelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1.5">
-              {t("channel.name")}
+            <span className="inline-flex items-center gap-1.5">
+              <Label htmlFor={nameId}>{t("channel.name")}</Label>
               <InfoTip text={t("channel.nameHint")} />
-            </Label>
-            <Input value={name} onChange={(e) => setName(slugify(e.target.value))} placeholder={t("channel.namePlaceholder")} />
+            </span>
+            <Input id={nameId} value={name} onChange={(e) => setName(slugify(e.target.value))} placeholder={t("channel.namePlaceholder")} />
           </div>
         </div>
 
         {displayName !== undefined && (
           <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1.5">
-              {t("channel.displayName")}
+            <span className="inline-flex items-center gap-1.5">
+              <Label htmlFor={displayNameId}>{t("channel.displayName")}</Label>
               <InfoTip text={t("channel.displayNameHint")} />
-            </Label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("channel.displayNamePlaceholder")} />
+            </span>
+            <Input id={displayNameId} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("channel.displayNamePlaceholder")} />
           </div>
         )}
 

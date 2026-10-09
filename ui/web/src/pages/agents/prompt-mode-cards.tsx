@@ -87,7 +87,7 @@ export function PromptModeCards({ value, onChange, compact }: PromptModeCardsPro
                   {sections.map((s) => (
                     <span
                       key={s}
-                      className="inline-block rounded bg-muted px-1.5 py-0.5 text-[9px] leading-tight text-muted-foreground"
+                      className="inline-block rounded bg-muted px-1.5 py-0.5 text-xs leading-tight text-muted-foreground"
                     >
                       {t(`detail.prompt.section.${s}`)}
                     </span>

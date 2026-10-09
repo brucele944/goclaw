@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ export function KeyValueEditor({
 }: KeyValueEditorProps) {
   const [entries, setEntries] = useState<KeyValuePair[]>(() => toEntries(value));
   const internalChange = useRef(false);
+  const { t } = useTranslation("common");
 
   // Sync from external value changes only (not our own onChange calls)
   useEffect(() => {
@@ -110,6 +112,7 @@ export function KeyValueEditor({
             variant="ghost"
             size="icon"
             className="h-9 w-9 shrink-0"
+            aria-label={t("remove")}
             onClick={() => removeEntry(idx)}
           >
             <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />

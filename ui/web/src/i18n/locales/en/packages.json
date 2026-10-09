@@ -91,6 +91,7 @@
   "actions": {
     "install": "Install",
     "uninstall": "Uninstall",
+    "uninstallPackage": "Uninstall {{name}}",
     "installing": "Installing...",
     "uninstalling": "Removing..."
   },

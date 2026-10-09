@@ -11,20 +11,20 @@ import type { TeamTaskEvent } from "@/types/team";
 const LIMIT = 50;
 
 const EVENT_BADGE_CLASSES: Record<string, string> = {
-  created:    "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  updated:    "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  created:    "bg-info-subtle text-info-text",
+  updated:    "bg-info-subtle text-info-text",
   claimed:    "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300",
   assigned:   "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300",
   dispatched: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
-  completed:  "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  approved:   "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  failed:     "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  rejected:   "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  completed:  "bg-success-subtle text-success-text",
+  approved:   "bg-success-subtle text-success-text",
+  failed:     "bg-destructive-subtle text-destructive-text",
+  rejected:   "bg-destructive-subtle text-destructive-text",
   cancelled:  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  commented:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  progress:   "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300",
-  reviewed:   "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
-  stale:      "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+  commented:  "bg-warning-subtle text-warning-text",
+  progress:   "bg-info-subtle text-info-text",
+  reviewed:   "bg-warning-subtle text-warning-text",
+  stale:      "bg-warning-subtle text-warning-text",
 };
 
 interface EventDataDetails {

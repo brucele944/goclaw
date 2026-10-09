@@ -151,7 +151,7 @@ export function ProviderFormDialog({ open, onOpenChange, provider, onSubmit }: P
           <button
             onClick={handleSubmit(onValid)}
             disabled={isSubmitting || !providerType}
-            className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
             {isSubmitting ? '...' : isEditing ? t('providers:form.save') : t('providers:form.create')}
           </button>

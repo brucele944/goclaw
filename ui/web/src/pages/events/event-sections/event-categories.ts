@@ -18,21 +18,21 @@ const teamTask: EventCategoryConfig = {
   label: "Task",
   icon: ListTodo,
   borderColor: "border-l-amber-500",
-  iconColor: "text-amber-500",
+  iconColor: "text-warning-text",
 };
 
 const teamMessage: EventCategoryConfig = {
   label: "Message",
   icon: MessageCircle,
   borderColor: "border-l-green-500",
-  iconColor: "text-green-500",
+  iconColor: "text-success-text",
 };
 
 const agent: EventCategoryConfig = {
   label: "Agent",
   icon: Bot,
   borderColor: "border-l-orange-500",
-  iconColor: "text-orange-500",
+  iconColor: "text-warning-text",
 };
 
 const teamCrud: EventCategoryConfig = {
@@ -46,7 +46,7 @@ const agentLink: EventCategoryConfig = {
   label: "Link",
   icon: Link,
   borderColor: "border-l-cyan-500",
-  iconColor: "text-cyan-500",
+  iconColor: "text-info-text",
 };
 
 export function getCategoryConfig(event: string): EventCategoryConfig {

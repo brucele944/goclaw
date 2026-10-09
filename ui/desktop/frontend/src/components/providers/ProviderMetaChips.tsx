@@ -36,7 +36,7 @@ export function ProviderMetaChips({ provider }: { provider: ProviderData }) {
         <span
           key={c.key}
           title={`${c.title}: ${c.label}`}
-          className="text-[10px] px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0"
+          className="text-2xs px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted shrink-0"
         >
           {c.label}
         </span>
@@ -44,7 +44,7 @@ export function ProviderMetaChips({ provider }: { provider: ProviderData }) {
       {stale && (
         <span
           title={t('meta.staleCatalogue')}
-          className="text-[10px] px-1.5 py-0.5 rounded bg-warning/10 text-warning shrink-0"
+          className="text-2xs px-1.5 py-0.5 rounded bg-warning/10 text-warning shrink-0"
         >
           {t('meta.staleCatalogue')}
         </span>

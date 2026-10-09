@@ -40,7 +40,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
   return (
     <TooltipProvider>
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-card px-3 py-2 landscape-compact sm:px-4 sm:gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 size-9">
+        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 size-9" aria-label={t("common:back")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
@@ -56,7 +56,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
           <div className="flex items-center gap-1.5 flex-wrap">
             <h2 className="truncate text-base font-semibold">{title}</h2>
             {agent.is_default && (
-              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
+              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400" />
             )}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -64,7 +64,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
                   className={cn(
                     "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
                     agent.status === "active"
-                      ? "bg-emerald-500"
+                      ? "bg-success"
                       : agent.status === "summon_failed"
                         ? "bg-destructive"
                         : "bg-muted-foreground/50",
@@ -90,7 +90,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
             </Tooltip>
             <Badge
               variant="outline"
-              className="text-2xs bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 cursor-pointer"
+              className="text-2xs bg-info-subtle text-info-text hover:bg-info-subtle cursor-pointer"
               onClick={() => setV3Open(true)}
             >
               V3
@@ -100,7 +100,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
                 <TooltipTrigger asChild>
                   <Badge
                     variant={selfEvolve ? "default" : "outline"}
-                    className={`text-2xs ${selfEvolve ? "bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300" : "text-muted-foreground"}`}
+                    className={`text-2xs ${selfEvolve ? "bg-warning-subtle text-warning-text hover:bg-warning-subtle" : "text-muted-foreground"}`}
                   >
                     <Sparkles className="h-2.5 w-2.5 sm:mr-0.5" />
                     <span className="hidden sm:inline">{selfEvolve ? t("detail.evolving") : t("detail.static")}</span>
@@ -142,8 +142,8 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
         </Button>
         {/* Heartbeat action */}
         <Button variant="ghost" size="sm" onClick={onHeartbeat} className="shrink-0 gap-1.5 size-9 sm:w-auto sm:px-3">
-          <Heart className={`h-4 w-4 ${hbEnabled ? "fill-rose-500 text-rose-500 animate-pulse" : hbConfigured ? "text-rose-400" : "text-muted-foreground"}`} />
-          <span className={`hidden sm:inline ${hbEnabled ? "text-rose-600 dark:text-rose-400" : ""}`}>
+          <Heart className={`h-4 w-4 ${hbEnabled ? "fill-rose-500 text-destructive-text animate-pulse" : hbConfigured ? "" : "text-muted-foreground"}`} />
+          <span className={`hidden sm:inline ${hbEnabled ? "text-destructive-text" : ""}`}>
             {!hbConfigured
               ? t("heartbeat.notSet")
               : !hbEnabled
@@ -155,7 +155,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={onAdvanced} className="shrink-0 size-9">
+            <Button variant="ghost" size="icon" onClick={onAdvanced} className="shrink-0 size-9" aria-label={t("detail.advanced")}>
               <Settings className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -170,6 +170,7 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
               size="icon"
               onClick={onDelete}
               className="shrink-0 size-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+              aria-label={t("delete.title")}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

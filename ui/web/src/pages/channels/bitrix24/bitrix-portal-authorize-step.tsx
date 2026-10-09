@@ -64,13 +64,13 @@ export function BitrixPortalAuthorizeStep({
   // OAuth round-trips happen in another tab — without this, the admin can't
   // tell whether install completed or polling broke.
   const statusBlock = installed ? (
-    <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm dark:border-green-900 dark:bg-green-950">
-      <CheckCircle2 className="h-4 w-4 text-green-600" />
+    <div className="flex items-center gap-2 rounded-md border border-success/25 bg-success-subtle p-3 text-sm">
+      <CheckCircle2 className="h-4 w-4 text-success-text" />
       <span>{t("bitrix24.create.authorize.installed", { defaultValue: "Portal installed successfully!" })}</span>
     </div>
   ) : timedOut ? (
-    <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950">
-      <AlertCircle className="h-4 w-4 text-amber-600" />
+    <div className="flex items-center gap-2 rounded-md border border-warning/25 bg-warning-subtle p-3 text-sm">
+      <AlertCircle className="h-4 w-4 text-warning-text" />
       <span>
         {t("bitrix24.create.authorize.timedOut", {
           defaultValue: "Authorization not completed yet. You can resume from the dropdown.",
@@ -94,7 +94,7 @@ export function BitrixPortalAuthorizeStep({
       </div>
 
       {warning && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-900 dark:bg-amber-950">
+        <div className="rounded-md border border-warning/25 bg-warning-subtle p-3 text-xs">
           ⚠ {warning}
         </div>
       )}

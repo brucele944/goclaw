@@ -128,6 +128,7 @@ export function ChannelListRow({
               variant="ghost"
               size="xs"
               className="text-muted-foreground hover:text-primary"
+              aria-label={t("actions.reauthenticate")}
               onClick={(e) => {
                 e.stopPropagation();
                 onAuth();
@@ -141,6 +142,7 @@ export function ChannelListRow({
               variant="ghost"
               size="xs"
               className="text-muted-foreground hover:text-destructive"
+              aria-label={t("common:delete")}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();

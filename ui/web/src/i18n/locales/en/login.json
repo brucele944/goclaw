@@ -14,6 +14,8 @@
     "userId": "User ID",
     "userIdPlaceholder": "your-user-id",
     "userIdHint": "Use \"system\" for full system access",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "gatewayToken": "Gateway Token",
     "tokenPlaceholder": "Bearer token",
     "connect": "Connect",

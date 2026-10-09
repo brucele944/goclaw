@@ -27,7 +27,7 @@ export function CronHeader({ job, isRunning, onBack, onRun, onToggle, onDelete }
   return (
     <TooltipProvider>
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-card px-3 py-2 landscape-compact sm:px-4 sm:gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 size-9">
+        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 size-9" aria-label={t("common:back")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
@@ -48,7 +48,7 @@ export function CronHeader({ job, isRunning, onBack, onRun, onToggle, onDelete }
                 <span
                   className={cn(
                     "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
-                    job.enabled ? "bg-emerald-500" : "bg-muted-foreground/50",
+                    job.enabled ? "bg-success" : "bg-muted-foreground/50",
                   )}
                 />
               </TooltipTrigger>

@@ -48,7 +48,7 @@ export function SystemRestorePanel() {
       <div className="space-y-4">
         <h3 className="text-sm font-medium">{t("restore.running")}</h3>
         <OperationProgress steps={restore.steps} elapsed={restore.elapsed} />
-        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+        <p className="text-xs text-warning-text flex items-center gap-1">
           <AlertTriangle className="h-3.5 w-3.5" />
           {t("restore.doNotClose")}
         </p>
@@ -67,11 +67,11 @@ export function SystemRestorePanel() {
     const warnings = (r.warnings ?? []) as string[];
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-green-600">{t("restore.complete")}</h3>
+        <h3 className="text-sm font-medium text-success-text">{t("restore.complete")}</h3>
         <OperationProgress steps={restore.steps} elapsed={restore.elapsed} />
 
         {!!r.dry_run && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900/40 dark:bg-blue-950/20 px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
+          <div className="rounded-md border border-info/25 bg-info-subtle px-3 py-2 text-sm text-info-text">
             {t("restore.dryRunNote")}
           </div>
         )}
@@ -103,9 +103,9 @@ export function SystemRestorePanel() {
 
         {warnings.length > 0 && (
           <div className="space-y-1">
-            <p className="text-xs font-medium text-amber-600">{t("restore.warnings")}</p>
+            <p className="text-xs font-medium text-warning-text">{t("restore.warnings")}</p>
             {warnings.map((w, i) => (
-              <p key={i} className="text-xs text-amber-600">{w}</p>
+              <p key={i} className="text-xs text-warning-text">{w}</p>
             ))}
           </div>
         )}
@@ -152,21 +152,24 @@ export function SystemRestorePanel() {
 
       {/* Drop zone */}
       {!file && (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{t("restore.dropzone")}</p>
-          <p className="text-xs text-muted-foreground/60">{t("restore.dropzoneHint")}</p>
+        <>
           <input ref={fileRef} type="file" className="hidden" accept=".tar.gz,.gz"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        </div>
+          <button
+            type="button"
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground/50" />
+            <span className="block text-sm text-muted-foreground">{t("restore.dropzone")}</span>
+            <span className="block text-xs text-muted-foreground/60">{t("restore.dropzoneHint")}</span>
+          </button>
+        </>
       )}
 
       {/* File info + options */}

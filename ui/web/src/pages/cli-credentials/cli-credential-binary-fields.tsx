@@ -63,7 +63,7 @@ export function CliCredentialBinaryFields({
             <p className="text-xs text-destructive">{errors.binaryName.message}</p>
           )}
           {checkResult && (
-            <p className={`text-xs flex items-center gap-1 ${checkResult.found ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
+            <p className={`text-xs flex items-center gap-1 ${checkResult.found ? "text-success-text" : "text-destructive"}`}>
               {checkResult.found
                 ? <><Check className="h-3 w-3" />{t("form.binaryFound", { path: checkResult.path })}</>
                 : <><AlertCircle className="h-3 w-3" />{checkResult.error || t("form.binaryNotFound")}</>}

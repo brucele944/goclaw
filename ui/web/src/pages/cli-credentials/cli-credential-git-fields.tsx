@@ -71,7 +71,7 @@ export function CliCredentialGitFields({
           data-testid="git-cred-type"
           value={type}
           onChange={(e) => onTypeChange(e.target.value as GitCredentialType)}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base md:text-sm shadow-xs"
+          className="flex h-9 w-full rounded-md border border-control-border bg-transparent px-3 py-1 text-base md:text-sm shadow-xs"
         >
           <option value="env">{t("userCredentials.credentialTypeEnv")}</option>
           <option value="pat">{t("userCredentials.credentialTypePAT")}</option>

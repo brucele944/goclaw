@@ -1,5 +1,5 @@
 import type { ManualEnvEntry } from "./cli-credential-env-vars-section";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -48,6 +48,7 @@ export function CliCredentialFormDialog({ open, onOpenChange, credential, preset
   const { t } = useTranslation("cli-credentials");
   const { t: tc } = useTranslation("common");
   const http = useHttp();
+  const presetSelectId = useId();
 
   const [selectedPreset, setSelectedPreset] = useState(NONE_PRESET);
   const [envValues, setEnvValues] = useState<Record<string, string>>({});
@@ -233,9 +234,9 @@ export function CliCredentialFormDialog({ open, onOpenChange, credential, preset
         <div className="grid gap-4 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto min-h-0">
           {!isEdit && presetEntries.length > 0 && (
             <div className="grid gap-1.5">
-              <Label>{t("form.preset")}</Label>
+              <Label htmlFor={presetSelectId}>{t("form.preset")}</Label>
               <Select value={selectedPreset} onValueChange={applyPreset}>
-                <SelectTrigger className="text-base md:text-sm">
+                <SelectTrigger id={presetSelectId} className="text-base md:text-sm">
                   <SelectValue placeholder={t("form.presetPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>

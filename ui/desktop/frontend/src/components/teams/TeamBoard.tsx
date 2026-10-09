@@ -83,17 +83,17 @@ export function TeamBoard() {
 
         {/* View toggle */}
         <div className="flex items-center bg-surface-tertiary rounded-lg p-0.5">
-          <button onClick={() => setViewMode('kanban')} className={`text-[10px] px-2 py-1 rounded cursor-pointer ${viewMode === 'kanban' ? 'bg-surface-primary text-text-primary shadow-sm' : 'text-text-muted'}`}>
+          <button onClick={() => setViewMode('kanban')} className={`text-2xs px-2 py-1 rounded cursor-pointer ${viewMode === 'kanban' ? 'bg-surface-primary text-text-primary shadow-sm' : 'text-text-muted'}`}>
             {t('kanban', 'Kanban')}
           </button>
-          <button onClick={() => setViewMode('list')} className={`text-[10px] px-2 py-1 rounded cursor-pointer ${viewMode === 'list' ? 'bg-surface-primary text-text-primary shadow-sm' : 'text-text-muted'}`}>
+          <button onClick={() => setViewMode('list')} className={`text-2xs px-2 py-1 rounded cursor-pointer ${viewMode === 'list' ? 'bg-surface-primary text-text-primary shadow-sm' : 'text-text-muted'}`}>
             {t('list', 'List')}
           </button>
         </div>
 
         {/* Status filter */}
         <div className="relative">
-          <button onClick={() => setFilterOpen((v) => !v)} className="flex items-center gap-1.5 text-[11px] bg-surface-tertiary border border-border rounded-lg px-2.5 py-1.5 text-text-secondary hover:border-accent/30 transition-colors cursor-pointer">
+          <button onClick={() => setFilterOpen((v) => !v)} className="flex items-center gap-1.5 text-2xs bg-surface-tertiary border border-border rounded-lg px-2.5 py-1.5 text-text-secondary hover:border-accent/30 transition-colors cursor-pointer">
             <span>{t(currentFilterLabel)}</span>
             <IconChevronDown size={10} />
           </button>
@@ -103,7 +103,7 @@ export function TeamBoard() {
               <div className="absolute right-0 top-full mt-1 z-50 bg-surface-primary border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
                 {FILTER_OPTIONS.map((opt) => (
                   <button key={opt.value} onClick={() => { setStatusFilter(opt.value); setFilterOpen(false) }}
-                    className={['w-full text-left px-3 py-1.5 text-[11px] transition-colors cursor-pointer', statusFilter === opt.value ? 'text-accent bg-accent/10' : 'text-text-secondary hover:bg-surface-tertiary'].join(' ')}
+                    className={['w-full text-left px-3 py-1.5 text-2xs transition-colors cursor-pointer', statusFilter === opt.value ? 'text-accent bg-accent/10' : 'text-text-secondary hover:bg-surface-tertiary'].join(' ')}
                   >
                     {t(opt.label)}
                   </button>

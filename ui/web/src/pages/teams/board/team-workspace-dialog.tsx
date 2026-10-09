@@ -230,10 +230,10 @@ export function TeamWorkspaceDialog({ open, onOpenChange, teamId, scopes }: Team
                   </SelectContent>
                 </Select>
               )}
-              <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)} className="gap-1">
+              <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)} className="gap-1" aria-label={t("workspace.upload.title")}>
                 <Upload className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => load()} disabled={loading} className="gap-1">
+              <Button variant="outline" size="sm" onClick={() => load()} disabled={loading} className="gap-1" aria-label={t("workspace.refresh")}>
                 <RefreshCw className={"h-3.5 w-3.5" + (loading ? " animate-spin" : "")} />
               </Button>
             </div>

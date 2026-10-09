@@ -209,6 +209,7 @@ export function MCPPage() {
                           size="sm"
                           onClick={() => { setEditServer(srv); setFormOpen(true); }}
                           className="gap-1"
+                          aria-label={tc("edit")}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -217,6 +218,7 @@ export function MCPPage() {
                           size="sm"
                           onClick={() => setDeleteTarget(srv)}
                           className="gap-1 text-destructive hover:text-destructive"
+                          aria-label={tc("delete")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

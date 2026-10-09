@@ -22,6 +22,8 @@ interface UserPickerComboboxProps {
   allowCustom?: boolean;
   /** Render dropdown into a portal container (useful inside dialogs). */
   portalContainer?: React.RefObject<HTMLElement | null>;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 /**
@@ -46,6 +48,7 @@ export function UserPickerCombobox({
   valueMode,
   allowCustom = true,
   portalContainer,
+  id,
 }: UserPickerComboboxProps) {
   const { options } = useUserPicker(value, peerKind, source, valueMode);
 
@@ -59,6 +62,7 @@ export function UserPickerCombobox({
       className={className}
       allowCustom={allowCustom}
       portalContainer={portalContainer}
+      id={id}
     />
   );
 }

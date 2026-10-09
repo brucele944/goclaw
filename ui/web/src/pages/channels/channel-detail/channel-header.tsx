@@ -55,6 +55,7 @@ export function ChannelHeader({
             size="icon"
             onClick={onBack}
             className="shrink-0 size-9"
+            aria-label={t("common:back")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -72,7 +73,7 @@ export function ChannelHeader({
                     className={cn(
                       "inline-block h-2.5 w-2.5 shrink-0 rounded-full",
                       instance.enabled
-                        ? "bg-emerald-500"
+                        ? "bg-success"
                         : "bg-muted-foreground/50",
                     )}
                   />

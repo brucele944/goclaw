@@ -29,7 +29,7 @@ export function CronStatusBadge({ status }: { status?: string }) {
   if (!status) return null;
   if (status === "running") {
     return (
-      <Badge variant="outline" className="shrink-0 animate-pulse border-blue-400 text-blue-600 dark:text-blue-400">
+      <Badge variant="outline" className="shrink-0 animate-pulse border-info/25 text-info-text">
         {status}
       </Badge>
     );

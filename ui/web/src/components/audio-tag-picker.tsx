@@ -75,7 +75,7 @@ export function AudioTagPicker({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("gemini.searchPlaceholder")}
         disabled={readonly}
-        className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-base md:text-sm"
+        className="w-full rounded-md border border-control-border bg-background px-3 py-1.5 text-sm text-base md:text-sm"
       />
 
       {/* Category filter (hidden when searching) */}

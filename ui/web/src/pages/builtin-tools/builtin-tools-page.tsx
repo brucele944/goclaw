@@ -140,10 +140,10 @@ export function BuiltinToolsPage() {
       </div>
 
       {unconfigured.length > 0 && (
-        <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="mt-4 flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-subtle px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-warning-text shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
+            <p className="text-sm dark:text-amber-200">
               {t("builtin.unconfiguredWarning", { count: unconfigured.length })}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -153,7 +153,7 @@ export function BuiltinToolsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setSettingsTool(tool)}
-                  className="h-6 gap-1 px-2 text-xs border-amber-300 dark:border-amber-800"
+                  className="h-6 gap-1 px-2 text-xs"
                 >
                   <Settings className="h-3 w-3" />
                   {tool.display_name}

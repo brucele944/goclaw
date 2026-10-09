@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,6 +50,9 @@ export function ProviderReasoningSection({
   reasoningPreviewCapability,
 }: ProviderReasoningSectionProps) {
   const { t } = useTranslation("providers");
+  const presetId = useId();
+  const effortId = useId();
+  const fallbackId = useId();
 
   return (
     <section className="space-y-4 rounded-lg border p-3 sm:p-4 overflow-hidden">
@@ -60,7 +64,7 @@ export function ProviderReasoningSection({
       </div>
 
       <div className="space-y-2">
-        <Label>{t("detail.reasoningPreset")}</Label>
+        <Label htmlFor={presetId}>{t("detail.reasoningPreset")}</Label>
         <Select
           value={reasoningThinkingLevel}
           onValueChange={(value) => {
@@ -68,7 +72,7 @@ export function ProviderReasoningSection({
             setReasoningEffort(value);
           }}
         >
-          <SelectTrigger className="w-full sm:w-56">
+          <SelectTrigger id={presetId} className="w-full sm:w-56">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -155,9 +159,9 @@ export function ProviderReasoningSection({
         {reasoningExpert ? (
           <div className="mt-4 space-y-3 border-t pt-3">
             <div className="space-y-2">
-              <Label>{t("detail.reasoningRequestedEffort")}</Label>
+              <Label htmlFor={effortId}>{t("detail.reasoningRequestedEffort")}</Label>
               <Select value={reasoningEffort} onValueChange={setReasoningEffort}>
-                <SelectTrigger className="w-full sm:w-72">
+                <SelectTrigger id={effortId} className="w-full sm:w-72">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,12 +178,12 @@ export function ProviderReasoningSection({
             </div>
 
             <div className="space-y-2">
-              <Label>{t("detail.reasoningFallbackBehavior")}</Label>
+              <Label htmlFor={fallbackId}>{t("detail.reasoningFallbackBehavior")}</Label>
               <Select
                 value={reasoningFallback}
                 onValueChange={(value) => setReasoningFallback(normalizeReasoningFallback(value))}
               >
-                <SelectTrigger className="w-full sm:w-72">
+                <SelectTrigger id={fallbackId} className="w-full sm:w-72">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

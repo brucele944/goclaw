@@ -5,7 +5,7 @@ import { useOrchestration } from "@/hooks/use-orchestration";
 
 const MODE_COLORS: Record<string, string> = {
   spawn: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  delegate: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  delegate: "bg-info-subtle text-info-text",
   team: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
 };
 

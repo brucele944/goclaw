@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useId } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,8 @@ export function StepModel({ provider, onComplete, onBack, initialModel }: StepMo
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const modelId = useId();
 
   // Reset verification when model changes
   useEffect(() => { resetVerify(); setError(""); }, [model, resetVerify]);
@@ -98,11 +100,12 @@ export function StepModel({ provider, onComplete, onBack, initialModel }: StepMo
           </div>
 
           <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1.5">
-              {t("model.model")}
+            <span className="inline-flex items-center gap-1.5">
+              <Label htmlFor={modelId}>{t("model.model")}</Label>
               <InfoTip text={t("model.modelHint")} />
-            </Label>
+            </span>
             <Combobox
+              id={modelId}
               value={model}
               onChange={setModel}
               options={modelOptions}
@@ -120,10 +123,10 @@ export function StepModel({ provider, onComplete, onBack, initialModel }: StepMo
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {isVerified && (
-            <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center gap-2 rounded-md border border-success/25 bg-success-subtle p-3">
+              <CheckCircle2 className="h-5 w-5 text-success-text" />
               <div>
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{t("model.modelVerified")}</p>
+                <p className="text-sm font-medium text-success-text">{t("model.modelVerified")}</p>
                 <p className="text-xs text-muted-foreground">
                   {t("model.modelVerifiedDesc", { model })}
                 </p>

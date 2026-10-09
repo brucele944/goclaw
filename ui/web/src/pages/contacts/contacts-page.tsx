@@ -229,20 +229,20 @@ function PermissionsNote() {
   const p = "permissionsNote";
 
   return (
-    <div className="mt-4 rounded-md border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/30">
+    <div className="mt-4 rounded-md border border-info/25 bg-blue-50/50">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm"
       >
-        <Info className="h-4 w-4 text-blue-500 shrink-0" />
-        <span className="font-medium text-blue-700 dark:text-blue-400">{t(`${p}.title`)}</span>
+        <Info className="h-4 w-4 text-info-text shrink-0" />
+        <span className="font-medium text-info-text">{t(`${p}.title`)}</span>
         <ChevronDown className={`ml-auto h-4 w-4 text-blue-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <ul className="px-3 pb-3 space-y-1 text-xs text-muted-foreground">
           {PERM_CHANNELS.map((ch) => (
-            <li key={ch} className={ch === "feishu" ? "text-amber-600 dark:text-amber-400 font-medium" : ""}>
+            <li key={ch} className={ch === "feishu" ? "text-warning-text font-medium" : ""}>
               {t(`${p}.${ch}`)}
             </li>
           ))}

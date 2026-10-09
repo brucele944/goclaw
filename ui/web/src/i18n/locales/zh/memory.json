@@ -5,6 +5,7 @@
   "create": "创建",
   "indexAll": "全部索引",
   "indexing": "索引中...",
+  "reindexDocument": "重新索引文档",
   "emptyTitle": "暂无记忆文档",
   "emptyAgentDescription": "该Agent暂无记忆文档。",
   "emptyGlobalDescription": "任何Agent均无记忆文档。",
@@ -17,6 +18,7 @@
   },
   "tabs": {
     "documents": "文档",
+    "episodic": "情景记忆",
     "knowledgeGraph": "知识图谱"
   },
   "columns": {
@@ -103,6 +105,11 @@
       "clear": "清除"
     },
     "refresh": "刷新",
+    "viewMode": {
+      "table": "表格视图",
+      "graph": "图谱视图"
+    },
+    "viewEntity": "查看实体详情",
     "extract": "提取",
     "columns": {
       "name": "名称",
@@ -184,7 +191,8 @@
       "edges": "{{count}} 条边",
       "selected": "已选择: {{name}}",
       "limitNote": "显示前 {{limit}}/{{total}} 个实体",
-      "limitHint": "为确保性能，图谱限制显示 {{limit}} 个实体。请使用表格视图浏览全部 {{total}} 个实体。"
+      "limitHint": "为确保性能，图谱限制显示 {{limit}} 个实体。请使用表格视图浏览全部 {{total}} 个实体。",
+      "ariaLabel": "知识图谱，包含 {{entities}} 个实体和 {{relations}} 条关系"
     }
   },
   "toast": {

@@ -9,6 +9,7 @@
   "noMatchDescription": "请尝试其他搜索词。",
   "viewCard": "卡片视图",
   "viewList": "列表视图",
+  "viewBoard": "看板视图",
   "scope": {
     "all": "所有范围",
     "label": "范围"
@@ -363,7 +364,12 @@
     "locked": "代理正在运行",
     "emptyColumn": "暂无任务",
     "unassigned": "未分配",
-    "createViaChat": "与团队代理聊天以创建任务"
+    "createViaChat": "与团队代理聊天以创建任务",
+    "priorityLow": "低",
+    "priorityMedium": "中",
+    "priorityHigh": "高",
+    "priorityCritical": "紧急",
+    "priorityTooltip": "{{level}} 优先级"
   },
   "sidebar": {
     "members": "成员",

@@ -27,7 +27,7 @@ export function PinnedSkillsSection({ agentId, pinned, onPinnedChange }: PinnedS
       <div className="flex items-center gap-2">
         <span className="text-sm">📌</span>
         <h3 className="text-sm font-semibold text-text-primary">{t('detail.pinnedSkills.title')}</h3>
-        <span className="text-[10px] text-text-muted">({pinned.length}/{MAX_PINNED})</span>
+        <span className="text-2xs text-text-muted">({pinned.length}/{MAX_PINNED})</span>
       </div>
 
       {pinned.length > 0 && (
@@ -63,7 +63,7 @@ export function PinnedSkillsSection({ agentId, pinned, onPinnedChange }: PinnedS
         </select>
       )}
 
-      <p className="text-[10px] text-text-muted">{t('detail.pinnedSkills.hint')}</p>
+      <p className="text-2xs text-text-muted">{t('detail.pinnedSkills.hint')}</p>
     </div>
   )
 }

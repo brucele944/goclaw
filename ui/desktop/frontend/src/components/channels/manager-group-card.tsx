@@ -38,7 +38,7 @@ export function ManagerGroupCard({
       >
         <span className="text-xs font-medium text-text-primary font-mono">{shortGroupId(groupId)}</span>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-surface-tertiary px-2 py-0.5 text-[11px] text-text-muted tabular-nums">
+          <span className="rounded-full bg-surface-tertiary px-2 py-0.5 text-2xs text-text-muted tabular-nums">
             {writerCount === 1
               ? t('detail.managers.managersCount', { count: writerCount })
               : t('detail.managers.managersCountPlural', { count: writerCount })}
@@ -63,9 +63,9 @@ export function ManagerGroupCard({
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border bg-surface-tertiary/40">
-                    <th className="px-3 py-1.5 text-left text-[11px] font-medium text-text-muted">{t('detail.managers.columns.userId')}</th>
-                    <th className="px-3 py-1.5 text-left text-[11px] font-medium text-text-muted">{t('detail.managers.columns.name')}</th>
-                    <th className="px-3 py-1.5 text-left text-[11px] font-medium text-text-muted">{t('detail.managers.columns.username')}</th>
+                    <th className="px-3 py-1.5 text-left text-2xs font-medium text-text-muted">{t('detail.managers.columns.userId')}</th>
+                    <th className="px-3 py-1.5 text-left text-2xs font-medium text-text-muted">{t('detail.managers.columns.name')}</th>
+                    <th className="px-3 py-1.5 text-left text-2xs font-medium text-text-muted">{t('detail.managers.columns.username')}</th>
                     <th className="px-3 py-1.5 w-10" />
                   </tr>
                 </thead>
@@ -77,8 +77,9 @@ export function ManagerGroupCard({
                       <td className="px-3 py-1.5 text-text-muted">{m.username ? `@${m.username}` : '—'}</td>
                       <td className="px-3 py-1.5 text-right">
                         <button
+                          aria-label={t('common:remove')}
                           onClick={() => onRemove(m.user_id)}
-                          className="text-[11px] text-text-muted hover:text-error transition-colors cursor-pointer"
+                          className="text-text-muted hover:text-error transition-colors cursor-pointer p-2.5"
                         >
                           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                             <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
@@ -105,7 +106,7 @@ export function ManagerGroupCard({
             <button
               onClick={onInlineAdd}
               disabled={adding || !inlineUserId.trim()}
-              className="px-3 py-1.5 bg-accent text-white text-xs rounded-lg disabled:opacity-50 cursor-pointer hover:bg-accent-hover transition-colors shrink-0"
+              className="px-3 py-1.5 bg-accent text-accent-foreground text-xs rounded-lg disabled:opacity-50 cursor-pointer hover:bg-accent-hover transition-colors shrink-0"
             >
               {t('detail.managers.addForm.add')}
             </button>

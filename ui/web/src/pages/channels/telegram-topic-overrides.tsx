@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ export function TelegramTopicOverrides({ topics, onChange }: Props) {
   const { t } = useTranslation("channels");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [newTopicId, setNewTopicId] = useState("");
+  const headingId = useId();
 
   const topicIds = Object.keys(topics);
 
@@ -43,8 +44,8 @@ export function TelegramTopicOverrides({ topics, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-2">
-      <Label className="text-xs font-medium text-muted-foreground">{t("groupOverrides.topicOverrides")}</Label>
+    <div className="space-y-2" role="group" aria-labelledby={headingId}>
+      <Label id={headingId} className="text-xs font-medium text-muted-foreground">{t("groupOverrides.topicOverrides")}</Label>
 
       {topicIds.map((id) => (
         <div key={id} className="rounded-md border border-dashed p-2 space-y-2">
@@ -62,6 +63,7 @@ export function TelegramTopicOverrides({ topics, onChange }: Props) {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+              aria-label={t("common:remove")}
               onClick={() => removeTopic(id)}
             >
               <Trash2 className="h-3.5 w-3.5" />

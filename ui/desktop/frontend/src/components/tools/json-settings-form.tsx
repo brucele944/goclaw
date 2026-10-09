@@ -65,7 +65,7 @@ export function JsonSettingsForm({ tool, onSave, onClose }: JsonSettingsFormProp
         />
         <div className="flex items-center justify-between mt-1 min-h-[20px]">
           {error ? <span className="text-xs text-error">{error}</span> : <span />}
-          <button type="button" onClick={handleFormat} className="text-[11px] text-accent hover:text-accent-hover transition-colors">
+          <button type="button" onClick={handleFormat} className="text-2xs text-accent hover:text-accent-hover transition-colors">
             {t('builtin.jsonDialog.formatJson')}
           </button>
         </div>
@@ -75,7 +75,7 @@ export function JsonSettingsForm({ tool, onSave, onClose }: JsonSettingsFormProp
         <button type="button" onClick={onClose} className="border border-border rounded-lg px-4 py-1.5 text-sm text-text-secondary hover:bg-surface-tertiary transition-colors">
           {t('builtin.jsonDialog.cancel')}
         </button>
-        <button type="button" onClick={handleSave} disabled={!!error || saving} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
+        <button type="button" onClick={handleSave} disabled={!!error || saving} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-accent-foreground hover:bg-accent-hover disabled:opacity-50 transition-colors">
           {saving ? t('builtin.jsonDialog.saving') : t('builtin.jsonDialog.save')}
         </button>
       </div>

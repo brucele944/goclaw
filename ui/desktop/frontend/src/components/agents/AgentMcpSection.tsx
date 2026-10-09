@@ -70,7 +70,7 @@ export function AgentMcpSection({ agentId }: AgentMcpSectionProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text-primary">{t('title')}</h3>
         {!loading && servers.length > 0 && (
-          <span className="text-[11px] text-text-muted">
+          <span className="text-2xs text-text-muted">
             {t('grants.currentGrants')}: {grantedCount}/{servers.length}
           </span>
         )}
@@ -99,7 +99,7 @@ export function AgentMcpSection({ agentId }: AgentMcpSectionProps) {
                   <span className="text-xs font-medium text-text-primary truncate">
                     {server.display_name || server.name}
                   </span>
-                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                  <span className={`rounded-full px-1.5 py-0.5 text-2xs font-medium ${
                     server.transport === 'sse'
                       ? 'bg-surface-tertiary text-text-secondary'
                       : 'border border-border text-text-muted'
@@ -107,7 +107,7 @@ export function AgentMcpSection({ agentId }: AgentMcpSectionProps) {
                     {server.transport.toUpperCase()}
                   </span>
                 </div>
-                <p className="text-[11px] text-text-muted font-mono ml-5">mcp_{server.name}</p>
+                <p className="text-2xs text-text-muted font-mono ml-5">mcp_{server.name}</p>
               </div>
               <Switch
                 checked={grantedIds.has(server.id)}

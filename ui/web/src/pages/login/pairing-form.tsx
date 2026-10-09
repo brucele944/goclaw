@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Methods, PROTOCOL_VERSION } from "@/api/protocol";
@@ -24,7 +25,7 @@ export function PairingForm({ onApproved }: PairingFormProps) {
   const wsRef = useRef<WebSocket | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { register, handleSubmit, watch } = useForm<PairingFormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<PairingFormData>({
     resolver: zodResolver(pairingFormSchema),
     defaultValues: { userId: "" },
   });
@@ -155,7 +156,7 @@ export function PairingForm({ onApproved }: PairingFormProps) {
   // Approved
   if (status === "approved") {
     return (
-      <p className="text-center text-sm text-green-600">
+      <p className="text-center text-sm text-success-text">
         {t("pairing.approved")}
       </p>
     );
@@ -165,7 +166,7 @@ export function PairingForm({ onApproved }: PairingFormProps) {
   return (
     <form onSubmit={handleSubmit(onValid)} className="space-y-4">
       {error && (
-        <p className="text-center text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-center text-sm text-destructive">{error}</p>
       )}
 
       <div className="space-y-2">
@@ -175,24 +176,28 @@ export function PairingForm({ onApproved }: PairingFormProps) {
         <Input
           id="pairingUserId"
           type="text"
+          autoComplete="username"
           {...register("userId")}
           placeholder={t("pairing.userIdPlaceholder")}
           className="text-base md:text-sm"
+          aria-invalid={errors.userId ? true : undefined}
+          aria-describedby={errors.userId ? "pairingUserId-error" : undefined}
           autoFocus
         />
+        {errors.userId && (
+          <p id="pairingUserId-error" role="alert" className="text-xs text-destructive">
+            {errors.userId.message}
+          </p>
+        )}
       </div>
 
       <p className="text-xs text-muted-foreground">
         {t("pairing.noTokenNeeded")}
       </p>
 
-      <button
-        type="submit"
-        disabled={status === "connecting"}
-        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-      >
+      <Button type="submit" className="w-full" disabled={status === "connecting"}>
         {status === "connecting" ? t("pairing.connecting") : t("pairing.requestAccess")}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -230,17 +235,13 @@ function PairingCodeDisplay({
       </p>
 
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-warning" />
         {t("pairing.waitingForApproval")}
       </div>
 
-      <button
-        type="button"
-        onClick={onCancel}
-        className="inline-flex h-9 w-full items-center justify-center rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
-      >
+      <Button type="button" variant="outline" className="w-full" onClick={onCancel}>
         {t("pairing.cancel")}
-      </button>
+      </Button>
     </div>
   );
 }

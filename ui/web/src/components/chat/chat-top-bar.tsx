@@ -71,7 +71,7 @@ export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, on
     const max = session.contextWindow;
     const percent = Math.min(100, Math.round((used / max) * 100));
     const color =
-      percent >= 90 ? "text-destructive" : percent >= 75 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground";
+      percent >= 90 ? "text-destructive" : percent >= 75 ? "text-warning-text" : "text-muted-foreground";
     return { used, max, percent, color };
   })();
 
@@ -106,7 +106,7 @@ export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, on
         )}
         {usage && (
           <div
-            className={`hidden sm:flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] ${usage.color}`}
+            className={`hidden sm:flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs ${usage.color}`}
             title={t("contextUsage.tooltip", {
               used: usage.used.toLocaleString(),
               max: usage.max.toLocaleString(),

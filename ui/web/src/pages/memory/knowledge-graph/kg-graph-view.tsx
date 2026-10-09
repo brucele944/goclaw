@@ -2,7 +2,8 @@ import { useRef, useMemo, useState, useCallback } from "react";
 import type Sigma from "sigma";
 import { useTranslation } from "react-i18next";
 import type { KGEntity, KGRelation } from "@/types/knowledge-graph";
-import { buildKGGraph, limitEntitiesByDegree, KG_TYPE_COLORS } from "@/adapters/kg-graph.adapter";
+import { buildKGGraph, limitEntitiesByDegree, kgTypeColors } from "@/adapters/kg-graph.adapter";
+import { useUiStore } from "@/stores/use-ui-store";
 import { SigmaGraphContainer } from "@/components/graph/sigma-graph-container";
 import { SigmaGraphControls } from "@/components/graph/sigma-graph-controls";
 import { SigmaGraphSearch } from "@/components/graph/sigma-graph-search";
@@ -31,6 +32,12 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Theme-aware node colors — derive from store, not DOM class (avoids stale reads)
+  const theme = useUiStore((s) => s.theme);
+  const isDark = theme === "dark" || (theme === "system"
+    && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const typeColors = useMemo(() => kgTypeColors(isDark), [isDark]);
+
   const totalCount = allEntities.length;
   const isLimited = totalCount > nodeLimit;
   const entities = useMemo(
@@ -38,7 +45,7 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
     [allEntities, allRelations, nodeLimit],
   );
   const entityMap = useMemo(() => new Map(entities.map((e) => [e.id, e])), [entities]);
-  const graph = useMemo(() => buildKGGraph(entities, allRelations), [entities, allRelations]);
+  const graph = useMemo(() => buildKGGraph(entities, allRelations, isDark), [entities, allRelations, isDark]);
 
   const handleNodeDoubleClick = useCallback((nodeId: string) => {
     const entity = entityMap.get(nodeId);
@@ -86,7 +93,7 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
       ref={containerRef}
       tabIndex={0}
       role="application"
-      aria-label={`Knowledge graph with ${totalCount} entities and ${allRelations.length} relations`}
+      aria-label={t("kg.graphView.ariaLabel", { entities: totalCount, relations: allRelations.length })}
       className="flex h-full flex-col rounded-md border overflow-hidden bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       {/* Top bar — responsive: legend stacks on mobile */}
@@ -94,7 +101,7 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-1 border-b shrink-0">
           {/* KG type legend */}
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground flex-1 min-w-0">
-            {Object.entries(KG_TYPE_COLORS).map(([type, color]) => (
+            {Object.entries(typeColors).map(([type, color]) => (
               <span key={type} className="flex items-center gap-1">
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
                 {type}
@@ -110,7 +117,7 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
             />
             <SigmaGraphFilters
               graph={graph}
-              typeColors={KG_TYPE_COLORS}
+              typeColors={typeColors}
               hiddenTypes={hiddenTypes}
               onHiddenTypesChange={setHiddenTypes}
               collapsed={!filtersOpen}
@@ -139,7 +146,7 @@ export function KGGraphView({ entities: allEntities, relations: allRelations, on
               hiddenTypes={hiddenTypes}
             />
             <div className="absolute bottom-2 right-2 z-10 hidden sm:block">
-              <SigmaGraphMinimap sigma={sigma} graph={graph} size={120} />
+              <SigmaGraphMinimap sigma={sigma} graph={graph} size={120} isDark={isDark} />
             </div>
           </>
         )}

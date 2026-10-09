@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +25,7 @@ export function InboundDebounceSection({
   onDebounceMsChange,
 }: InboundDebounceSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.inboundDebounce";
   return (
     <section className="space-y-3">
@@ -34,9 +36,9 @@ export function InboundDebounceSection({
       <div className="rounded-lg border p-3 space-y-4 sm:p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.modeTip`)}>{t(`${s}.mode`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-mode`} tip={t(`${s}.modeTip`)}>{t(`${s}.mode`)}</InfoLabel>
             <Select value={mode} onValueChange={(value) => onModeChange(value as InboundDebounceOverrideMode)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`${uid}-mode`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -46,8 +48,9 @@ export function InboundDebounceSection({
             </Select>
           </div>
           <div className="space-y-2">
-            <InfoLabel tip={t(`${s}.debounceMsTip`)}>{t(`${s}.debounceMs`)}</InfoLabel>
+            <InfoLabel htmlFor={`${uid}-debounceMs`} tip={t(`${s}.debounceMsTip`)}>{t(`${s}.debounceMs`)}</InfoLabel>
             <Input
+              id={`${uid}-debounceMs`}
               type="number"
               min={0}
               value={debounceMs}

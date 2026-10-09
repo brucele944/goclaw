@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export function ThinkingSection({
   onExpertModeChange,
 }: ThinkingSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.thinking";
   const supported = new Set(capability?.levels ?? []);
   const expertAvailable = Boolean(capability?.levels?.length);
@@ -126,7 +128,7 @@ export function ThinkingSection({
 
       {showCustomControls ? (
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.thinkingLevelTip`)}>
+          <InfoLabel htmlFor={`${uid}-thinkingLevel`} tip={t(`${s}.thinkingLevelTip`)}>
             {t(`${s}.thinkingLevel`)}
           </InfoLabel>
           <Select
@@ -136,7 +138,7 @@ export function ThinkingSection({
               onReasoningEffortChange(value);
             }}
           >
-            <SelectTrigger className="w-56">
+            <SelectTrigger id={`${uid}-thinkingLevel`} className="w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -198,14 +200,14 @@ export function ThinkingSection({
         {expertAvailable && expertMode && showCustomControls ? (
           <div className="mt-4 space-y-3 border-t pt-3">
             <div className="space-y-2">
-              <InfoLabel tip={t(`${s}.requestedEffortTip`)}>
+              <InfoLabel htmlFor={`${uid}-requestedEffort`} tip={t(`${s}.requestedEffortTip`)}>
                 {t(`${s}.requestedEffort`)}
               </InfoLabel>
               <Select
                 value={currentEffort}
                 onValueChange={onReasoningEffortChange}
               >
-                <SelectTrigger className="w-full sm:w-72">
+                <SelectTrigger id={`${uid}-requestedEffort`} className="w-full sm:w-72">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,14 +226,14 @@ export function ThinkingSection({
             </div>
 
             <div className="space-y-2">
-              <InfoLabel tip={t(`${s}.fallbackBehaviorTip`)}>
+              <InfoLabel htmlFor={`${uid}-fallbackBehavior`} tip={t(`${s}.fallbackBehaviorTip`)}>
                 {t(`${s}.fallbackBehavior`)}
               </InfoLabel>
               <Select
                 value={reasoningFallback}
                 onValueChange={onReasoningFallbackChange}
               >
-                <SelectTrigger className="w-full sm:w-72">
+                <SelectTrigger id={`${uid}-fallbackBehavior`} className="w-full sm:w-72">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

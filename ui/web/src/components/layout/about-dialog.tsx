@@ -60,7 +60,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
             <img src={branding.logoUrl} alt={branding.appName} className="h-7 w-7" />
             {t("about.title")}
             {updateAvailable && latestVersion && (
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+              <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs font-medium text-warning-text">
                 {latestVersion}
               </span>
             )}
@@ -74,7 +74,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
             <div className="flex items-center gap-2">
               <span className="font-medium">{version}</span>
               {!updateAvailable && latestVersion && (
-                <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs text-green-600 dark:text-green-400">
+                <span className="rounded-full bg-success-subtle px-2 py-0.5 text-xs text-success-text">
                   {t("about.upToDate")}
                 </span>
               )}

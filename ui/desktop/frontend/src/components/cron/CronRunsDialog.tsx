@@ -53,8 +53,9 @@ export function CronRunsDialog({ open, onOpenChange, job, onFetchRuns }: CronRun
             {t('runLog.title', { name: job.name })}
           </span>
           <button
+            aria-label={t('common:close')}
             onClick={() => onOpenChange(false)}
-            className="p-1 text-text-muted hover:text-text-primary transition-colors"
+            className="p-2 text-text-muted hover:text-text-primary transition-colors"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
@@ -94,11 +95,11 @@ export function CronRunsDialog({ open, onOpenChange, job, onFetchRuns }: CronRun
                         {new Date(run.ts).toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(run.status)}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-2xs font-medium ${statusBadge(run.status)}`}>
                           {run.status}
                         </span>
                         {run.error && (
-                          <p className="text-[10px] text-error mt-0.5 max-w-[120px] truncate" title={run.error}>
+                          <p className="text-2xs text-error mt-0.5 max-w-[120px] truncate" title={run.error}>
                             {run.error}
                           </p>
                         )}

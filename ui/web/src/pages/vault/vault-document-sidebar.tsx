@@ -5,6 +5,7 @@ import {
   FileText, Brain, StickyNote, Sparkles, Clock, Image, FileType,
 } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
+import { getClickableProps } from "@/hooks/use-clickable";
 import type { TreeNode } from "@/lib/file-helpers";
 import type { VaultDocument, VaultSearchResult } from "@/types/vault";
 import { VaultTree } from "./components/vault-tree";
@@ -12,13 +13,13 @@ import type { VaultTreeEntry } from "./hooks/use-vault-tree";
 import { useVaultSearchAll } from "./hooks/use-vault";
 
 const DOC_TYPE_CONFIG: Record<string, { color: string; bg: string; icon: typeof FileText; dotColor: string }> = {
-  context:  { color: "text-blue-600 dark:text-blue-400",    bg: "bg-blue-500/10",    icon: FileText, dotColor: "bg-blue-500" },
+  context:  { color: "text-info-text",    bg: "bg-info-subtle",    icon: FileText, dotColor: "bg-blue-500" },
   memory:   { color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-500/10",  icon: Brain,    dotColor: "bg-purple-500" },
-  note:     { color: "text-amber-600 dark:text-amber-400",   bg: "bg-amber-500/10",   icon: StickyNote, dotColor: "bg-amber-500" },
-  skill:    { color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10", icon: Sparkles, dotColor: "bg-emerald-500" },
-  episodic: { color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-500/10",  icon: Clock,    dotColor: "bg-orange-500" },
-  media:    { color: "text-rose-600 dark:text-rose-400",     bg: "bg-rose-500/10",    icon: Image,    dotColor: "bg-rose-500" },
-  document: { color: "text-cyan-600 dark:text-cyan-400",     bg: "bg-cyan-500/10",    icon: FileType, dotColor: "bg-cyan-500" },
+  note:     { color: "text-warning-text",   bg: "bg-warning-subtle",   icon: StickyNote, dotColor: "bg-warning" },
+  skill:    { color: "text-success-text", bg: "bg-success-subtle", icon: Sparkles, dotColor: "bg-success" },
+  episodic: { color: "text-warning-text", bg: "bg-warning-subtle",  icon: Clock,    dotColor: "bg-orange-500" },
+  media:    { color: "text-destructive-text",     bg: "bg-destructive-subtle",    icon: Image,    dotColor: "bg-rose-500" },
+  document: { color: "text-info-text",     bg: "bg-info-subtle",    icon: FileType, dotColor: "bg-cyan-500" },
 };
 const DEFAULT_CONFIG = { color: "text-muted-foreground", bg: "bg-muted", icon: FileText, dotColor: "bg-muted-foreground" };
 const DOC_TYPES = ["context", "memory", "note", "skill", "episodic", "media", "document"] as const;
@@ -41,7 +42,7 @@ function SearchResultCard({ doc, onClick }: { doc: VaultDocument; onClick: () =>
   const cfg = DOC_TYPE_CONFIG[doc.doc_type] ?? DEFAULT_CONFIG;
   const Icon = cfg.icon;
   return (
-    <div className="mx-1.5 my-0.5 flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-muted/60" onClick={onClick}>
+    <div className="mx-1.5 my-0.5 flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" {...getClickableProps(onClick)}>
       <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${cfg.bg}`}>
         <Icon className={`h-3 w-3 ${cfg.color}`} />
       </div>
@@ -127,7 +128,7 @@ export function VaultDocumentSidebar({
             placeholder={t("searchPlaceholder")}
             className="w-full rounded-md border bg-background pl-7 pr-7 py-1 text-base md:text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
           {query && (
-            <button onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <button onClick={clearSearch} aria-label={t("clearSearch")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               <X className="h-3 w-3" />
             </button>
           )}

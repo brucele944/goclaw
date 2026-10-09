@@ -82,7 +82,7 @@ export function CompactRequestCard({ request, index }: CompactRequestCardProps) 
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <div
             className={cn(
-              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-semibold tabular-nums",
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums",
               "xl:h-6 xl:w-6 xl:text-2xs",
               accent.index,
             )}

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Select,
@@ -20,6 +21,7 @@ interface ToolPolicySectionProps {
 
 export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPolicySectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.toolPolicy";
 
   const updateWaitLimit = (field: "min_ms" | "max_ms", raw: string) => {
@@ -46,12 +48,12 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       onToggle={onToggle}
     >
       <div className="space-y-2">
-        <InfoLabel tip="Base tool profile. 'full' allows all tools, 'coding' includes filesystem/runtime/sessions/memory, 'messaging' includes messaging/sessions, 'minimal' allows only session_status.">{t(`${s}.profile`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-profile`} tip="Base tool profile. 'full' allows all tools, 'coding' includes filesystem/runtime/sessions/memory, 'messaging' includes messaging/sessions, 'minimal' allows only session_status.">{t(`${s}.profile`)}</InfoLabel>
         <Select
           value={value.profile ?? ""}
           onValueChange={(v) => onChange({ ...value, profile: v || undefined })}
         >
-          <SelectTrigger><SelectValue placeholder="full" /></SelectTrigger>
+          <SelectTrigger id={`${uid}-profile`}><SelectValue placeholder="full" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="full">full</SelectItem>
             <SelectItem value="coding">coding</SelectItem>
@@ -61,8 +63,9 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
         </Select>
       </div>
       <div className="space-y-2">
-        <InfoLabel tip="Strip prefix from tool call names returned by the model before registry lookup. Example: 'proxy_' strips prefix so 'proxy_exec' resolves to 'exec'. Supports {tool_name} placeholder.">{t(`${s}.toolCallPrefix`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-toolCallPrefix`} tip="Strip prefix from tool call names returned by the model before registry lookup. Example: 'proxy_' strips prefix so 'proxy_exec' resolves to 'exec'. Supports {tool_name} placeholder.">{t(`${s}.toolCallPrefix`)}</InfoLabel>
         <Input
+          id={`${uid}-toolCallPrefix`}
           value={value.toolCallPrefix ?? ""}
           onChange={(e) => onChange({ ...value, toolCallPrefix: e.target.value.replace(/[^a-z0-9_{}/]/g, "") || undefined })}
           placeholder="e.g. proxy_"
@@ -72,7 +75,7 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       </div>
       <div className="space-y-2">
         <InfoLabel tip="Optional per-agent wait tool bounds in milliseconds. Values are clamped by server safety limits: 100ms to 300000ms.">{t(`${s}.waitLimits`)}</InfoLabel>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div role="group" aria-label={t(`${s}.waitLimits`)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Input
             type="number"
             min={100}
@@ -97,24 +100,27 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
         <p className="text-xs text-muted-foreground">{t(`${s}.waitLimitsHint`)}</p>
       </div>
       <div className="space-y-2">
-        <InfoLabel tip="Explicit allowlist. Only these tools will be available (overrides profile). Leave empty to use profile defaults.">{t(`${s}.allow`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-allow`} tip="Explicit allowlist. Only these tools will be available (overrides profile). Leave empty to use profile defaults.">{t(`${s}.allow`)}</InfoLabel>
         <ToolNameSelect
+          id={`${uid}-allow`}
           value={value.allow ?? []}
           onChange={(v) => onChange({ ...value, allow: v.length > 0 ? v : undefined })}
           placeholder={t(`${s}.selectToolsAllow`)}
         />
       </div>
       <div className="space-y-2">
-        <InfoLabel tip="Denylist. These tools will be blocked even if allowed by the profile.">{t(`${s}.deny`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-deny`} tip="Denylist. These tools will be blocked even if allowed by the profile.">{t(`${s}.deny`)}</InfoLabel>
         <ToolNameSelect
+          id={`${uid}-deny`}
           value={value.deny ?? []}
           onChange={(v) => onChange({ ...value, deny: v.length > 0 ? v : undefined })}
           placeholder={t(`${s}.selectToolsDeny`)}
         />
       </div>
       <div className="space-y-2">
-        <InfoLabel tip="Additional tools on top of profile defaults. Useful for enabling optional tools without overriding the whole profile.">{t(`${s}.alsoAllow`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-alsoAllow`} tip="Additional tools on top of profile defaults. Useful for enabling optional tools without overriding the whole profile.">{t(`${s}.alsoAllow`)}</InfoLabel>
         <ToolNameSelect
+          id={`${uid}-alsoAllow`}
           value={value.alsoAllow ?? []}
           onChange={(v) => onChange({ ...value, alsoAllow: v.length > 0 ? v : undefined })}
           placeholder={t(`${s}.selectToolsAlsoAllow`)}

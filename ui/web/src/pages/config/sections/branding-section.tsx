@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Image, Save, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ const ASSET_FIELDS: Array<{ key: BrandingAssetField; labelKey: string; tipKey: s
 
 export function BrandingSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const http = useHttp();
   const [draft, setDraft] = useState<BrandingData>(() => normalizeBrandingDraft(data));
   const [dirty, setDirty] = useState(false);
@@ -174,9 +175,10 @@ export function BrandingSection({ data, onSave, saving }: Props) {
             const current = draft[field.key] ?? "";
             return (
               <div key={field.key} className="grid gap-1.5">
-                <InfoLabel tip={t(field.tipKey)}>{t(field.labelKey)}</InfoLabel>
+                <InfoLabel tip={t(field.tipKey)} htmlFor={`${uid}-${field.key}`}>{t(field.labelKey)}</InfoLabel>
                 <div className="flex gap-2">
                   <Input
+                    id={`${uid}-${field.key}`}
                     value={current}
                     onChange={(event) => update({ [field.key]: event.target.value })}
                     placeholder={field.placeholder}
@@ -193,6 +195,7 @@ export function BrandingSection({ data, onSave, saving }: Props) {
                     variant="outline"
                     size="icon"
                     title={t("branding.upload")}
+                    aria-label={t("branding.upload")}
                     disabled={uploadingField !== null}
                     onClick={() => inputRefs.current[field.key]?.click()}
                   >
@@ -235,10 +238,11 @@ function TextField({
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const uid = useId();
   return (
     <div className="grid gap-1.5">
-      <InfoLabel tip={tip}>{label}</InfoLabel>
-      <Input value={value ?? ""} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      <InfoLabel tip={tip} htmlFor={uid}>{label}</InfoLabel>
+      <Input id={uid} value={value ?? ""} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </div>
   );
 }

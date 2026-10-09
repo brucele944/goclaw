@@ -19,6 +19,7 @@
   },
   "deleteChat": "删除对话",
   "deleteChatConfirm": "此操作将永久删除此对话及其所有消息。",
+  "dropFilesHere": "将文件拖放到此处",
   "newChat": "新建对话",
   "openSessions": "打开Session",
   "readOnly": "只读 — 此Session属于其他用户",
@@ -40,5 +41,8 @@
   },
   "turnModel": {
     "tooltip": "由 {{model}} 回答"
-  }
+  },
+  "runningTasks": "运行中的任务",
+  "runningTasksCount": "运行中的任务 ({{count}})",
+  "noActiveTasks": "没有正在运行的任务"
 }

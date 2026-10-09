@@ -14,11 +14,11 @@ export function SkillHealthSummary({ stats, activeFilter, onFilterChange }: Skil
   const { t } = useTranslation("skills");
   const items: Array<{ filter: SkillsFilter; label: string; value: number; icon: typeof Box; tone?: string }> = [
     { filter: "all", label: t("health.total"), value: stats.total, icon: Box },
-    { filter: "attention", label: t("health.attention"), value: stats.attention, icon: AlertTriangle, tone: "text-amber-700" },
-    { filter: "missing-deps", label: t("health.missingDeps"), value: stats.missingDeps, icon: PackageX, tone: "text-amber-700" },
-    { filter: "disabled", label: t("health.disabled"), value: stats.disabled, icon: CircleOff, tone: "text-red-700" },
+    { filter: "attention", label: t("health.attention"), value: stats.attention, icon: AlertTriangle, tone: "text-warning-text" },
+    { filter: "missing-deps", label: t("health.missingDeps"), value: stats.missingDeps, icon: PackageX, tone: "text-warning-text" },
+    { filter: "disabled", label: t("health.disabled"), value: stats.disabled, icon: CircleOff, tone: "text-destructive-text" },
     { filter: "archived", label: t("health.archived"), value: stats.archived, icon: Archive, tone: "text-muted-foreground" },
-    { filter: "unmanaged", label: t("health.unmanaged"), value: stats.unmanaged, icon: ShieldAlert, tone: "text-orange-700" },
+    { filter: "unmanaged", label: t("health.unmanaged"), value: stats.unmanaged, icon: ShieldAlert, tone: "text-warning-text" },
   ];
 
   return (

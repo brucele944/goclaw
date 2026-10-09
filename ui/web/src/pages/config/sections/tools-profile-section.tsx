@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ interface Props {
 
 export function ToolsProfileSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ToolsData>(data ?? {});
   const [dirty, setDirty] = useState(false);
 
@@ -55,9 +56,9 @@ export function ToolsProfileSection({ data, onSave, saving }: Props) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.profileTip")}>{t("tools.profile")}</InfoLabel>
+            <InfoLabel tip={t("tools.profileTip")} htmlFor={`${uid}-profile`}>{t("tools.profile")}</InfoLabel>
             <Select value={draft.profile ?? ""} onValueChange={(v) => update({ profile: v })}>
-              <SelectTrigger>
+              <SelectTrigger id={`${uid}-profile`}>
                 <SelectValue placeholder={t("tools.profilePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
@@ -69,8 +70,9 @@ export function ToolsProfileSection({ data, onSave, saving }: Props) {
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.rateLimitPerHourTip")}>{t("tools.rateLimitPerHour")}</InfoLabel>
+            <InfoLabel tip={t("tools.rateLimitPerHourTip")} htmlFor={`${uid}-rate-limit`}>{t("tools.rateLimitPerHour")}</InfoLabel>
             <Input
+              id={`${uid}-rate-limit`}
               type="number"
               value={draft.rate_limit_per_hour ?? ""}
               onChange={(e) => update({ rate_limit_per_hour: Number(e.target.value) })}
@@ -82,24 +84,27 @@ export function ToolsProfileSection({ data, onSave, saving }: Props) {
 
         <div className="space-y-4">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.allowTip")}>{t("tools.allow")}</InfoLabel>
+            <InfoLabel tip={t("tools.allowTip")} htmlFor={`${uid}-allow`}>{t("tools.allow")}</InfoLabel>
             <ToolNameSelect
+              id={`${uid}-allow`}
               value={draft.allow ?? []}
               onChange={(v) => update({ allow: v })}
               placeholder={t("tools.allowPlaceholder")}
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.denyTip")}>{t("tools.deny")}</InfoLabel>
+            <InfoLabel tip={t("tools.denyTip")} htmlFor={`${uid}-deny`}>{t("tools.deny")}</InfoLabel>
             <ToolNameSelect
+              id={`${uid}-deny`}
               value={draft.deny ?? []}
               onChange={(v) => update({ deny: v })}
               placeholder={t("tools.denyPlaceholder")}
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("tools.alsoAllowTip")}>{t("tools.alsoAllow")}</InfoLabel>
+            <InfoLabel tip={t("tools.alsoAllowTip")} htmlFor={`${uid}-also-allow`}>{t("tools.alsoAllow")}</InfoLabel>
             <ToolNameSelect
+              id={`${uid}-also-allow`}
               value={draft.alsoAllow ?? []}
               onChange={(v) => update({ alsoAllow: v })}
               placeholder={t("tools.alsoAllowPlaceholder")}

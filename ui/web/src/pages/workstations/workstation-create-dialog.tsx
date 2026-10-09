@@ -143,9 +143,9 @@ export function WorkstationCreateDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>{t("createDialog.backendLabel")}</Label>
+              <Label htmlFor="ws-backend">{t("createDialog.backendLabel")}</Label>
               <Select value={backend} onValueChange={(v) => setBackend(v as WorkstationBackendType)}>
-                <SelectTrigger className="text-base md:text-sm">
+                <SelectTrigger id="ws-backend" className="text-base md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,9 +192,9 @@ export function WorkstationCreateDialog({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t("createDialog.authMethodLabel")}</Label>
+                  <Label htmlFor="ws-auth-method">{t("createDialog.authMethodLabel")}</Label>
                   <Select value={authMethod} onValueChange={(v) => setAuthMethod(v as SshAuthMethod)}>
-                    <SelectTrigger className="text-base md:text-sm">
+                    <SelectTrigger id="ws-auth-method" className="text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,11 +25,13 @@ interface QuotaWindowInputsProps {
 
 export function QuotaWindowInputs({ value, onChange }: QuotaWindowInputsProps) {
   const { t } = useTranslation("config");
+  const uid = useId();
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div className="grid gap-1.5">
-        <InfoLabel tip={t("quota.hourTip")}>{t("quota.hour")}</InfoLabel>
+        <InfoLabel tip={t("quota.hourTip")} htmlFor={`${uid}-hour`}>{t("quota.hour")}</InfoLabel>
         <Input
+          id={`${uid}-hour`}
           type="number"
           min={0}
           value={value.hour ?? 0}
@@ -36,8 +39,9 @@ export function QuotaWindowInputs({ value, onChange }: QuotaWindowInputsProps) {
         />
       </div>
       <div className="grid gap-1.5">
-        <InfoLabel tip={t("quota.dayTip")}>{t("quota.day")}</InfoLabel>
+        <InfoLabel tip={t("quota.dayTip")} htmlFor={`${uid}-day`}>{t("quota.day")}</InfoLabel>
         <Input
+          id={`${uid}-day`}
           type="number"
           min={0}
           value={value.day ?? 0}
@@ -45,8 +49,9 @@ export function QuotaWindowInputs({ value, onChange }: QuotaWindowInputsProps) {
         />
       </div>
       <div className="grid gap-1.5">
-        <InfoLabel tip={t("quota.weekTip")}>{t("quota.week")}</InfoLabel>
+        <InfoLabel tip={t("quota.weekTip")} htmlFor={`${uid}-week`}>{t("quota.week")}</InfoLabel>
         <Input
+          id={`${uid}-week`}
           type="number"
           min={0}
           value={value.week ?? 0}
@@ -75,6 +80,7 @@ export function OverridesTable({
   options,
 }: OverridesTableProps) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const keys = Object.keys(entries);
   const usedKeys = new Set(keys);
   const availableOptions = options?.filter((o) => !usedKeys.has(o.value));
@@ -105,8 +111,8 @@ export function OverridesTable({
   };
 
   return (
-    <div className="space-y-2">
-      <InfoLabel tip={tip}>{label}</InfoLabel>
+    <div className="space-y-2" role="group" aria-label={label}>
+      <InfoLabel tip={tip} htmlFor={`${uid}-row-0-key`}>{label}</InfoLabel>
       {keys.map((key, i) => (
         <div key={i} className="overflow-x-auto">
           <div className="flex items-end gap-2 min-w-[420px]">
@@ -116,7 +122,7 @@ export function OverridesTable({
               )}
               {options ? (
                 <Select value={key} onValueChange={(v) => updateKey(key, v)}>
-                  <SelectTrigger>
+                  <SelectTrigger id={i === 0 ? `${uid}-row-0-key` : undefined}>
                     <SelectValue placeholder={keyPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -136,6 +142,7 @@ export function OverridesTable({
                 </Select>
               ) : (
                 <Input
+                  id={i === 0 ? `${uid}-row-0-key` : undefined}
                   placeholder={keyPlaceholder}
                   value={key}
                   onChange={(e) => updateKey(key, e.target.value)}
@@ -179,6 +186,7 @@ export function OverridesTable({
               variant="ghost"
               size="icon"
               className="shrink-0"
+              aria-label={t("common:remove")}
               onClick={() => removeRow(key)}
             >
               <Trash2 className="h-4 w-4" />

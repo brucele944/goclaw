@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface McpSettingsFieldsProps {
 /** Renders env vars, OAuth config, tool prefix, timeout, enabled, requireUserCredentials fields. */
 export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
   const { t } = useTranslation("mcp");
+  const uid = useId();
   const { watch, setValue } = form;
   const transport = watch("transport");
   const env = watch("env") as Record<string, string>;
@@ -45,8 +47,8 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
 
   return (
     <>
-      <div className="grid gap-1.5">
-        <Label>{t("form.env")}</Label>
+      <div role="group" aria-labelledby={`${uid}-env`} className="grid gap-1.5">
+        <Label id={`${uid}-env`}>{t("form.env")}</Label>
         <KeyValueEditor
           value={env}
           onChange={(v) => setValue("env", v, { shouldDirty: true, shouldValidate: true })}
@@ -96,12 +98,12 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
                 <>
                   {/* Grant type */}
                   <div className="grid gap-1.5">
-                    <Label>{t("form.oauth.grantType")}</Label>
+                    <Label htmlFor={`${uid}-oauth-grant-type`}>{t("form.oauth.grantType")}</Label>
                     <Select
                       value={oauthGrantType}
                       onValueChange={(v) => setValue("oauthGrantType", v as MCPFormData["oauthGrantType"])}
                     >
-                      <SelectTrigger className="text-base md:text-sm">
+                      <SelectTrigger id={`${uid}-oauth-grant-type`} className="text-base md:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -115,8 +117,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
                   {/* Authorization URL — for auth code flows (pkce and authorization_code) */}
                   {oauthGrantType !== "client_credentials" && (
                     <div className="grid gap-1.5">
-                      <Label>{t("form.oauth.authEndpoint")}</Label>
+                      <Label htmlFor={`${uid}-oauth-auth-endpoint`}>{t("form.oauth.authEndpoint")}</Label>
                       <Input
+                        id={`${uid}-oauth-auth-endpoint`}
                         value={watch("oauthAuthEndpoint")}
                         onChange={(e) => setValue("oauthAuthEndpoint", e.target.value)}
                         placeholder={t("form.oauth.authEndpointPlaceholder")}
@@ -127,8 +130,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
 
                   {/* Token URL */}
                   <div className="grid gap-1.5">
-                    <Label>{t("form.oauth.tokenEndpoint")}</Label>
+                    <Label htmlFor={`${uid}-oauth-token-endpoint`}>{t("form.oauth.tokenEndpoint")}</Label>
                     <Input
+                      id={`${uid}-oauth-token-endpoint`}
                       value={watch("oauthTokenEndpoint")}
                       onChange={(e) => setValue("oauthTokenEndpoint", e.target.value)}
                       placeholder={t("form.oauth.tokenEndpointPlaceholder")}
@@ -138,8 +142,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
 
                   {/* Client ID */}
                   <div className="grid gap-1.5">
-                    <Label>{t("form.oauth.clientId")}</Label>
+                    <Label htmlFor={`${uid}-oauth-client-id`}>{t("form.oauth.clientId")}</Label>
                     <Input
+                      id={`${uid}-oauth-client-id`}
                       autoComplete="off"
                       value={watch("oauthClientId")}
                       onChange={(e) => setValue("oauthClientId", e.target.value)}
@@ -151,8 +156,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
                   {/* Client Secret — not needed for PKCE (public client) */}
                   {oauthGrantType !== "pkce" && (
                     <div className="grid gap-1.5">
-                      <Label>{t("form.oauth.clientSecret")}</Label>
+                      <Label htmlFor={`${uid}-oauth-client-secret`}>{t("form.oauth.clientSecret")}</Label>
                       <Input
+                        id={`${uid}-oauth-client-secret`}
                         type="password"
                         autoComplete="new-password"
                         value={watch("oauthClientSecret")}
@@ -165,8 +171,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
 
                   {/* Scopes */}
                   <div className="grid gap-1.5">
-                    <Label>{t("form.oauth.scope")}</Label>
+                    <Label htmlFor={`${uid}-oauth-scope`}>{t("form.oauth.scope")}</Label>
                     <Input
+                      id={`${uid}-oauth-scope`}
                       value={watch("oauthScope")}
                       onChange={(e) => setValue("oauthScope", e.target.value)}
                       placeholder={t("form.oauth.scopePlaceholder")}
@@ -186,9 +193,9 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
       )}
 
       {/* Admin-authored hints appended to MCP tool descriptions. */}
-      <div className="grid gap-3 rounded-md border border-dashed border-border p-3">
+      <div role="group" aria-labelledby={`${uid}-tool-hints`} className="grid gap-3 rounded-md border border-dashed border-border p-3">
         <div className="grid gap-1">
-          <Label className="text-sm font-medium">{t("form.toolHints")}</Label>
+          <Label id={`${uid}-tool-hints`} className="text-sm font-medium">{t("form.toolHints")}</Label>
           <p className="text-xs text-muted-foreground">{t("form.toolHintsHint")}</p>
         </div>
 
@@ -207,8 +214,8 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
           <p className="text-xs text-muted-foreground">{t("form.toolHintsGlobalHint")}</p>
         </div>
 
-        <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">{t("form.toolHintsPerTool")}</Label>
+        <div role="group" aria-labelledby={`${uid}-tool-hints-per-tool`} className="grid gap-1.5">
+          <Label id={`${uid}-tool-hints-per-tool`} className="text-xs text-muted-foreground">{t("form.toolHintsPerTool")}</Label>
           <KeyValueEditor
             value={toolHintsTools}
             onChange={(v) => setValue("toolHintsTools", v)}
@@ -223,7 +230,7 @@ export function McpSettingsFields({ form, isEditing }: McpSettingsFieldsProps) {
       <div className="grid gap-1.5">
         <Label htmlFor="mcp-prefix">{t("form.toolPrefix")}</Label>
         <div className="flex">
-          <span className="inline-flex items-center px-2.5 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm font-mono">
+          <span className="inline-flex items-center px-2.5 rounded-l-md border border-r-0 border-control-border bg-muted text-muted-foreground text-sm font-mono">
             mcp_
           </span>
           <Input

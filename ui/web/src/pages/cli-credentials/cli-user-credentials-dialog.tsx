@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import {
@@ -64,6 +64,8 @@ function envPayloadFromEntries(entries: ManualEnvEntry[]): CLIEnvPayload {
 export function CLIUserCredentialsDialog({ open, onOpenChange, binary }: CLIUserCredentialsDialogProps) {
   const { t } = useTranslation("cli-credentials");
   const http = useHttp();
+  const userPickerId = useId();
+  const envLabelId = useId();
 
   const [view, setView] = useState<ViewState>("list");
   const [entries, setEntries] = useState<UserCredEntry[]>([]);
@@ -384,8 +386,9 @@ export function CLIUserCredentialsDialog({ open, onOpenChange, binary }: CLIUser
           <>
             <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
               <div className="flex flex-col gap-1.5">
-                <Label>{t("userCredentials.userId")}</Label>
+                <Label htmlFor={userPickerId}>{t("userCredentials.userId")}</Label>
                 <UserPickerCombobox
+                  id={userPickerId}
                   value={userSearchText}
                   onChange={setUserSearchText}
                   onSelect={(val) => { setUserId(val); setUserSearchText(val); }}
@@ -393,7 +396,7 @@ export function CLIUserCredentialsDialog({ open, onOpenChange, binary }: CLIUser
                   source="tenant_user"
                   allowCustom
                 />
-                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-md px-2.5 py-1.5 border border-amber-200 dark:border-amber-800">{t("userCredentials.mergeHint")}</p>
+                <p className="text-xs text-warning-text bg-warning-subtle rounded-md px-2.5 py-1.5 border border-warning/25">{t("userCredentials.mergeHint")}</p>
               </div>
 
               {isGit ? (
@@ -412,8 +415,8 @@ export function CLIUserCredentialsDialog({ open, onOpenChange, binary }: CLIUser
               ) : null}
 
               {(!isGit || gitType === "env") && (
-                <div className="flex flex-col gap-1.5">
-                  <Label>{t("userCredentials.env")}</Label>
+                <div className="flex flex-col gap-1.5" role="group" aria-labelledby={envLabelId}>
+                  <Label id={envLabelId}>{t("userCredentials.env")}</Label>
                   <CliCredentialEnvVarsSection
                     isManualMode
                     activePreset={null}

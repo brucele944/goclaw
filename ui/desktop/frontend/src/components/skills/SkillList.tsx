@@ -53,7 +53,7 @@ export function SkillList() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={atLimit || uploading}
-            className="bg-accent text-white rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center gap-1.5"
           >
             {uploading ? (
               <>
@@ -75,7 +75,7 @@ export function SkillList() {
       </div>
 
       {atLimit && (
-        <p className="text-[11px] text-amber-600 dark:text-amber-400">{t('deps.runtimeMissing')}</p>
+        <p className="text-2xs text-amber-600 dark:text-amber-400">{t('deps.runtimeMissing')}</p>
       )}
       {uploadError && <p className="text-xs text-error">{uploadError}</p>}
 
@@ -88,7 +88,7 @@ export function SkillList() {
           </svg>
           <div>
             <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{t('deps.runtimeMissing')}</p>
-            <p className="text-[11px] text-text-muted mt-0.5">
+            <p className="text-2xs text-text-muted mt-0.5">
               {t('deps.runtimeMissingDesc')}{' '}
               {runtimes.runtimes.filter((r) => !r.available).map((r) => r.name).join(', ')}
             </p>

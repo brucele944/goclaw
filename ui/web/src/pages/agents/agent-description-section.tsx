@@ -22,7 +22,7 @@ export function AgentDescriptionSection({ form, agentPresets }: AgentDescription
 
   return (
     <div className="space-y-3">
-      <Label>{t("create.describeAgent")}</Label>
+      <Label htmlFor="agent-description">{t("create.describeAgent")}</Label>
       <div className="flex flex-wrap gap-1.5">
         {agentPresets.map((preset) => (
           <button
@@ -36,6 +36,7 @@ export function AgentDescriptionSection({ form, agentPresets }: AgentDescription
         ))}
       </div>
       <Textarea
+        id="agent-description"
         {...register("description")}
         placeholder={t("create.descriptionPlaceholder")}
         className="min-h-[120px]"

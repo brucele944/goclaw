@@ -3,6 +3,7 @@
  * Renders a button group for selecting the active TTS provider.
  * Selecting a provider reveals the Credentials + Voice/Model sections.
  */
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ interface Props {
 
 export function ProviderSetup({ provider, onChange }: Props) {
   const { t } = useTranslation("tts");
+  const uid = useId();
 
   // Edge is the only provider that requires no API key
   const hint = provider === "edge" ? t("edge.hint") : null;
@@ -30,8 +32,8 @@ export function ProviderSetup({ provider, onChange }: Props) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid gap-1.5">
-          <Label className="sr-only">{t("general.primaryProvider")}</Label>
-          <div className="flex flex-wrap gap-2">
+          <Label id={`${uid}-provider`} className="sr-only">{t("general.primaryProvider")}</Label>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby={`${uid}-provider`}>
             {PROVIDER_VALUES.map((v) => (
               <Button
                 key={v}

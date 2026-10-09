@@ -32,8 +32,8 @@ export function TenantSelectorPage() {
     return (
       <LoginLayout subtitle={t("noAccess")}>
         <div className="space-y-5 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40">
-            <ShieldAlert className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-warning-subtle">
+            <ShieldAlert className="h-7 w-7 text-warning-text" />
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">{t("noAccessDescription")}</p>
@@ -41,7 +41,7 @@ export function TenantSelectorPage() {
           </div>
           <button
             onClick={handleLogout}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2.5 text-base md:text-sm font-medium hover:bg-muted transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-control-border bg-background px-4 py-2.5 text-base md:text-sm font-medium hover:bg-muted transition-colors"
           >
             <LogOut className="h-4 w-4" />
             {t("logout")}
@@ -61,7 +61,7 @@ export function TenantSelectorPage() {
           <button
             key={tenant.id}
             onClick={() => handleSelect(tenant.slug)}
-            className="w-full rounded-lg border border-input bg-card p-4 text-left transition-colors hover:bg-muted"
+            className="w-full rounded-lg border border-control-border bg-card p-4 text-left transition-colors hover:bg-muted"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">

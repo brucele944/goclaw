@@ -81,14 +81,15 @@ export function ChannelGeneralTab({ instance, agents, onUpdate }: ChannelGeneral
         <h3 className="text-sm font-medium">{t("detail.general.identity")}</h3>
 
         <div className="grid gap-1.5">
-          <Label>{t("detail.general.name")}</Label>
-          <Input value={instance.name} disabled className="text-base md:text-sm" />
+          <Label htmlFor="cd-name">{t("detail.general.name")}</Label>
+          <Input id="cd-name" value={instance.name} disabled className="text-base md:text-sm" />
           <p className="text-xs text-muted-foreground">{t("detail.general.nameHint")}</p>
         </div>
 
         <div className="grid gap-1.5">
-          <Label>{t("detail.general.channelType")}</Label>
+          <Label htmlFor="cd-type">{t("detail.general.channelType")}</Label>
           <Input
+            id="cd-type"
             value={channelTypeLabels[instance.channel_type] || instance.channel_type}
             disabled
             className="text-base md:text-sm"
@@ -107,9 +108,9 @@ export function ChannelGeneralTab({ instance, agents, onUpdate }: ChannelGeneral
         </div>
 
         <div className="grid gap-1.5">
-          <Label>{t("detail.general.agent")}</Label>
+          <Label htmlFor="cd-agent">{t("detail.general.agent")}</Label>
           <Select value={agentId} onValueChange={setAgentId}>
-            <SelectTrigger className="text-base md:text-sm">
+            <SelectTrigger id="cd-agent" className="text-base md:text-sm">
               <SelectValue placeholder={t("detail.general.selectAgent")} />
             </SelectTrigger>
             <SelectContent>

@@ -251,7 +251,7 @@ export function PassiveMemorySection({ instanceId, channelType }: PassiveMemoryS
             checked={config.review_mode}
             onCheckedChange={(checked) => updateConfig({ review_mode: checked })}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <NumberField label={t("detail.passiveMemory.interval")} value={config.interval_minutes} onChange={(v) => updateConfig({ interval_minutes: v })} />
             <NumberField label={t("detail.passiveMemory.messageCap")} value={config.message_cap} onChange={(v) => updateConfig({ message_cap: v })} />
             <NumberField label={t("detail.passiveMemory.retention")} value={config.retention_hours} onChange={(v) => updateConfig({ retention_hours: v })} />

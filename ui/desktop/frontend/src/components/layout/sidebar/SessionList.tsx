@@ -53,7 +53,7 @@ export function SessionList() {
       <div className="px-2 space-y-3">
         {groups.map((group) => (
           <div key={group.label}>
-            <p className="text-[10px] uppercase tracking-wider text-text-muted px-1 mb-1">
+            <p className="text-2xs uppercase tracking-wider text-text-muted px-1 mb-1">
               {group.label}
             </p>
             <div className="space-y-0.5">

@@ -97,6 +97,7 @@ export function TeamListRow({ team, onClick, onDelete }: TeamListRowProps) {
           variant="ghost"
           size="xs"
           className="shrink-0 text-muted-foreground hover:text-destructive"
+          aria-label={t("common:delete")}
           onClick={(e) => {
             e.stopPropagation();
             onDelete();

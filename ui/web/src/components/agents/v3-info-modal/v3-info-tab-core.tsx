@@ -3,8 +3,8 @@ import { Workflow, Shield, BookOpen } from "lucide-react";
 import { V3FeatureCard } from "./v3-feature-card";
 
 const FEATURES = [
-  { key: "pipeline", icon: Workflow, iconColor: "text-blue-500" },
-  { key: "resilience", icon: Shield, iconColor: "text-emerald-500" },
+  { key: "pipeline", icon: Workflow, iconColor: "text-info-text" },
+  { key: "resilience", icon: Shield, iconColor: "text-success-text" },
   { key: "registry", icon: BookOpen, iconColor: "text-violet-500" },
 ] as const;
 

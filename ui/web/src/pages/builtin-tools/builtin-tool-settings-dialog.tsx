@@ -75,7 +75,7 @@ export function BuiltinToolSettingsDialog({
 
   const modeBadge = tenantScope ? (
     <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+      <span className="rounded bg-warning-subtle px-1.5 py-0.5 font-medium dark:text-amber-200">
         {t("builtin.tenantOverrideBadge")}
       </span>
       <span>{hasTenantOverride ? t("builtin.tenantOverrideHint") : t("builtin.tenantOverrideNewHint")}</span>

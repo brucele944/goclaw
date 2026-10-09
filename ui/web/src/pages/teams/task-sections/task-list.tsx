@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 import { Pagination } from "@/components/shared/pagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { getClickableProps } from "@/hooks/use-clickable";
 import type { TeamTaskData, TeamTaskComment, TeamTaskEvent, TeamTaskAttachment } from "@/types/team";
 import type { TeamMemberData } from "@/types/team";
 import { taskStatusBadgeVariant, isTerminalStatus } from "./task-utils";
@@ -182,8 +183,8 @@ export function TaskList({
           return (
             <div
               key={task.id}
-              className={`grid min-w-[500px] cursor-pointer ${gridCols} items-center gap-2 border-b px-4 py-3 last:border-0 hover:bg-muted/30 ${isChecked ? "bg-destructive/5" : ""}`}
-              onClick={() => setSelectedTask(task)}
+              className={`grid min-w-[500px] cursor-pointer ${gridCols} items-center gap-2 border-b px-4 py-3 last:border-0 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isChecked ? "bg-destructive/5" : ""}`}
+              {...getClickableProps(() => setSelectedTask(task))}
             >
               {hasBulkDelete && (
                 <label className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -234,7 +235,7 @@ export function TaskList({
               <div className="flex flex-wrap items-center gap-1">
                 <Badge variant={taskStatusBadgeVariant(task.status)}>{task.status.replace(/_/g, " ")}</Badge>
                 {isTeamV2 && task.followup_at && task.status === "in_progress" && (
-                  <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-2xs text-amber-700 dark:text-amber-400">
+                  <Badge variant="outline" className="border-warning/25 bg-warning-subtle text-2xs text-warning-text">
                     {t("tasks.badges.awaitingReply")}
                   </Badge>
                 )}
@@ -249,6 +250,7 @@ export function TaskList({
                   <button
                     className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     onClick={(e) => handleDelete(e, task.id)}
+                    aria-label={t("tasks.delete")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

@@ -32,7 +32,7 @@ export function EvolutionSection({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-orange-500 shrink-0" />
+            <Sparkles className="h-4 w-4 text-warning-text shrink-0" />
             <div className="space-y-0.5">
               <Label htmlFor="self-evolve" className="text-sm font-normal cursor-pointer">
                 {t("general.selfEvolutionLabel")}
@@ -43,7 +43,7 @@ export function EvolutionSection({
           <Switch id="self-evolve" checked={selfEvolve} onCheckedChange={onSelfEvolveChange} />
         </div>
         {selfEvolve && (
-          <div className="flex items-start gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-300">
+          <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-xs text-warning-text">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>{t("general.selfEvolutionInfo")}</span>
           </div>
@@ -54,7 +54,7 @@ export function EvolutionSection({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-amber-500 shrink-0" />
+            <GraduationCap className="h-4 w-4 text-warning-text shrink-0" />
             <div className="space-y-0.5">
               <Label htmlFor="skill-evolve" className="text-sm font-normal cursor-pointer">
                 {t("general.skillLearningLabel")}
@@ -66,7 +66,7 @@ export function EvolutionSection({
         </div>
         {skillEvolve && (
           <>
-            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-xs text-warning-text">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{t("general.skillLearningInfo")}</span>
             </div>
@@ -96,7 +96,7 @@ export function EvolutionSection({
 
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-cyan-500 shrink-0" />
+              <BarChart3 className="h-4 w-4 text-info-text shrink-0" />
               <div className="space-y-0.5">
                 <Label htmlFor="evo-metrics" className="text-sm font-normal cursor-pointer">
                   {t("detail.evolution.metricsLabel")}
@@ -113,7 +113,7 @@ export function EvolutionSection({
 
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-yellow-500 shrink-0" />
+              <Lightbulb className="h-4 w-4 text-warning-text shrink-0" />
               <div className="space-y-0.5">
                 <Label htmlFor="evo-suggestions" className="text-sm font-normal cursor-pointer">
                   {t("detail.evolution.suggestionsLabel")}

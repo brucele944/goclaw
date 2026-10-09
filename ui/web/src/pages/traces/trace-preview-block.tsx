@@ -35,7 +35,7 @@ export function TracePreviewBlock({ label, content }: { label: string; content: 
         onClick={() => copy(content)}
         className="absolute right-2 top-2 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
-        {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+        {copied ? <Check className="h-3 w-3 text-success-text" /> : <Copy className="h-3 w-3" />}
         {t("detail.copy")}
       </button>
       {highlightedHtml ? (

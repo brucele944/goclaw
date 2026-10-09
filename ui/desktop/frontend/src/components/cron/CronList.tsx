@@ -59,7 +59,7 @@ export function CronList() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setFormOpen(true)}
-            className="bg-accent text-white rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover transition-colors flex items-center gap-1.5"
+            className="bg-accent text-accent-foreground rounded-lg px-3 py-1.5 text-xs hover:bg-accent-hover transition-colors flex items-center gap-1.5"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" /><path d="M12 5v14" />

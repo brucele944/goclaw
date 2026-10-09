@@ -20,6 +20,7 @@ export function ViewModeToggle({ mode, onChange }: ViewModeToggleProps) {
               variant={mode === "card" ? "default" : "ghost"}
               size="xs"
               className="h-7 w-7 p-0"
+              aria-label={t("viewCard")}
               onClick={() => onChange("card")}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -33,6 +34,7 @@ export function ViewModeToggle({ mode, onChange }: ViewModeToggleProps) {
               variant={mode === "list" ? "default" : "ghost"}
               size="xs"
               className="h-7 w-7 p-0"
+              aria-label={t("viewList")}
               onClick={() => onChange("list")}
             >
               <List className="h-3.5 w-3.5" />

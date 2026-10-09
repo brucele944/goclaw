@@ -67,14 +67,14 @@ export function MermaidBlock({ code }: MermaidBlockProps) {
 
   if (error) {
     return (
-      <div className="not-prose my-3 rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30 p-3">
-        <p className="mb-2 text-xs font-semibold text-red-600 dark:text-red-400">
+      <div className="not-prose my-3 rounded-lg border dark:border-red-700 bg-destructive-subtle p-3">
+        <p className="mb-2 text-xs font-semibold text-destructive-text">
           Mermaid render error
         </p>
-        <pre className="overflow-x-auto text-xs text-red-500 dark:text-red-400 whitespace-pre-wrap">
+        <pre className="overflow-x-auto text-xs text-destructive-text whitespace-pre-wrap">
           {error}
         </pre>
-        <hr className="my-2 border-red-200 dark:border-red-800" />
+        <hr className="my-2 border-destructive/25" />
         <pre className="overflow-x-auto text-xs text-muted-foreground whitespace-pre">{code}</pre>
       </div>
     );

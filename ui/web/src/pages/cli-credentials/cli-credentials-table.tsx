@@ -86,6 +86,7 @@ export function CliCredentialsTable({ items, onEdit, onDelete, onUserCreds, onAg
                     <Button
                       variant="ghost" size="sm"
                       onClick={() => onDelete(item)}
+                      aria-label={tc("delete")}
                       className="gap-1 text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

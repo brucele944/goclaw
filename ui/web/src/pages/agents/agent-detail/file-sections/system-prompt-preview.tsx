@@ -109,7 +109,7 @@ function renderPromptWithBoundary(prompt: string) {
   return (
     <>
       {before}
-      <span className="my-1 block border-t border-dashed border-amber-500/50 py-1 text-2xs font-medium text-amber-600 dark:text-amber-400">
+      <span className="my-1 block border-t border-dashed border-warning/25 py-1 text-2xs font-medium text-warning-text">
         ── cache boundary ── stable above · dynamic below ──
       </span>
       {after}

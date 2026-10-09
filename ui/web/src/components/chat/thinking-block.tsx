@@ -23,7 +23,7 @@ export function ThinkingBlock({ text, isStreaming = false }: ThinkingBlockProps)
         className="flex w-full items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
-        <Brain className={`h-3.5 w-3.5 shrink-0 ${isStreaming ? "text-amber-500" : ""}`} />
+        <Brain className={`h-3.5 w-3.5 shrink-0 ${isStreaming ? "text-warning-text" : ""}`} />
         <span className="text-xs font-medium">
           {isStreaming ? t("thinkingStreaming") : t("thinking")}
         </span>

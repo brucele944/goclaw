@@ -93,7 +93,7 @@ export function KGEntitiesTab({ agentId, userId }: KGEntitiesTabProps) {
           placeholder={t("kg.search.placeholder")}
           className="max-w-[220px] h-8 text-xs"
         />
-        <Button variant="outline" size="sm" onClick={handleSearch} disabled={fetching} className="gap-1 h-8 px-2.5">
+        <Button variant="outline" size="sm" onClick={handleSearch} disabled={fetching} className="gap-1 h-8 px-2.5" aria-label={t("common:search")}>
           <Search className="h-3.5 w-3.5" />
         </Button>
         {appliedQuery && (
@@ -111,6 +111,7 @@ export function KGEntitiesTab({ agentId, userId }: KGEntitiesTabProps) {
             size="sm"
             onClick={() => setViewMode("table")}
             className="h-8 rounded-r-none px-2"
+            aria-label={t("kg.viewMode.table")}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
           </Button>
@@ -119,12 +120,13 @@ export function KGEntitiesTab({ agentId, userId }: KGEntitiesTabProps) {
             size="sm"
             onClick={() => setViewMode("graph")}
             className="h-8 rounded-l-none px-2"
+            aria-label={t("kg.viewMode.graph")}
           >
             <Share2 className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => refresh()} disabled={fetching} className="gap-1 h-8 px-2.5">
+        <Button variant="outline" size="sm" onClick={() => refresh()} disabled={fetching} className="gap-1 h-8 px-2.5" aria-label={t("common:refresh")}>
           <RefreshCw className={`h-3.5 w-3.5${fetching ? " animate-spin" : ""}`} />
         </Button>
         <Button variant="outline" size="sm" onClick={() => setDedupOpen(true)} className="gap-1 h-8 px-2.5">
@@ -198,13 +200,14 @@ export function KGEntitiesTab({ agentId, userId }: KGEntitiesTabProps) {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setViewEntity(entity)} className="gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setViewEntity(entity)} className="gap-1" aria-label={t("kg.viewEntity")}>
                         <GitFork className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeleteTarget(entity)}
+                        aria-label={t("common:delete")}
                         className="gap-1 text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

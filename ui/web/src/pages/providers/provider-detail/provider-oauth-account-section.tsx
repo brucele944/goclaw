@@ -28,6 +28,7 @@ export function ProviderOAuthAccountSection({
   quotaLoading = false,
 }: ProviderOAuthAccountSectionProps) {
   const { t } = useTranslation("providers");
+  const { t: tc } = useTranslation("common");
   const modelPrefix = `${provider.name}/`;
   const role: "member" | "owner" | "standalone" = managedByProvider
     ? "member"
@@ -76,7 +77,7 @@ export function ProviderOAuthAccountSection({
             <code className="flex-1 rounded-md border bg-muted px-3 py-2 font-mono text-sm text-muted-foreground">
               {modelPrefix}
             </code>
-            <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={handleCopyPrefix}>
+            <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={handleCopyPrefix} aria-label={tc("copy")}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>

@@ -122,22 +122,26 @@ export const BoardToolbar = memo(function BoardToolbar({
         <div className="flex rounded-lg border bg-muted/50 p-0.5">
           <button
             onClick={() => setViewMode("kanban")}
+            aria-label={t("viewBoard")}
+            aria-pressed={viewMode === "kanban"}
             className={"cursor-pointer rounded-md p-1.5 " + (viewMode === "kanban" ? "bg-background shadow-sm" : "text-muted-foreground")}
           >
             <LayoutGrid className="h-4 w-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
+            aria-label={t("viewList")}
+            aria-pressed={viewMode === "list"}
             className={"cursor-pointer rounded-md p-1.5 " + (viewMode === "list" ? "bg-background shadow-sm" : "text-muted-foreground")}
           >
             <List className="h-4 w-4" />
           </button>
         </div>
 
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={onCreateTask}>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={onCreateTask} aria-label={t("tasks.createTask")}>
           <Plus className="h-4 w-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={onRefresh} disabled={spinning} className="gap-1">
+        <Button variant="outline" size="sm" onClick={onRefresh} disabled={spinning} className="gap-1" aria-label={t("tasks.refresh")}>
           <RefreshCw className={"h-3.5 w-3.5" + (spinning ? " animate-spin" : "")} />
         </Button>
       </div>

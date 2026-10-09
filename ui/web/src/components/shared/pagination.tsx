@@ -66,6 +66,7 @@ export function Pagination({
           <Button
             variant="outline"
             size="icon-sm"
+            aria-label={t("previousPage")}
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
           >
@@ -74,6 +75,7 @@ export function Pagination({
           <Button
             variant="outline"
             size="icon-sm"
+            aria-label={t("nextPage")}
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
           >

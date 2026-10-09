@@ -715,7 +715,8 @@
     "save": "Save",
     "saved": "Saved",
     "searchContacts": "Search contacts to add...",
-    "noContactsFound": "No contacts found"
+    "noContactsFound": "No contacts found",
+    "emptyPlaceholder": "(empty)"
   },
   "summoning": {
     "title": "Summoning Your Agent...",
@@ -769,6 +770,10 @@
       "selectToolsAlsoAllow": "Select additional tools...",
       "toolCallPrefix": "Tool Call Prefix",
       "toolCallPrefixHint": "Strips this prefix from model's tool call names before registry lookup.",
+      "toolCallPrefixPlaceholder": "e.g. proxy_",
+      "profileHint": "Base tool profile. 'full' allows all tools, 'coding' includes filesystem/runtime/sessions/memory, 'messaging' includes messaging/sessions, 'minimal' allows only session_status.",
+      "toolCallPrefixTip": "Strip prefix from tool call names returned by the model before registry lookup. Example: 'proxy_' strips prefix so 'proxy_exec' resolves to 'exec'. Supports {tool_name} placeholder.",
+      "waitLimitsTip": "Optional per-agent wait tool bounds in milliseconds. Values are clamped by server safety limits: 100ms to 300000ms.",
       "waitLimits": "Wait Tool Bounds",
       "waitMinPlaceholder": "Min ms",
       "waitMaxPlaceholder": "Max ms",
@@ -782,6 +787,7 @@
       "sharedGroup": "Share in Groups",
       "sharedGroupTip": "All members in a group chat share the same workspace directory",
       "sharedUsers": "Shared Users",
+      "addUser": "Add user",
       "sharedUsersTip": "Specific user IDs that always share workspace regardless of DM/Group settings. Format: channel:userId (e.g. telegram:386246614)",
       "userIdPlaceholder": "Enter user ID (e.g. telegram:386246614)",
       "warning": "When sharing is enabled, all shared users can read and write files in the same workspace directory. Memory sharing is controlled separately. Context files remain isolated per user.",
@@ -1041,6 +1047,7 @@
     "denied": "Denied",
     "fileWriters": "File Writers",
     "configPerms": "Config Permissions",
+    "revoke": "Revoke",
     "noRules": "No permission rules. Owner has implicit full access.",
     "userIdPlaceholder": "Search contacts or type ID...",
     "scopePlaceholder": "Select or type scope...",

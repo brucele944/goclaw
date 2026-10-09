@@ -9,6 +9,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { Badge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { useDeferredLoading } from "@/hooks/use-deferred-loading";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useUiStore } from "@/stores/use-ui-store";
 import { useSessions } from "./hooks/use-sessions";
 import { SessionDetailPage } from "./session-detail-page";
@@ -138,8 +139,8 @@ function SessionRow({
 
   return (
     <tr
-      className="cursor-pointer border-b transition-colors hover:bg-muted/50"
-      onClick={onClick}
+      className="cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      {...getClickableProps(onClick)}
     >
       <td className="px-4 py-3">
         <div className="text-sm font-medium">
@@ -188,9 +189,9 @@ function ContextUsageBar({
   const threshold = contextWindow * 0.75;
   const pct = Math.min(Math.round((estimatedTokens / threshold) * 100), 100);
 
-  let barColor = "bg-emerald-500";
-  if (pct >= 85) barColor = "bg-red-500";
-  else if (pct >= 60) barColor = "bg-amber-500";
+  let barColor = "bg-success";
+  if (pct >= 85) barColor = "bg-destructive";
+  else if (pct >= 60) barColor = "bg-warning";
 
   const tooltip = `~${formatTokens(estimatedTokens)} / ${formatTokens(contextWindow)} tokens (${pct}%)`;
 

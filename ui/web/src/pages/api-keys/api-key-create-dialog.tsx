@@ -163,11 +163,11 @@ export function ApiKeyCreateDialog({ open, onOpenChange, onCreate }: Props) {
 
           {/* Scopes */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">
+            <Label id="key-scopes-label" className="flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5" />
               {t("form.scopes")}
             </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5" role="group" aria-labelledby="key-scopes-label">
               {ALL_SCOPES.map((scope) => {
                 const shortName = scope.replace("operator.", "");
                 const isSelected = scopes.includes(scope);

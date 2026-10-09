@@ -26,14 +26,14 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
       onToggle={onToggle}
     >
       <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5">
-        <p className="text-[11px] text-amber-600 dark:text-amber-400">
+        <p className="text-2xs text-amber-600 dark:text-amber-400">
           Requires Docker installed locally. Sandbox containers run on this machine.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.mode')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.mode')}</label>
           <select value={value.mode ?? 'off'} onChange={(e) => update({ mode: e.target.value as SandboxConfig['mode'] })} className={selectCls}>
             <option value="off">off</option>
             <option value="non-main">non-main</option>
@@ -41,7 +41,7 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.workspaceAccess')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.workspaceAccess')}</label>
           <select value={value.workspace_access ?? 'none'} onChange={(e) => update({ workspace_access: e.target.value as SandboxConfig['workspace_access'] })} className={selectCls}>
             <option value="none">none</option>
             <option value="ro">ro (read-only)</option>
@@ -51,7 +51,7 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.image')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.image')}</label>
         <input
           type="text"
           value={value.image ?? ''}
@@ -63,7 +63,7 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.scope')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.scope')}</label>
           <select value={value.scope ?? 'session'} onChange={(e) => update({ scope: e.target.value as SandboxConfig['scope'] })} className={selectCls}>
             <option value="session">session</option>
             <option value="agent">agent</option>
@@ -71,18 +71,18 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.timeout')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.timeout')}</label>
           <input type="number" min={0} value={value.timeout_sec ?? ''} onChange={(e) => update({ timeout_sec: numOrUndef(e.target.value) })} className={inputCls} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.memoryMb')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.memoryMb')}</label>
           <input type="number" min={0} value={value.memory_mb ?? ''} onChange={(e) => update({ memory_mb: numOrUndef(e.target.value) })} className={inputCls} />
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-text-secondary">{t('configSections.sandbox.cpus')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('configSections.sandbox.cpus')}</label>
           <input type="number" min={0} step={0.5} value={value.cpus ?? ''} onChange={(e) => update({ cpus: numOrUndef(e.target.value) })} className={inputCls} />
         </div>
       </div>

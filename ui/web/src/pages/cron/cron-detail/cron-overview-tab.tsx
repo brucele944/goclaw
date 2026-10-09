@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, Clock, AlertTriangle, Pencil, Terminal } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,7 @@ function getEverySeconds(job: CronJob): string {
 
 export function CronOverviewTab({ job, onUpdate }: CronOverviewTabProps) {
   const { t } = useTranslation("cron");
+  const uid = useId();
   const { agents } = useAgents();
   const ws = useWs();
   const { channels: availableChannels } = useChannels();
@@ -158,14 +159,14 @@ export function CronOverviewTab({ job, onUpdate }: CronOverviewTabProps) {
       />
 
       {isCommandCron(job) ? (
-        <section className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/40 p-3 sm:p-4 overflow-hidden dark:border-amber-900/50 dark:bg-amber-950/20">
+        <section className="space-y-3 rounded-lg border border-warning/25 bg-amber-50/40 p-3 sm:p-4 overflow-hidden">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <Terminal className="h-4 w-4 text-warning-text" />
               <h3 className="text-sm font-medium">{t("detail.commandSection")}</h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-amber-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:border-amber-800 dark:text-amber-300">
+              <span className="rounded-full border px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-warning-text">
                 {t("payload.command")}
               </span>
               {!readonly && (
@@ -278,10 +279,10 @@ export function CronOverviewTab({ job, onUpdate }: CronOverviewTabProps) {
         <h3 className="text-sm font-medium">{t("detail.agentStatus")}</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>{t("create.agentId")}</Label>
+            <Label htmlFor={`${uid}-agent`}>{t("create.agentId")}</Label>
             <Select name="agentId" value={agentId || "__default__"}
               onValueChange={(v) => setAgentId(v === "__default__" ? "" : v)} disabled={readonly}>
-              <SelectTrigger className="text-base md:text-sm">
+              <SelectTrigger id={`${uid}-agent`} className="text-base md:text-sm">
                 <SelectValue placeholder={t("create.agentIdPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
@@ -295,10 +296,10 @@ export function CronOverviewTab({ job, onUpdate }: CronOverviewTabProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>{t("columns.enabled")}</Label>
+            <Label htmlFor={`${uid}-enabled`}>{t("columns.enabled")}</Label>
             <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5">
               <span className="text-sm">{enabled ? t("detail.enabled") : t("detail.disabled")}</span>
-              <Switch checked={enabled} onCheckedChange={setEnabled} disabled={readonly} />
+              <Switch id={`${uid}-enabled`} checked={enabled} onCheckedChange={setEnabled} disabled={readonly} />
             </div>
           </div>
         </div>

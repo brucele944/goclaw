@@ -60,7 +60,7 @@ export function VaultSearchDialog({ agentId, open, onOpenChange, onSelectResult 
               className="text-base md:text-sm"
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
-            <Button onClick={handleSearch} disabled={searching || !query.trim()} size="sm">
+            <Button onClick={handleSearch} disabled={searching || !query.trim()} size="sm" aria-label={t("common:search")}>
               <Search className="h-4 w-4" />
             </Button>
           </div>

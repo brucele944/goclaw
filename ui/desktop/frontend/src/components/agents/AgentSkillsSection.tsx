@@ -62,7 +62,7 @@ export function AgentSkillsSection({ agentId }: AgentSkillsSectionProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text-primary">{t('detail.skills')}</h3>
         {!loading && skills.length > 0 && (
-          <span className="text-[11px] text-text-muted">
+          <span className="text-2xs text-text-muted">
             {t('skills.skillsGranted', { granted, total: skills.length })}
           </span>
         )}
@@ -89,17 +89,17 @@ export function AgentSkillsSection({ agentId }: AgentSkillsSectionProps) {
                   </svg>
                   <span className="text-xs font-medium text-text-primary truncate">{skill.name}</span>
                   {skill.is_system && (
-                    <span className="rounded-full px-1.5 py-0.5 text-[9px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:text-blue-400 dark:bg-blue-500/5 dark:border-blue-500/15 shrink-0">
+                    <span className="rounded-full px-1.5 py-0.5 text-2xs font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:text-blue-400 dark:bg-blue-500/5 dark:border-blue-500/15 shrink-0">
                       System
                     </span>
                   )}
                 </div>
                 {skill.description && (
-                  <p className="text-[11px] text-text-muted truncate ml-5">{skill.description}</p>
+                  <p className="text-2xs text-text-muted truncate ml-5">{skill.description}</p>
                 )}
               </div>
               {skill.is_system ? (
-                <span className="text-[10px] text-text-muted shrink-0">{t('skills.alwaysAvailable')}</span>
+                <span className="text-2xs text-text-muted shrink-0">{t('skills.alwaysAvailable')}</span>
               ) : (
                 <Switch
                   checked={skill.granted}

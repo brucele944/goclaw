@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -25,24 +26,25 @@ export function HeartbeatDeliverySection({
   targets,
 }: HeartbeatDeliverySectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Send className="h-3.5 w-3.5 text-blue-500" />
+        <Send className="h-3.5 w-3.5 text-info-text" />
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("heartbeat.sectionDelivery")}
         </h4>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr]">
         <div className="space-y-1">
-          <Label className="text-xs">{t("heartbeat.channel")}</Label>
+          <Label className="text-xs" htmlFor={`${uid}-channel`}>{t("heartbeat.channel")}</Label>
           {channelNames.length > 0 ? (
             <Select
               value={channel || "__none__"}
               onValueChange={(v) => { setChannel(v === "__none__" ? "" : v); setChatId(""); }}
             >
-              <SelectTrigger className="w-full text-base md:text-sm">
+              <SelectTrigger id={`${uid}-channel`} className="w-full text-base md:text-sm">
                 <SelectValue placeholder={t("heartbeat.channelPlaceholder")} />
               </SelectTrigger>
               <SelectContent position="popper">
@@ -54,6 +56,7 @@ export function HeartbeatDeliverySection({
             </Select>
           ) : (
             <Input
+              id={`${uid}-channel`}
               placeholder="telegram"
               value={channel}
               onChange={(e) => setChannel(e.target.value)}
@@ -62,15 +65,16 @@ export function HeartbeatDeliverySection({
           )}
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">{t("heartbeat.chatId")}</Label>
+          <Label className="text-xs" htmlFor={`${uid}-chatId`}>{t("heartbeat.chatId")}</Label>
           {(() => {
             if (!channel) {
-              return <Input placeholder={t("heartbeat.selectChannelFirst")} disabled className="text-base md:text-sm" />;
+              return <Input id={`${uid}-chatId`} placeholder={t("heartbeat.selectChannelFirst")} disabled className="text-base md:text-sm" />;
             }
             const filtered = targets.filter((tgt) => tgt.channel === channel);
             if (filtered.length > 0) {
               return (
                 <Combobox
+                  id={`${uid}-chatId`}
                   value={chatId}
                   onChange={setChatId}
                   options={filtered.map((target) => ({
@@ -85,6 +89,7 @@ export function HeartbeatDeliverySection({
             }
             return (
               <Input
+                id={`${uid}-chatId`}
                 placeholder="-100123456789"
                 value={chatId}
                 onChange={(e) => setChatId(e.target.value)}

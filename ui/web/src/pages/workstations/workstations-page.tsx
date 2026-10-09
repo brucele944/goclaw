@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useMinLoading } from "@/hooks/use-min-loading";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useDeferredLoading } from "@/hooks/use-deferred-loading";
 import { formatDate } from "@/lib/format";
 import { useWorkstations, type Workstation } from "./hooks/use-workstations";
@@ -80,8 +81,9 @@ export function WorkstationsPage() {
                     <>
                       <tr
                         key={ws.id}
-                        className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                        onClick={() => toggleExpand(ws.id)}
+                        className="border-b last:border-0 hover:bg-muted/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-expanded={isExpanded}
+                        {...getClickableProps(() => toggleExpand(ws.id))}
                       >
                         <td className="px-4 py-3 text-muted-foreground">
                           {isExpanded ? (

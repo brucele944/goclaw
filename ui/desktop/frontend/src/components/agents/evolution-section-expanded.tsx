@@ -31,14 +31,14 @@ export function EvolutionSectionExpanded({
             <span className="text-sm">✨</span>
             <span className="text-xs font-medium text-text-primary">{t('general.selfEvolution')}</span>
           </div>
-          <p className="text-[11px] text-text-muted">{t('general.selfEvolutionLabel')}</p>
+          <p className="text-2xs text-text-muted">{t('general.selfEvolutionLabel')}</p>
         </div>
         <Switch checked={selfEvolve} onCheckedChange={onSelfEvolveChange} />
       </div>
 
       {selfEvolve && (
         <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
-          <p className="text-[11px] text-orange-600 dark:text-orange-400">{t('general.selfEvolutionInfo')}</p>
+          <p className="text-2xs text-orange-600 dark:text-orange-400">{t('general.selfEvolutionInfo')}</p>
         </div>
       )}
 
@@ -49,14 +49,14 @@ export function EvolutionSectionExpanded({
             <span className="text-sm">📚</span>
             <span className="text-xs font-medium text-text-primary">{t('general.skillLearning')}</span>
           </div>
-          <p className="text-[11px] text-text-muted">{t('general.skillLearningLabel')}</p>
+          <p className="text-2xs text-text-muted">{t('general.skillLearningLabel')}</p>
         </div>
         <Switch checked={skillLearning} onCheckedChange={onSkillLearningChange} />
       </div>
 
       {skillLearning && (
         <div className="rounded-lg border border-border p-3 space-y-2">
-          <label className="text-[11px] font-medium text-text-secondary">{t('general.skillNudgeIntervalLabel')}</label>
+          <label className="text-2xs font-medium text-text-secondary">{t('general.skillNudgeIntervalLabel')}</label>
           <input
             type="number"
             min={0}
@@ -64,7 +64,7 @@ export function EvolutionSectionExpanded({
             onChange={(e) => onSkillNudgeIntervalChange(Number(e.target.value) || 0)}
             className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
           />
-          <p className="text-[10px] text-text-muted">{t('general.skillNudgeIntervalHint')}</p>
+          <p className="text-2xs text-text-muted">{t('general.skillNudgeIntervalHint')}</p>
         </div>
       )}
 
@@ -72,7 +72,7 @@ export function EvolutionSectionExpanded({
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <h4 className="text-xs font-semibold text-text-primary">{t('general.v3Flags')}</h4>
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{t('general.v3FlagsHint')}</span>
+          <span className="text-2xs px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{t('general.v3FlagsHint')}</span>
         </div>
 
         {loading ? (
@@ -82,7 +82,7 @@ export function EvolutionSectionExpanded({
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div className="space-y-0.5">
                 <span className="text-xs font-medium text-text-primary">{t('general.evolutionMetrics')}</span>
-                <p className="text-[11px] text-text-muted">{t('general.evolutionMetricsLabel')}</p>
+                <p className="text-2xs text-text-muted">{t('general.evolutionMetricsLabel')}</p>
               </div>
               <Switch
                 checked={flags.self_evolution_metrics}
@@ -92,7 +92,7 @@ export function EvolutionSectionExpanded({
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div className="space-y-0.5">
                 <span className="text-xs font-medium text-text-primary">{t('general.evolutionSuggestions')}</span>
-                <p className="text-[11px] text-text-muted">{t('general.evolutionSuggestionsLabel')}</p>
+                <p className="text-2xs text-text-muted">{t('general.evolutionSuggestionsLabel')}</p>
               </div>
               <Switch
                 checked={flags.self_evolution_suggestions}

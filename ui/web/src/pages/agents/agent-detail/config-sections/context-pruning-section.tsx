@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ interface ContextPruningSectionProps {
 
 export function ContextPruningSection({ enabled, value, onToggle, onChange }: ContextPruningSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.contextPruning";
   const [showAdvanced, setShowAdvanced] = useState(false);
   const d = useConfigDefaults().agents.contextPruning;
@@ -29,8 +30,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
     >
       {/* Primary setting */}
       <div className="max-w-xs space-y-2">
-        <InfoLabel tip="Number of recent assistant turns whose tool results are always kept intact, never pruned.">{t(`${s}.keepLastAssistants`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-keepLastAssistants`} tip="Number of recent assistant turns whose tool results are always kept intact, never pruned.">{t(`${s}.keepLastAssistants`)}</InfoLabel>
         <Input
+          id={`${uid}-keepLastAssistants`}
           type="number"
           placeholder={String(d.keepLastAssistants)}
           value={value.keepLastAssistants ?? ""}
@@ -43,8 +45,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
       {/* Cache TTL — always shown when pruning is enabled (opt-in requires cache-ttl mode) */}
       {enabled && (
         <div className="max-w-xs space-y-2">
-          <InfoLabel tip='Prompt cache TTL. Pruning is skipped while the cache is live, preserving cache hits. Use Go duration strings like "5m", "30s". Default: 5m.'>{t(`${s}.cacheTtl`, "Cache TTL")}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-ttl`} tip='Prompt cache TTL. Pruning is skipped while the cache is live, preserving cache hits. Use Go duration strings like "5m", "30s". Default: 5m.'>{t(`${s}.cacheTtl`, "Cache TTL")}</InfoLabel>
           <Input
+            id={`${uid}-ttl`}
             type="text"
             placeholder={d.ttl}
             value={value.ttl ?? ""}
@@ -68,8 +71,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
           {/* Trim ratios */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <InfoLabel tip="Context usage ratio (0-1) at which soft trimming begins. E.g. 0.3 means trimming starts when context is 30% full.">{t(`${s}.softTrimRatio`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-softTrimRatio`} tip="Context usage ratio (0-1) at which soft trimming begins. E.g. 0.3 means trimming starts when context is 30% full.">{t(`${s}.softTrimRatio`)}</InfoLabel>
               <Input
+                id={`${uid}-softTrimRatio`}
                 type="number"
                 step="0.05"
                 placeholder={String(d.softTrimRatio)}
@@ -78,8 +82,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
               />
             </div>
             <div className="space-y-2">
-              <InfoLabel tip="Context usage ratio (0-1) at which hard clearing kicks in. E.g. 0.5 means full clearing at 50% context usage.">{t(`${s}.hardClearRatio`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-hardClearRatio`} tip="Context usage ratio (0-1) at which hard clearing kicks in. E.g. 0.5 means full clearing at 50% context usage.">{t(`${s}.hardClearRatio`)}</InfoLabel>
               <Input
+                id={`${uid}-hardClearRatio`}
                 type="number"
                 step="0.05"
                 placeholder={String(d.hardClearRatio)}
@@ -92,8 +97,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
           {/* Soft Trim chars */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <InfoLabel tip="Tool results longer than this will be soft-trimmed, keeping only head and tail portions.">{t(`${s}.maxChars`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-maxChars`} tip="Tool results longer than this will be soft-trimmed, keeping only head and tail portions.">{t(`${s}.maxChars`)}</InfoLabel>
               <Input
+                id={`${uid}-maxChars`}
                 type="number"
                 placeholder={String(d.softTrim.maxChars)}
                 value={value.softTrim?.maxChars ?? ""}
@@ -103,8 +109,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
               />
             </div>
             <div className="space-y-2">
-              <InfoLabel tip="Number of characters to keep from the beginning of a trimmed tool result.">{t(`${s}.headChars`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-headChars`} tip="Number of characters to keep from the beginning of a trimmed tool result.">{t(`${s}.headChars`)}</InfoLabel>
               <Input
+                id={`${uid}-headChars`}
                 type="number"
                 placeholder={String(d.softTrim.headChars)}
                 value={value.softTrim?.headChars ?? ""}
@@ -114,8 +121,9 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
               />
             </div>
             <div className="space-y-2">
-              <InfoLabel tip="Number of characters to keep from the end of a trimmed tool result.">{t(`${s}.tailChars`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-tailChars`} tip="Number of characters to keep from the end of a trimmed tool result.">{t(`${s}.tailChars`)}</InfoLabel>
               <Input
+                id={`${uid}-tailChars`}
                 type="number"
                 placeholder={String(d.softTrim.tailChars)}
                 value={value.softTrim?.tailChars ?? ""}
@@ -130,12 +138,13 @@ export function ContextPruningSection({ enabled, value, onToggle, onChange }: Co
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Switch
+                id={`${uid}-hardClear`}
                 checked={value.hardClear?.enabled ?? true}
                 onCheckedChange={(v) =>
                   onChange({ ...value, hardClear: { ...value.hardClear, enabled: v } })
                 }
               />
-              <InfoLabel tip="When enabled, old tool results beyond the hard clear ratio are replaced entirely with placeholder text.">{t(`${s}.hardClear`)}</InfoLabel>
+              <InfoLabel htmlFor={`${uid}-hardClear`} tip="When enabled, old tool results beyond the hard clear ratio are replaced entirely with placeholder text.">{t(`${s}.hardClear`)}</InfoLabel>
             </div>
           </div>
         </div>

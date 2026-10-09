@@ -185,8 +185,8 @@ export function ChannelDetailPage({
           )}
 
           {neutralHealthNote && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-200/70 bg-emerald-500/[0.04] px-3 py-2 text-sm dark:border-emerald-500/20 dark:bg-emerald-500/10">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200/70 bg-emerald-500/[0.04] px-3 py-2 text-sm dark:bg-success-subtle">
+              <CheckCircle2 className="h-4 w-4 text-success-text" />
               <span className="text-muted-foreground">{neutralHealthNote}</span>
             </div>
           )}

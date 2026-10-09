@@ -56,7 +56,7 @@ export function CronListItem({
           <div className="min-w-0">
             <span className="font-mono text-sm text-text-primary">{job.name}</span>
             {job.state?.lastStatus && (
-              <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusBadgeClass(job.state.lastStatus)}`}>
+              <span className={`ml-2 rounded-full px-1.5 py-0.5 text-2xs font-medium ${statusBadgeClass(job.state.lastStatus)}`}>
                 {job.state.lastStatus}
               </span>
             )}
@@ -73,7 +73,7 @@ export function CronListItem({
       </td>
       {/* Enabled badge */}
       <td className="px-4 py-3">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        <span className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
           job.enabled
             ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20'
             : 'bg-surface-tertiary text-text-secondary border border-border'

@@ -93,7 +93,7 @@ export function ProviderListRow({
       className={cn(
         "flex w-full cursor-pointer items-center gap-3 rounded-lg border bg-card px-4 py-2.5 text-left transition-all hover:border-primary/30 hover:shadow-sm",
         oauthPool?.role === "owner" && "border-primary/20 bg-primary/[0.02]",
-        oauthPool?.role === "member" && "relative border-sky-500/20 bg-sky-500/[0.025]",
+        oauthPool?.role === "member" && "relative border-info/25 bg-sky-500/[0.025]",
         showMemberConnector && "ml-4 w-[calc(100%-1rem)]",
       )}
     >
@@ -116,7 +116,7 @@ export function ProviderListRow({
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",
           oauthPool?.role === "owner" && "bg-primary/12 text-primary",
-          oauthPool?.role === "member" && "bg-sky-500/12 text-sky-700 dark:text-sky-300",
+          oauthPool?.role === "member" && "bg-sky-500/12 text-info-text",
         )}
       >
         <Cpu className="h-4 w-4" />
@@ -128,7 +128,7 @@ export function ProviderListRow({
           <span
             className={cn(
               "inline-block h-2 w-2 shrink-0 rounded-full",
-              provider.enabled ? "bg-emerald-500" : "bg-muted-foreground/40",
+              provider.enabled ? "bg-success" : "bg-muted-foreground/40",
             )}
           />
           {hasPoolRole && (
@@ -174,7 +174,7 @@ export function ProviderListRow({
                   "shrink-0 font-medium",
                   oauthPool?.availability === "disabled"
                     ? "text-muted-foreground"
-                    : "text-amber-700 dark:text-amber-400",
+                    : "text-warning-text",
                 )}
               >
                 {availabilityWarningLabel}
@@ -216,6 +216,7 @@ export function ProviderListRow({
           variant="ghost"
           size="xs"
           className="shrink-0 text-muted-foreground hover:text-destructive"
+          aria-label={tc("delete")}
           onClick={(event) => {
             event.stopPropagation();
             onDelete();

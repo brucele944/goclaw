@@ -59,7 +59,7 @@ export function ExtractorChainForm({ tool, onSave, onClose }: ExtractorChainForm
           <div key={ext.name} className="rounded-lg border border-border p-3 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-text-muted bg-surface-tertiary rounded px-1.5 py-0.5">#{i + 1}</span>
+                <span className="text-2xs font-mono text-text-muted bg-surface-tertiary rounded px-1.5 py-0.5">#{i + 1}</span>
                 <span className="text-sm font-medium text-text-primary">{EXTRACTOR_DISPLAY[ext.name] ?? ext.name}</span>
               </div>
               <Switch checked={ext.enabled} onCheckedChange={(v) => updateExtractor(i, { enabled: v })} />
@@ -97,7 +97,7 @@ export function ExtractorChainForm({ tool, onSave, onClose }: ExtractorChainForm
                   onChange={(e) => updateExtractor(i, { timeout: Math.max(0, Number(e.target.value)) })}
                   className="w-20 bg-surface-tertiary border border-border rounded-lg px-3 py-1.5 text-base md:text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                 />
-                <p className="text-[10px] text-text-muted">0 = {t('common:default')}</p>
+                <p className="text-2xs text-text-muted">0 = {t('common:default')}</p>
               </div>
             )}
           </div>
@@ -112,7 +112,7 @@ export function ExtractorChainForm({ tool, onSave, onClose }: ExtractorChainForm
         <button type="button" onClick={onClose} className="border border-border rounded-lg px-4 py-1.5 text-sm text-text-secondary hover:bg-surface-tertiary transition-colors">
           {t('builtin.settingsDialog.cancel')}
         </button>
-        <button type="button" onClick={handleSave} disabled={saving} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
+        <button type="button" onClick={handleSave} disabled={saving} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-accent-foreground hover:bg-accent-hover disabled:opacity-50 transition-colors">
           {saving ? t('builtin.settingsDialog.saving') : t('builtin.settingsDialog.save')}
         </button>
       </div>

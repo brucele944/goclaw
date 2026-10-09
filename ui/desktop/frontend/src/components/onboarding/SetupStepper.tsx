@@ -27,7 +27,7 @@ export function SetupStepper({ currentStep, completedSteps }: SetupStepperProps)
                 className={[
                   'flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
                   isCompleted
-                    ? 'bg-accent text-white'
+                    ? 'bg-accent text-accent-foreground'
                     : isCurrent
                       ? 'border-2 border-accent bg-surface-primary text-accent'
                       : 'border border-border bg-surface-tertiary text-text-muted',

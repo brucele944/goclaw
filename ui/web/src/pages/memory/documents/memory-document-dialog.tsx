@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import {
@@ -26,6 +26,7 @@ interface MemoryDocumentDialogProps {
 export function MemoryDocumentDialog({ open, onOpenChange, agentId, document }: MemoryDocumentDialogProps) {
   const { t } = useTranslation("memory");
   const { t: tc } = useTranslation("common");
+  const contentId = useId();
   const http = useHttp();
   const [tab, setTab] = useState<"content" | "chunks">("content");
   const [detail, setDetail] = useState<MemoryDocumentDetail | null>(null);
@@ -147,11 +148,12 @@ export function MemoryDocumentDialog({ open, onOpenChange, agentId, document }: 
                 </div>
               )}
               <div className="grid gap-1.5">
-                <Label>{t("documentDialog.content")}</Label>
+                <Label htmlFor={contentId}>{t("documentDialog.content")}</Label>
                 {loadingDetail ? (
                   <div className="h-48 flex items-center justify-center text-muted-foreground">{tc("loading")}</div>
                 ) : (
                   <Textarea
+                    id={contentId}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className="font-mono text-xs min-h-[300px]"

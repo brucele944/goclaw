@@ -31,7 +31,7 @@ function StatCard({ label, value, trend, hint }: StatCardProps) {
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold" title={hint}>{value}</p>
       {trend !== null ? (
-        <div className={`mt-1 flex items-center gap-1 text-xs ${isUp ? "text-green-600" : isDown ? "text-red-500" : "text-muted-foreground"}`}>
+        <div className={`mt-1 flex items-center gap-1 text-xs ${isUp ? "text-success-text" : isDown ? "text-destructive-text" : "text-muted-foreground"}`}>
           {isUp ? <TrendingUp className="h-3 w-3" /> : isDown ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
           <span>
             {isUp

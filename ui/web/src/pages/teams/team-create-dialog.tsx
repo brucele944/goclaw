@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useId } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,8 @@ interface TeamCreateDialogProps {
 
 export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDialogProps) {
   const { t } = useTranslation("teams");
+  const leadFieldId = useId();
+  const membersFieldId = useId();
   const { agents, loading: agentsLoading, refresh: refreshAgents } = useAgents();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -138,8 +140,9 @@ export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDia
           </div>
 
           <div className="space-y-2">
-            <Label>{t("create.leadAgent")}</Label>
+            <Label htmlFor={leadFieldId}>{t("create.leadAgent")}</Label>
             <Combobox
+              id={leadFieldId}
               value={lead}
               onChange={setLead}
               options={leadOptions}
@@ -151,7 +154,7 @@ export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDia
           </div>
 
           <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1">
+            <Label htmlFor={membersFieldId} className="inline-flex items-center gap-1">
               {t("create.members")}
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
@@ -165,6 +168,7 @@ export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDia
               </TooltipProvider>
             </Label>
             <Combobox
+              id={membersFieldId}
               value={memberSearch}
               onChange={(val) => {
                 // If an option was selected (value matches an agent ID), add it
@@ -186,6 +190,7 @@ export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDia
                       type="button"
                       onClick={() => removeMember(id)}
                       className="ml-0.5 rounded-full p-0.5 hover:bg-muted"
+                      aria-label={t("members.removeMember")}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -194,7 +199,7 @@ export function TeamCreateDialog({ open, onOpenChange, onCreate }: TeamCreateDia
               </div>
             )}
             {lead && members.length === 0 && memberOptions.length > 0 && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">{t("create.needMembers")}</p>
+              <p className="text-xs text-warning-text">{t("create.needMembers")}</p>
             )}
           </div>
         </div>

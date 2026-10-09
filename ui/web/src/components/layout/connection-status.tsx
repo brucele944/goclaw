@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils";
 import { cleanVersion } from "@/lib/clean-version";
 
 const ROLE_STYLES: Record<string, string> = {
-  admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  admin: "bg-destructive-subtle text-destructive-text",
   owner: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-  operator: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  operator: "bg-info-subtle text-info-text",
   viewer: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
@@ -36,7 +36,7 @@ export function ConnectionStatus({ collapsed }: { collapsed?: boolean }) {
         <span
           className={cn(
             "h-2 w-2 shrink-0 rounded-full",
-            connected ? "bg-green-500" : "bg-red-500",
+            connected ? "bg-success" : "bg-destructive",
           )}
         />
         {!collapsed && (

@@ -81,7 +81,7 @@ function DropZoneImportTab({
               <div key={i} className="flex items-center gap-2 px-4 py-2">
                 {e.type === "skipped"
                   ? <SkipForward className="h-4 w-4 text-muted-foreground" />
-                  : <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                  : <CheckCircle2 className="h-4 w-4 text-success-text" />}
                 <span>{e.label}</span>
                 <span className="ml-auto text-xs font-medium tabular-nums">{e.value}</span>
               </div>
@@ -131,20 +131,7 @@ function DropZoneImportTab({
       )}
 
       {!file && (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragging
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{dropLabel}</p>
-          <p className="text-xs text-muted-foreground/60">{dropFormats}</p>
+        <>
           <input
             ref={fileRef}
             type="file"
@@ -152,7 +139,23 @@ function DropZoneImportTab({
             accept=".tar.gz,.gz"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
           />
-        </div>
+          <button
+            type="button"
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              dragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground/50" />
+            <span className="block text-sm text-muted-foreground">{dropLabel}</span>
+            <span className="block text-xs text-muted-foreground/60">{dropFormats}</span>
+          </button>
+        </>
       )}
 
       {file && (

@@ -20,6 +20,7 @@ interface BackgroundErrorBannerProps {
 
 export function BackgroundErrorBanner({ settingsOpen, onOpenSettings }: BackgroundErrorBannerProps) {
   const { t } = useTranslation("system-settings");
+  const { t: tCommon } = useTranslation("common");
   const http = useHttp();
   const role = useAuthStore((s) => s.role);
   const isAdmin = role === "admin" || role === "owner";
@@ -62,20 +63,26 @@ export function BackgroundErrorBanner({ settingsOpen, onOpenSettings }: Backgrou
   const reasonText = t(reasonKey, { defaultValue: t("alert.reason.unknown") });
 
   return (
-    <div className="flex items-center gap-3 border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-      <AlertTriangle className="h-4 w-4 shrink-0" />
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-3 border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive"
+    >
+      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="flex-1">
         {t("alert.message", { reason: reasonText })}
       </span>
       <Button variant="outline" size="sm" onClick={onOpenSettings} className="shrink-0 gap-1.5 h-7 text-xs">
-        <Settings2 className="h-3.5 w-3.5" />
+        <Settings2 className="h-3.5 w-3.5" aria-hidden="true" />
         {t("alert.openSettings")}
       </Button>
       <button
+        type="button"
         onClick={() => setDismissed(true)}
+        aria-label={tCommon("dismiss")}
         className="shrink-0 rounded p-1 hover:bg-destructive/20"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </div>
   );

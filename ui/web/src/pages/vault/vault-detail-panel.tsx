@@ -91,11 +91,11 @@ export function VaultDetailPanel({ doc, open, onClose, onDeleted }: Props) {
             </>
           )}
           {!editMode && (
-            <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={startEdit}>
+            <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={startEdit} aria-label={t("common:edit")}>
               <Pencil className="h-3 w-3" />
             </Button>
           )}
-          <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={onClose}>
+          <Button variant="ghost" size="xs" className="h-6 w-6 p-0" onClick={onClose} aria-label={t("common:close")}>
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -145,7 +145,7 @@ export function VaultDetailPanel({ doc, open, onClose, onDeleted }: Props) {
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Link2 className="h-3 w-3" />
                 <span>{t("detail.outlinks")} ({outlinks.length})</span>
-                <Button variant="ghost" size="xs" className="h-5 px-1 ml-auto" onClick={() => setLinkDialogOpen(true)}>
+                <Button variant="ghost" size="xs" className="h-5 px-1 ml-auto" onClick={() => setLinkDialogOpen(true)} aria-label={t("addLink")}>
                   <Plus className="h-2.5 w-2.5" />
                 </Button>
               </div>

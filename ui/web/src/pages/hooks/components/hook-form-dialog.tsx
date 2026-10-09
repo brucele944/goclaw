@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -33,6 +33,7 @@ interface HookFormDialogProps {
 
 export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFormDialogProps) {
   const { t } = useTranslation("hooks");
+  const uid = useId();
   const isMasterScope = useAuthStore((s) => s.isMasterScope);
   // Global scope hidden for non-master callers; existing `global` hooks still render as-is in edit mode.
   const scopeOptions = isMasterScope
@@ -124,15 +125,16 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
 
         <div className="flex-1 space-y-4 overflow-y-auto -mx-4 px-4 sm:-mx-6 sm:px-6">
           {isBuiltin && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+            <div className="rounded-lg border border-info/25 bg-info-subtle px-3 py-2 text-xs">
               {t("form.builtinReadonly")}
             </div>
           )}
 
           {/* Name — optional user-facing label */}
           <div className="space-y-1.5">
-            <Label>{t("form.name")}</Label>
+            <Label htmlFor={`${uid}-name`}>{t("form.name")}</Label>
             <Input
+              id={`${uid}-name`}
               {...register("name")}
               placeholder={t("form.namePlaceholder")}
               className="text-base md:text-sm"
@@ -143,10 +145,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
           {/* Event + Scope side-by-side on wider viewports */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t("form.event")}</Label>
+              <Label htmlFor={`${uid}-event`}>{t("form.event")}</Label>
               <Controller control={control} name="event" render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange} disabled={isBuiltin}>
-                  <SelectTrigger className="text-base md:text-sm">
+                  <SelectTrigger id={`${uid}-event`} className="text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,10 +161,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
             </div>
             {/* Scope — global hidden for non-master callers (advisory UI hint; backend enforces). */}
             <div className="space-y-1.5">
-              <Label>{t("form.scope")}</Label>
+              <Label htmlFor={`${uid}-scope`}>{t("form.scope")}</Label>
               <Controller control={control} name="scope" render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange} disabled={isBuiltin}>
-                  <SelectTrigger className="text-base md:text-sm">
+                  <SelectTrigger id={`${uid}-scope`} className="text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -179,8 +181,8 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
           {scope === "agent" && agents.length > 0 && (
             <Controller control={control} name="agent_ids" render={({ field }) => (
               <div className="space-y-1.5">
-                <Label>{t("form.agents")}</Label>
-                <div className="grid gap-1.5 max-h-40 overflow-y-auto rounded border p-2 sm:grid-cols-2">
+                <Label id={`${uid}-agents`}>{t("form.agents")}</Label>
+                <div role="group" aria-labelledby={`${uid}-agents`} className="grid gap-1.5 max-h-40 overflow-y-auto rounded border p-2 sm:grid-cols-2">
                   {agents.map((a) => {
                     const checked = (field.value ?? []).includes(a.id);
                     return (
@@ -189,7 +191,7 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
                           type="checkbox"
                           checked={checked}
                           disabled={isBuiltin}
-                          className="rounded border-input"
+                          className="rounded border-control-border"
                           onChange={(e) => {
                             const ids = field.value ?? [];
                             field.onChange(e.target.checked ? [...ids, a.id] : ids.filter((x: string) => x !== a.id));
@@ -209,9 +211,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               existing rows but cannot create new ones via UI (DB/CLI path only).
               `script` added in Phase 06 (goja sandbox; builtin PII redactor = Phase 05). */}
           <div className="space-y-1.5">
-            <Label>{t("form.handlerType")}</Label>
+            <Label id={`${uid}-handler-type`}>{t("form.handlerType")}</Label>
             <Controller control={control} name="handler_type" render={({ field }) => (
               <RadioGroup
+                aria-labelledby={`${uid}-handler-type`}
                 value={field.value}
                 onValueChange={field.onChange}
                 className="flex flex-wrap gap-4"
@@ -219,8 +222,8 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               >
                 {(["script", "http", "prompt"] as const).map((ht) => (
                   <div key={ht} className="flex items-center gap-1.5">
-                    <RadioGroupItem value={ht} id={`ht-${ht}`} />
-                    <Label htmlFor={`ht-${ht}`} className="cursor-pointer">
+                    <RadioGroupItem value={ht} id={`${uid}-ht-${ht}`} />
+                    <Label htmlFor={`${uid}-ht-${ht}`} className="cursor-pointer">
                       {ht}
                     </Label>
                   </div>
@@ -232,8 +235,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
           {/* Matcher + if_expr side-by-side */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t("form.matcher")}</Label>
+              <Label htmlFor={`${uid}-matcher`}>{t("form.matcher")}</Label>
               <Input
+                id={`${uid}-matcher`}
                 {...register("matcher")}
                 placeholder="^bash$"
                 className="text-base md:text-sm font-mono"
@@ -245,8 +249,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               }
             </div>
             <div className="space-y-1.5">
-              <Label>{t("form.ifExpr")}</Label>
+              <Label htmlFor={`${uid}-if-expr`}>{t("form.ifExpr")}</Label>
               <Input
+                id={`${uid}-if-expr`}
                 {...register("if_expr")}
                 placeholder='tool_input.path.startsWith("/etc")'
                 className="text-base md:text-sm font-mono"
@@ -279,8 +284,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
           {handlerType === "http" && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="space-y-1.5">
-                <Label>{t("form.url")}</Label>
+                <Label htmlFor={`${uid}-url`}>{t("form.url")}</Label>
                 <Input
+                  id={`${uid}-url`}
                   {...register("url")}
                   placeholder="https://hooks.example.com/agent"
                   className="text-base md:text-sm"
@@ -289,10 +295,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
                 {errors.url && <p className="text-xs text-destructive">{errors.url.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>{t("form.method")}</Label>
+                <Label htmlFor={`${uid}-method`}>{t("form.method")}</Label>
                 <Controller control={control} name="method" render={({ field }) => (
                   <Select value={field.value ?? "POST"} onValueChange={field.onChange} disabled={isBuiltin}>
-                    <SelectTrigger className="text-base md:text-sm">
+                    <SelectTrigger id={`${uid}-method`} className="text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -304,8 +310,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
                 )} />
               </div>
               <div className="space-y-1.5">
-                <Label>{t("form.bodyTemplate")}</Label>
+                <Label htmlFor={`${uid}-body-template`}>{t("form.bodyTemplate")}</Label>
                 <Textarea
+                  id={`${uid}-body-template`}
                   {...register("body_template")}
                   rows={3}
                   placeholder='{"event": "{{.Event}}"}'
@@ -319,8 +326,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
           {handlerType === "prompt" && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="space-y-1.5">
-                <Label>{t("form.promptTemplate")}</Label>
+                <Label htmlFor={`${uid}-prompt-template`}>{t("form.promptTemplate")}</Label>
                 <Textarea
+                  id={`${uid}-prompt-template`}
                   {...register("prompt_template")}
                   rows={4}
                   placeholder="Evaluate the tool call and decide whether to allow or block it."
@@ -357,8 +365,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{t("form.maxInvocationsPerTurn")}</Label>
+                <Label htmlFor={`${uid}-max-invocations`}>{t("form.maxInvocationsPerTurn")}</Label>
                 <Input
+                  id={`${uid}-max-invocations`}
                   type="number"
                   min={1}
                   max={20}
@@ -375,8 +384,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               change for builtin hooks). */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
-              <Label>{t("form.timeout")}</Label>
+              <Label htmlFor={`${uid}-timeout`}>{t("form.timeout")}</Label>
               <Input
+                id={`${uid}-timeout`}
                 type="number"
                 min={100}
                 {...register("timeout_ms", { valueAsNumber: true })}
@@ -385,10 +395,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("form.onTimeout")}</Label>
+              <Label htmlFor={`${uid}-on-timeout`}>{t("form.onTimeout")}</Label>
               <Controller control={control} name="on_timeout" render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange} disabled={isBuiltin}>
-                  <SelectTrigger className="text-base md:text-sm">
+                  <SelectTrigger id={`${uid}-on-timeout`} className="text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -399,8 +409,9 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               )} />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("form.priority")}</Label>
+              <Label htmlFor={`${uid}-priority`}>{t("form.priority")}</Label>
               <Input
+                id={`${uid}-priority`}
                 type="number"
                 min={0}
                 max={1000}
@@ -410,10 +421,10 @@ export function HookFormDialog({ open, onOpenChange, onSubmit, initial }: HookFo
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("form.enabled")}</Label>
+              <Label htmlFor={`${uid}-enabled`}>{t("form.enabled")}</Label>
               <div className="flex h-9 items-center">
                 <Controller control={control} name="enabled" render={({ field }) => (
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  <Switch id={`${uid}-enabled`} checked={field.value} onCheckedChange={field.onChange} />
                 )} />
               </div>
             </div>

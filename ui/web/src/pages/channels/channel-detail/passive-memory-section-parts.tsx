@@ -34,7 +34,7 @@ export function memoryItemDebugBadges(item: Pick<ChannelMemoryExtractionItem, "t
 
 export function memoryItemDebugBadgeClass(kind: MemoryItemDebugBadge["kind"]): string {
   if (kind === "topic") {
-    return "cursor-help border-sky-500/30 bg-sky-500/10 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-300";
+    return "cursor-help border-info/25 bg-info-subtle text-info-text";
   }
   return "cursor-help border-violet-500/30 bg-violet-500/10 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-300";
 }

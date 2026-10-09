@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import { useTranslation } from 'react-i18next'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
 import { CodeBlock } from './CodeBlock'
@@ -48,6 +49,7 @@ function resolveFileUrl(path: string, baseUrl?: string): string {
 }
 
 export function MarkdownRenderer({ content, baseUrl }: MarkdownRendererProps) {
+  const { t } = useTranslation('common')
   return (
     <div className="text-sm leading-relaxed text-text-primary break-words overflow-hidden">
     <ReactMarkdown
@@ -91,8 +93,9 @@ export function MarkdownRenderer({ content, baseUrl }: MarkdownRendererProps) {
               <span className="group/img relative inline-block">
                 <AuthImage src={resolvedSrc} alt={alt ?? ''} className="max-w-full rounded-lg" />
                 <button
+                  aria-label={t('download')}
                   onClick={() => downloadFile(resolvedSrc, filename)}
-                  className="absolute top-2 right-2 opacity-0 group-hover/img:opacity-100 transition-opacity rounded bg-black/60 p-1.5 text-white hover:bg-black/80"
+                  className="absolute top-2 right-2 opacity-0 group-hover/img:opacity-100 focus-visible:opacity-100 transition-opacity rounded bg-black/60 p-2.5 text-white hover:bg-black/80"
                 >
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

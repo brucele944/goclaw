@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useId, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Upload, FileArchive, AlertTriangle } from "lucide-react";
@@ -40,6 +40,10 @@ export function AgentImportPanel() {
   );
   const [parseError, setParseError] = useState("");
   const imp = useImport();
+  const modeSelectId = useId();
+  const displayNameInputId = useId();
+  const agentKeyInputId = useId();
+  const mergeTargetId = useId();
 
   const handleFile = useCallback(async (f: File) => {
     setFile(f);
@@ -91,7 +95,7 @@ export function AgentImportPanel() {
         <div className="flex items-center justify-end gap-2 pt-2">
           {imp.status === "running" && (
             <>
-              <p className="text-xs text-amber-600 mr-auto flex items-center gap-1">
+              <p className="text-xs text-warning-text mr-auto flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 {t("betaWarning")}
               </p>
@@ -118,21 +122,24 @@ export function AgentImportPanel() {
   return (
     <div className="space-y-4">
       {!file && (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{t("import.filePlaceholder")}</p>
-          <p className="text-xs text-muted-foreground/60">{t("import.file")}</p>
+        <>
           <input ref={fileRef} type="file" className="hidden" accept=".tar.gz,.gz,.json,.agent.json"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        </div>
+          <button
+            type="button"
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground/50" />
+            <span className="block text-sm text-muted-foreground">{t("import.filePlaceholder")}</span>
+            <span className="block text-xs text-muted-foreground/60">{t("import.file")}</span>
+          </button>
+        </>
       )}
       {parseError && <p className="text-sm text-destructive">{parseError}</p>}
 
@@ -152,9 +159,9 @@ export function AgentImportPanel() {
           </div>
 
           <div>
-            <Label>{t("import.mode")}</Label>
+            <Label htmlFor={modeSelectId}>{t("import.mode")}</Label>
             <Select value={mode} onValueChange={(v) => setMode(v as ImportMode)}>
-              <SelectTrigger className="mt-1 text-base md:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger id={modeSelectId} className="mt-1 text-base md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="new">{t("import.modeNew")}</SelectItem>
                 <SelectItem value="merge">{t("import.modeMerge")}</SelectItem>
@@ -165,13 +172,13 @@ export function AgentImportPanel() {
           {mode === "new" && (
             <>
               <div>
-                <Label>{t("import.agentKey")}</Label>
-                <Input value={displayName} onChange={(e) => handleNameChange(e.target.value)}
+                <Label htmlFor={displayNameInputId}>{t("import.agentKey")}</Label>
+                <Input id={displayNameInputId} value={displayName} onChange={(e) => handleNameChange(e.target.value)}
                   placeholder={t("import.agentKeyPlaceholder")} className="mt-1 text-base md:text-sm" />
               </div>
               <div>
-                <Label>{t("import.agentKey")}</Label>
-                <Input value={agentKey} onChange={(e) => { setAgentKey(e.target.value); setKeyTouched(true); }}
+                <Label htmlFor={agentKeyInputId}>{t("import.agentKey")}</Label>
+                <Input id={agentKeyInputId} value={agentKey} onChange={(e) => { setAgentKey(e.target.value); setKeyTouched(true); }}
                   placeholder={t("import.agentKeyPlaceholder")} className="mt-1 font-mono text-base md:text-sm" />
               </div>
             </>
@@ -180,8 +187,8 @@ export function AgentImportPanel() {
           {mode === "merge" && (
             <>
               <div>
-                <Label className="mb-1.5">{t("import.targetAgent")}</Label>
-                <Combobox value={mergeTarget} onChange={setMergeTarget} options={agentOptions}
+                <Label htmlFor={mergeTargetId} className="mb-1.5">{t("import.targetAgent")}</Label>
+                <Combobox id={mergeTargetId} value={mergeTarget} onChange={setMergeTarget} options={agentOptions}
                   placeholder={t("import.targetAgentPlaceholder")} />
               </div>
               <SectionPicker sections={MERGE_SECTIONS} selected={mergeSelected} onChange={setMergeSelected} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const EMPTY_BINDING: Binding = { agentId: "", match: { channel: "", peer: { kind
 export function BindingsSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
   const { t: tc } = useTranslation("common");
+  const uid = useId();
   const [draft, setDraft] = useState<Binding[]>(data ?? []);
   const [dirty, setDirty] = useState(false);
 
@@ -94,17 +95,18 @@ export function BindingsSection({ data, onSave, saving }: Props) {
             <div key={idx} className="flex items-start gap-3 rounded-md border p-3">
               <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="grid gap-1">
-                  <Label className="text-xs">{t("bindings.agentId")}</Label>
+                  <Label className="text-xs" htmlFor={`${uid}-${idx}-agent-id`}>{t("bindings.agentId")}</Label>
                   <Input
+                    id={`${uid}-${idx}-agent-id`}
                     value={binding.agentId ?? ""}
                     onChange={(e) => updateBinding(idx, { agentId: e.target.value })}
                     placeholder={tc("default")}
                   />
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-xs">{t("bindings.channel")}</Label>
+                  <Label className="text-xs" htmlFor={`${uid}-${idx}-channel`}>{t("bindings.channel")}</Label>
                   <Select value={binding.match?.channel ?? ""} onValueChange={(v) => updateMatch(idx, { channel: v })}>
-                    <SelectTrigger>
+                    <SelectTrigger id={`${uid}-${idx}-channel`}>
                       <SelectValue placeholder={t("bindings.any")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -118,9 +120,9 @@ export function BindingsSection({ data, onSave, saving }: Props) {
                   </Select>
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-xs">{t("bindings.peerKind")}</Label>
+                  <Label className="text-xs" htmlFor={`${uid}-${idx}-peer-kind`}>{t("bindings.peerKind")}</Label>
                   <Select value={binding.match?.peer?.kind ?? ""} onValueChange={(v) => updatePeer(idx, { kind: v })}>
-                    <SelectTrigger>
+                    <SelectTrigger id={`${uid}-${idx}-peer-kind`}>
                       <SelectValue placeholder={t("bindings.any")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -130,15 +132,16 @@ export function BindingsSection({ data, onSave, saving }: Props) {
                   </Select>
                 </div>
                 <div className="grid gap-1">
-                  <Label className="text-xs">{t("bindings.peerId")}</Label>
+                  <Label className="text-xs" htmlFor={`${uid}-${idx}-peer-id`}>{t("bindings.peerId")}</Label>
                   <Input
+                    id={`${uid}-${idx}-peer-id`}
                     value={binding.match?.peer?.id ?? ""}
                     onChange={(e) => updatePeer(idx, { id: e.target.value })}
                     placeholder={tc("optional")}
                   />
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="mt-5 shrink-0" onClick={() => removeBinding(idx)}>
+              <Button variant="ghost" size="icon" className="mt-5 shrink-0" aria-label={tc("remove")} onClick={() => removeBinding(idx)}>
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>

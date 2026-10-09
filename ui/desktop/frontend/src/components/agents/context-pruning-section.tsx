@@ -18,7 +18,7 @@ function NumInput({ label, value, hint, step, onChange }: {
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium text-text-secondary">{label}</label>
+      <label className="text-2xs font-medium text-text-secondary">{label}</label>
       <input
         type="number"
         value={value ?? ''}
@@ -26,7 +26,7 @@ function NumInput({ label, value, hint, step, onChange }: {
         onChange={(e) => onChange(numOrUndef(e.target.value))}
         className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
       />
-      {hint && <p className="text-[10px] text-text-muted">{hint}</p>}
+      {hint && <p className="text-2xs text-text-muted">{hint}</p>}
     </div>
   )
 }

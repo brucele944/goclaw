@@ -77,6 +77,7 @@
     "allChannels": "Tất cả kênh",
     "activeFilters": "Bộ lọc đang áp dụng",
     "clearAll": "Xóa tất cả",
+    "removeFilter": "Gỡ bỏ bộ lọc",
     "exportCsv": "Xuất CSV",
     "requests": "Yêu cầu",
     "tokens": "Token",

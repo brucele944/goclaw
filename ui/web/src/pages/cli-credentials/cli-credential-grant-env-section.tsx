@@ -4,7 +4,7 @@
  * Reveal: POST .../env:reveal — values in component state only, cleared on close.
  * Denylist: keep in sync with internal/crypto/env_denylist.go
  */
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,10 +150,11 @@ export function CliCredentialGrantEnvSection({
   };
   const isRejected = (k: string) => k.length > 0 && rejectedKeys.includes(k);
   const hasMasked = entries.some((e) => e.masked);
+  const titleId = useId();
 
   return (
-    <div className="grid gap-2 rounded-md border p-3">
-      <Label className="text-sm font-medium">
+    <div className="grid gap-2 rounded-md border p-3" role="group" aria-labelledby={titleId}>
+      <Label id={titleId} className="text-sm font-medium">
         {t("grants.envVars.title")}
       </Label>
       <div className="flex items-start gap-3">

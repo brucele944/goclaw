@@ -77,6 +77,7 @@
     "allChannels": "All Channels",
     "activeFilters": "Active filters",
     "clearAll": "Clear all",
+    "removeFilter": "Remove filter",
     "exportCsv": "Export CSV",
     "requests": "Requests",
     "tokens": "Tokens",

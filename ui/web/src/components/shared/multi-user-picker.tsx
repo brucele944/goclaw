@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useContactResolver } from "@/hooks/use-contact-resolver";
@@ -17,6 +18,8 @@ interface MultiUserPickerProps {
   allowCustom?: boolean;
   /** Render dropdown into a portal container (useful inside dialogs). */
   portalContainer?: React.RefObject<HTMLElement | null>;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 /**
@@ -34,9 +37,11 @@ export function MultiUserPicker({
   peerKind,
   allowCustom = true,
   portalContainer,
+  id,
 }: MultiUserPickerProps) {
   const [inputValue, setInputValue] = useState("");
   const { resolve } = useContactResolver(value);
+  const { t } = useTranslation("common");
 
   const handleCommit = (val: string) => {
     const trimmed = val.trim();
@@ -57,6 +62,7 @@ export function MultiUserPicker({
         peerKind={peerKind}
         allowCustom={allowCustom}
         portalContainer={portalContainer}
+        id={id}
       />
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -66,6 +72,7 @@ export function MultiUserPicker({
               <button
                 type="button"
                 onClick={() => onChange(value.filter((v) => v !== id))}
+                aria-label={t("remove")}
                 className="relative ml-0.5 cursor-pointer rounded-full p-0.5 hover:bg-muted after:absolute after:-inset-2 after:content-[''] md:after:hidden"
               >
                 <X className="h-3 w-3" />

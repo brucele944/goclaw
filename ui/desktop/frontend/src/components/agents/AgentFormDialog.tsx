@@ -118,7 +118,7 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
           <h3 className="text-sm font-semibold text-text-primary">
             {isEditing ? t('agents:detail.tabs.agent') + ' — ' + t('common:edit') : t('agents:create.title')}
           </h3>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
@@ -169,7 +169,7 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-5 py-4 shrink-0">
-          <div>{verifyResult && !verifyResult.valid && <span className="text-[11px] text-error">{verifyResult.error}</span>}</div>
+          <div>{verifyResult && !verifyResult.valid && <span className="text-2xs text-error">{verifyResult.error}</span>}</div>
           <div className="flex items-center gap-2">
             <button onClick={() => onOpenChange(false)} className="px-3 py-1.5 text-xs border border-border rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors">{t('agents:create.cancel')}</button>
             {!isEditing && providerRef && model.trim() && !verifyResult?.valid && (
@@ -177,7 +177,7 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSubmit }: AgentFo
                 {verifying ? (<><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>{t('desktop:agent.verifying')}</>) : t('desktop:agent.verifyModel')}
               </button>
             )}
-            <button onClick={handleSubmit(onValid)} disabled={!canCreate || isSubmitting} className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5">
+            <button onClick={handleSubmit(onValid)} disabled={!canCreate || isSubmitting} className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5">
               {isSubmitting ? '...' : isEditing ? t('common:save') : (<>{verifyResult?.valid && (<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>)}{t('desktop:agent.summon')}</>)}
             </button>
           </div>

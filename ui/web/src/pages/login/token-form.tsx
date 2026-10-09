@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { tokenFormSchema, type TokenFormData } from "@/schemas/login.schema";
@@ -15,6 +16,7 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
   const { t } = useTranslation("login");
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showToken, setShowToken] = useState(false);
 
   const {
     register,
@@ -55,6 +57,10 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
     }
   };
 
+  const userIdDescribedBy = [errors.userId ? "userId-error" : null, "userId-hint"]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <form onSubmit={handleSubmit(onValid)} className="space-y-4">
       <div className="space-y-2">
@@ -64,16 +70,21 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
         <Input
           id="userId"
           type="text"
+          autoComplete="username"
           {...register("userId")}
           placeholder={t("token.userIdPlaceholder")}
           className="text-base md:text-sm"
+          aria-invalid={errors.userId ? true : undefined}
+          aria-describedby={userIdDescribedBy}
           autoFocus
           disabled={connecting}
         />
         {errors.userId && (
-          <p className="text-xs text-destructive">{errors.userId.message}</p>
+          <p id="userId-error" role="alert" className="text-xs text-destructive">
+            {errors.userId.message}
+          </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p id="userId-hint" className="text-xs text-muted-foreground">
           {t("token.userIdHint")}
         </p>
       </div>
@@ -82,33 +93,54 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
         <Label htmlFor="token" className="text-sm font-medium">
           {t("token.gatewayToken")}
         </Label>
-        <Input
-          id="token"
-          type="password"
-          {...register("token")}
-          placeholder={t("token.tokenPlaceholder")}
-          className="text-base md:text-sm"
-          disabled={connecting}
-        />
+        <div className="relative">
+          <Input
+            id="token"
+            type={showToken ? "text" : "password"}
+            autoComplete="current-password"
+            {...register("token")}
+            placeholder={t("token.tokenPlaceholder")}
+            className="text-base md:text-sm pr-10"
+            aria-invalid={errors.token ? true : undefined}
+            aria-describedby={errors.token ? "token-error" : undefined}
+            disabled={connecting}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setShowToken((v) => !v)}
+            aria-pressed={showToken}
+            aria-label={showToken ? t("token.hidePassword") : t("token.showPassword")}
+            className="absolute inset-y-0 right-1 my-auto text-muted-foreground"
+          >
+            {showToken ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+          </Button>
+        </div>
         {errors.token && (
-          <p className="text-xs text-destructive">{errors.token.message}</p>
+          <p id="token-error" role="alert" className="text-xs text-destructive">
+            {errors.token.message}
+          </p>
         )}
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={connecting}
-        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-      >
+      <Button type="submit" className="w-full" disabled={connecting}>
         {connecting ? t("token.connecting") : t("token.connect")}
-      </button>
+      </Button>
     </form>
   );
 }

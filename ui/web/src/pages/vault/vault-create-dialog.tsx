@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, type ChangeEvent, type DragEvent } from "react";
+import { useState, useEffect, useCallback, useRef, useId, type ChangeEvent, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Upload, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ interface Props {
 
 export function VaultCreateDialog({ open, onOpenChange, onUploaded, defaultAgentId, defaultTeamId }: Props) {
   const { t } = useTranslation("vault");
+  const destinationLabelId = useId();
   const { agents } = useAgents();
   const { teams, load: loadTeams } = useTeams();
   const { upload, isPending } = useVaultUpload();
@@ -124,8 +125,9 @@ export function VaultCreateDialog({ open, onOpenChange, onUploaded, defaultAgent
         <div className="space-y-4 max-h-[calc(85vh-8rem)] overflow-y-auto overscroll-contain -mx-1 px-1">
           {/* Destination */}
           <fieldset className="space-y-3">
-            <Label>{t("upload.destination", "Destination")}</Label>
+            <Label id={destinationLabelId}>{t("upload.destination", "Destination")}</Label>
             <RadioGroup
+              aria-labelledby={destinationLabelId}
               value={destination}
               onValueChange={(v) => setDestination(v as Destination)}
               className="gap-3"
@@ -184,21 +186,22 @@ export function VaultCreateDialog({ open, onOpenChange, onUploaded, defaultAgent
           </fieldset>
 
           {/* Drop zone */}
-          <div
+          <input ref={inputRef} type="file" multiple accept={ACCEPT_ATTR}
+            onChange={onFileInput} className="hidden" />
+          <button
+            type="button"
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => inputRef.current?.click()}
-            className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors ${
+            className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               dragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
             }`}
           >
             <Upload className="h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">{t("upload.dropzone", "Drop files here or click to browse")}</p>
-            <p className="text-xs text-muted-foreground/60">{t("upload.dropzoneHint", "Text files only (.md, .txt, .json, .yaml, .csv, ...)")}</p>
-            <input ref={inputRef} type="file" multiple accept={ACCEPT_ATTR}
-              onChange={onFileInput} className="hidden" />
-          </div>
+            <span className="block text-sm text-muted-foreground">{t("upload.dropzone", "Drop files here or click to browse")}</span>
+            <span className="block text-xs text-muted-foreground/60">{t("upload.dropzoneHint", "Text files only (.md, .txt, .json, .yaml, .csv, ...)")}</span>
+          </button>
 
           {/* File list */}
           {files.length > 0 && (
@@ -212,7 +215,7 @@ export function VaultCreateDialog({ open, onOpenChange, onUploaded, defaultAgent
                     <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate flex-1 font-mono text-xs">{f.name}</span>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatBytes(f.size)}</span>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(i); }} aria-label={t("common:remove")}
                       className="shrink-0 p-1 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
                       <X className="h-3.5 w-3.5" />
                     </button>

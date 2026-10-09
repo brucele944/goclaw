@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { formatTokens, formatApiCost, formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useUsageFilterContext } from "../context/usage-filter-context";
 import type { SnapshotBreakdown } from "../hooks/use-usage-analytics";
 
@@ -44,13 +45,17 @@ export function TopModelsTable({ data, loading }: TopModelsTableProps) {
   function ThSort({ col, label }: { col: SortKey; label: string }) {
     return (
       <th
-        className="px-3 py-2 text-right font-medium cursor-pointer select-none hover:text-foreground whitespace-nowrap"
-        onClick={() => handleSort(col)}
+        className="px-3 py-2 text-right font-medium select-none whitespace-nowrap"
+        aria-sort={sortKey === col ? (sortDir === "desc" ? "descending" : "ascending") : "none"}
       >
-        <span className="inline-flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => handleSort(col)}
+          className="flex w-full items-center justify-end cursor-pointer font-medium hover:text-foreground rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           {label}
           <SortIcon col={col} />
-        </span>
+        </button>
       </th>
     );
   }
@@ -111,10 +116,11 @@ export function TopModelsTable({ data, loading }: TopModelsTableProps) {
                 <tr
                   key={row.key}
                   className={cn(
-                    "border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors",
+                    "border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     isActive && "bg-primary/5",
                   )}
-                  onClick={toggleProviderModel}
+                  aria-pressed={isActive}
+                  {...getClickableProps(toggleProviderModel)}
                 >
                   <td className="px-3 py-2 font-medium">{model}</td>
                   <td className="px-3 py-2 text-muted-foreground">{provider || "—"}</td>

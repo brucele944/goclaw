@@ -700,7 +700,8 @@
     "save": "保存",
     "saved": "已保存",
     "searchContacts": "搜索联系人添加...",
-    "noContactsFound": "未找到联系人"
+    "noContactsFound": "未找到联系人",
+    "emptyPlaceholder": "（空）"
   },
   "summoning": {
     "title": "正在召唤您的Agent...",
@@ -754,6 +755,10 @@
       "selectToolsAlsoAllow": "选择附加工具...",
       "toolCallPrefix": "工具调用前缀",
       "toolCallPrefixHint": "从模型的工具调用名称中去除此前缀后再查找注册表。",
+      "toolCallPrefixPlaceholder": "例如 proxy_",
+      "profileHint": "基础工具配置。'full' 允许所有工具，'coding' 包含 filesystem/runtime/sessions/memory，'messaging' 包含 messaging/sessions，'minimal' 仅允许 session_status。",
+      "toolCallPrefixTip": "在查找注册表之前，从模型返回的工具调用名称中去除前缀。例如：'proxy_' 会去除前缀，使 'proxy_exec' 解析为 'exec'。支持 {tool_name} 占位符。",
+      "waitLimitsTip": "可选的每 Agent wait 工具边界（毫秒）。数值会被服务器安全限制钳制：100ms 到 300000ms。",
       "waitLimits": "Wait 工具边界",
       "waitMinPlaceholder": "最小毫秒",
       "waitMaxPlaceholder": "最大毫秒",
@@ -767,6 +772,7 @@
       "sharedGroup": "在群组中共享",
       "sharedGroupTip": "启用后，群聊中的所有成员共享同一工作区目录",
       "sharedUsers": "共享用户",
+      "addUser": "添加用户",
       "sharedUsersTip": "始终共享工作区的特定用户ID。格式：channel:userId（例如 telegram:386246614）",
       "userIdPlaceholder": "输入用户ID（例如 telegram:386246614）",
       "warning": "启用共享后，所有共享用户可以读写同一工作区目录中的文件。记忆共享单独控制。上下文文件仍按用户隔离。",
@@ -1026,6 +1032,7 @@
     "denied": "Denied",
     "fileWriters": "文件编辑者",
     "configPerms": "配置权限",
+    "revoke": "撤销",
     "noRules": "暂无权限规则。所有者默认拥有完全访问权限。",
     "userIdPlaceholder": "搜索联系人或输入ID...",
     "scopePlaceholder": "选择或输入范围...",

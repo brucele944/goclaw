@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -306,6 +306,7 @@ function DeliveryBehaviorSection({
 }) {
   const { t } = useTranslation("agents");
   const disabled = mode === "inherit";
+  const uid = useId();
   const patch = (updates: DeliveryBehaviorConfig) => onChange({ ...value, ...updates });
   const patchQuick = (updates: NonNullable<DeliveryBehaviorConfig["quick_ack"]>) =>
     patch({ quick_ack: { ...(value.quick_ack ?? {}), ...updates } });
@@ -316,13 +317,13 @@ function DeliveryBehaviorSection({
     <div className="space-y-3 rounded-md border p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <InfoLabel tip={t("delivery.modeTip")} labelClassName="text-sm font-medium">
+          <InfoLabel tip={t("delivery.modeTip")} labelClassName="text-sm font-medium" htmlFor={`${uid}-mode`}>
             {t("delivery.title")}
           </InfoLabel>
           <p className="text-xs text-muted-foreground">{t("delivery.description")}</p>
         </div>
         <Select value={mode} onValueChange={(next) => onModeChange(next as "inherit" | "custom")}>
-          <SelectTrigger className="w-32 text-base md:text-sm">
+          <SelectTrigger id={`${uid}-mode`} className="w-32 text-base md:text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -334,8 +335,8 @@ function DeliveryBehaviorSection({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <InfoLabel tip={t("delivery.quickAckTip")}>{t("delivery.quickAck")}</InfoLabel>
-            <Switch checked={value.quick_ack?.enabled ?? true} disabled={disabled} onCheckedChange={(enabled) => patchQuick({ enabled })} />
+            <InfoLabel tip={t("delivery.quickAckTip")} htmlFor={`${uid}-quickAck`}>{t("delivery.quickAck")}</InfoLabel>
+            <Switch id={`${uid}-quickAck`} checked={value.quick_ack?.enabled ?? true} disabled={disabled} onCheckedChange={(enabled) => patchQuick({ enabled })} />
           </div>
           <DeliveryProviderFields
             disabled={disabled}
@@ -351,8 +352,8 @@ function DeliveryBehaviorSection({
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <InfoLabel tip={t("delivery.intermediateTip")}>{t("delivery.intermediate")}</InfoLabel>
-            <Switch checked={value.intermediate_replies?.enabled ?? false} disabled={disabled} onCheckedChange={(enabled) => patchIntermediate({ enabled })} />
+            <InfoLabel tip={t("delivery.intermediateTip")} htmlFor={`${uid}-intermediate`}>{t("delivery.intermediate")}</InfoLabel>
+            <Switch id={`${uid}-intermediate`} checked={value.intermediate_replies?.enabled ?? false} disabled={disabled} onCheckedChange={(enabled) => patchIntermediate({ enabled })} />
           </div>
           <DeliveryProviderFields
             disabled={disabled}
@@ -407,10 +408,11 @@ function DeliveryProviderFields({
 }
 
 function NumberField({ label, tip, value, disabled, onChange }: { label: string; tip: string; value: number; disabled: boolean; onChange: (value: number) => void }) {
+  const uid = useId();
   return (
     <div className="grid gap-1.5">
-      <InfoLabel tip={tip}>{label}</InfoLabel>
-      <Input className="text-base md:text-sm" type="number" min={0} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
+      <InfoLabel tip={tip} htmlFor={`${uid}-num`}>{label}</InfoLabel>
+      <Input id={`${uid}-num`} className="text-base md:text-sm" type="number" min={0} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
     </div>
   );
 }

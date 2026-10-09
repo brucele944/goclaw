@@ -11,16 +11,16 @@ import { formatRelativeTime } from "@/lib/format";
 import type { EvolutionSuggestion } from "@/types/evolution";
 
 const TYPE_COLORS: Record<string, string> = {
-  threshold: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  tool_order: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
-  skill_add: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  threshold: "bg-info-subtle text-info-text",
+  tool_order: "bg-warning-subtle text-warning-text",
+  skill_add: "bg-success-subtle text-success-text",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  approved: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  applied: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  pending: "bg-warning-subtle text-warning-text",
+  approved: "bg-info-subtle text-info-text",
+  applied: "bg-success-subtle text-success-text",
+  rejected: "bg-destructive-subtle text-destructive-text",
   rolled_back: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
@@ -94,7 +94,7 @@ export function EvolutionSuggestionsTable({ suggestions, loading, onUpdateStatus
                         <>
                           <Button
                             size="sm" variant="ghost"
-                            className="h-7 w-7 p-0 text-green-600 hover:text-green-700"
+                            className="h-7 w-7 p-0 text-success-text hover:text-success-text"
                             title={t("detail.evolution.approve")}
                             onClick={() => setConfirm({ id: s.id, action: "approved" })}
                           >
@@ -102,7 +102,7 @@ export function EvolutionSuggestionsTable({ suggestions, loading, onUpdateStatus
                           </Button>
                           <Button
                             size="sm" variant="ghost"
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            className="h-7 w-7 p-0 text-destructive-text hover:text-destructive-text"
                             title={t("detail.evolution.reject")}
                             onClick={() => setConfirm({ id: s.id, action: "rejected" })}
                           >
@@ -113,7 +113,7 @@ export function EvolutionSuggestionsTable({ suggestions, loading, onUpdateStatus
                       {s.status === "applied" && (
                         <Button
                           size="sm" variant="ghost"
-                          className="h-7 w-7 p-0 text-orange-600 hover:text-orange-700"
+                          className="h-7 w-7 p-0 text-warning-text hover:text-warning-text"
                           title={t("detail.evolution.rollback")}
                           onClick={() => setConfirm({ id: s.id, action: "rolled_back" })}
                         >

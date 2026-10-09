@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -40,6 +40,7 @@ export function ModelFallbackSection({
   onChange,
 }: ModelFallbackSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const candidates = value.candidates ?? [];
   const enabledProviders = useMemo(() => {
     const selectedNames = new Set(candidates.map((candidate) => candidate.provider));
@@ -130,12 +131,13 @@ export function ModelFallbackSection({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Switch
+              id={`${uid}-cooldownEnabled`}
               checked={value.cooldown_enabled ?? true}
               onCheckedChange={(cooldownEnabled) =>
                 onChange({ ...value, cooldown_enabled: cooldownEnabled })
               }
             />
-            <Label className="text-xs text-muted-foreground">
+            <Label htmlFor={`${uid}-cooldownEnabled`} className="text-xs text-muted-foreground">
               {t("configSections.modelFallback.cooldown")}
             </Label>
           </div>

@@ -51,7 +51,7 @@ export function TeamsListTab({ onSelectTeam }: TeamsListTabProps) {
           <div className="sm:ml-auto flex items-center gap-0.5 rounded-md border p-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant={viewMode === "card" ? "default" : "ghost"} size="xs" className="h-7 w-7 p-0" onClick={() => setViewMode("card")}>
+                <Button variant={viewMode === "card" ? "default" : "ghost"} size="xs" className="h-7 w-7 p-0" onClick={() => setViewMode("card")} aria-label={t("viewCard")}>
                   <LayoutGrid className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -59,7 +59,7 @@ export function TeamsListTab({ onSelectTeam }: TeamsListTabProps) {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant={viewMode === "list" ? "default" : "ghost"} size="xs" className="h-7 w-7 p-0" onClick={() => setViewMode("list")}>
+                <Button variant={viewMode === "list" ? "default" : "ghost"} size="xs" className="h-7 w-7 p-0" onClick={() => setViewMode("list")} aria-label={t("viewList")}>
                   <List className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>

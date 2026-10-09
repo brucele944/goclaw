@@ -98,13 +98,13 @@ export function ChannelInstanceFormStep({
         </div>
 
         <div className="grid gap-1.5">
-          <Label>{t("form.channelType")}</Label>
+          <Label htmlFor="ci-type">{t("form.channelType")}</Label>
           <Controller
             control={control}
             name="channelType"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange} disabled={!!instance}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="ci-type"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CHANNEL_TYPES.map((ct) => (
                     <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
@@ -116,13 +116,13 @@ export function ChannelInstanceFormStep({
         </div>
 
         <div className="grid gap-1.5">
-          <Label>{t("form.agent")}</Label>
+          <Label htmlFor="ci-agent">{t("form.agent")}</Label>
           <Controller
             control={control}
             name="agentId"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger><SelectValue placeholder={t("form.selectAgent")} /></SelectTrigger>
+                <SelectTrigger id="ci-agent"><SelectValue placeholder={t("form.selectAgent")} /></SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.display_name || a.agent_key}</SelectItem>
@@ -148,9 +148,9 @@ export function ChannelInstanceFormStep({
         <ChannelScopesInfo channelType={channelType} />
 
         {instance && wizard?.steps.includes("auth") && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950 p-3">
+          <div className="rounded-md border border-info/25 bg-info-subtle p-3">
             <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${instance.has_credentials ? "bg-green-500" : "bg-amber-500"}`} />
+              <span className={`h-2 w-2 rounded-full ${instance.has_credentials ? "bg-success" : "bg-warning"}`} />
               <span className="text-sm">
                 {instance.has_credentials ? t("form.authStatus.authenticated") : t("form.authStatus.notAuthenticated")}
               </span>
@@ -162,7 +162,7 @@ export function ChannelInstanceFormStep({
         )}
 
         {hasWizard && wizard?.formBanner && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950 p-3">
+          <div className="rounded-md border border-info/25 bg-info-subtle p-3">
             <p className="text-sm text-muted-foreground">{t(wizard.formBanner)}</p>
           </div>
         )}

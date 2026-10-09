@@ -28,7 +28,7 @@ export function KanbanColumn({ status, tasks, members, onTaskClick }: KanbanColu
       <div className="flex items-center gap-2 px-3 py-2.5">
         <div className={`w-2.5 h-2.5 rounded-full ${STATUS_COLORS[status]}`} />
         <span className="text-xs font-medium text-text-primary capitalize">{STATUS_LABELS[status]}</span>
-        <span className="ml-auto text-[10px] text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded-full">
+        <span className="ml-auto text-2xs text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded-full">
           {tasks.length}
         </span>
       </div>
@@ -36,7 +36,7 @@ export function KanbanColumn({ status, tasks, members, onTaskClick }: KanbanColu
       {/* Card list */}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-2 pb-2">
         {tasks.length === 0 ? (
-          <div className="py-3 text-center text-[10px] text-text-muted opacity-50">
+          <div className="py-3 text-center text-2xs text-text-muted opacity-50">
             No tasks
           </div>
         ) : (

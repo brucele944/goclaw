@@ -138,8 +138,8 @@ export function AgentFilesTab({
   return (
     <div className="space-y-3">
       {isPredefined && !isOwner && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-subtle p-4">
+          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-warning-text" />
           <div className="text-sm">
             <p className="font-medium">{t("files.readOnly")}</p>
             <p className="text-muted-foreground">{t("files.readOnlyDesc")}</p>

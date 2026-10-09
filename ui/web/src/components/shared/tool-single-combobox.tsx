@@ -13,6 +13,8 @@ interface ToolSingleComboboxProps {
   onToolSelect?: (toolName: string) => void;
   placeholder?: string;
   className?: string;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 interface ToolOption {
@@ -26,6 +28,7 @@ export function ToolSingleCombobox({
   onToolSelect,
   placeholder,
   className,
+  id,
 }: ToolSingleComboboxProps) {
   const { t } = useTranslation("common");
   const { tools: builtinTools } = useBuiltinTools();
@@ -109,13 +112,14 @@ export function ToolSingleCombobox({
     <div ref={containerRef} className={cn("relative", className)}>
       <div
         className={cn(
-          "border-input dark:bg-input/30 flex min-h-9 items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
+          "border-control-border dark:bg-input/30 flex min-h-9 items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
           "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-2",
         )}
         onClick={() => inputRef.current?.focus()}
       >
         <input
           ref={inputRef}
+          id={id}
           value={displayValue}
           onChange={(e) => {
             setSearch(e.target.value);

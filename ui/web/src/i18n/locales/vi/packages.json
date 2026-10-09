@@ -91,6 +91,7 @@
   "actions": {
     "install": "Cài đặt",
     "uninstall": "Gỡ bỏ",
+    "uninstallPackage": "Gỡ bỏ {{name}}",
     "installing": "Đang cài...",
     "uninstalling": "Đang gỡ..."
   },

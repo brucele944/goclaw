@@ -135,7 +135,7 @@ export function AgentInstancesTab({ agentId }: AgentInstancesTabProps) {
               className="flex-1 font-mono text-sm"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="(empty)"
+              placeholder={t("instances.emptyPlaceholder")}
               style={{ minHeight: 300 }}
             />
             <div className="flex items-center justify-end gap-2">

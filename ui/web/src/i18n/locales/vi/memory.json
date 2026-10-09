@@ -5,6 +5,7 @@
   "create": "Tạo",
   "indexAll": "Lập chỉ mục tất cả",
   "indexing": "Đang lập chỉ mục...",
+  "reindexDocument": "Lập chỉ mục lại tài liệu",
   "emptyTitle": "Không có tài liệu bộ nhớ",
   "emptyAgentDescription": "Agent này chưa có tài liệu bộ nhớ.",
   "emptyGlobalDescription": "Không tìm thấy tài liệu bộ nhớ trên bất kỳ agent nào.",
@@ -17,6 +18,7 @@
   },
   "tabs": {
     "documents": "Tài liệu",
+    "episodic": "Bộ nhớ episodic",
     "knowledgeGraph": "Đồ thị tri thức"
   },
   "columns": {
@@ -103,6 +105,11 @@
       "clear": "Xóa"
     },
     "refresh": "Làm mới",
+    "viewMode": {
+      "table": "Chế độ bảng",
+      "graph": "Chế độ đồ thị"
+    },
+    "viewEntity": "Xem chi tiết thực thể",
     "extract": "Trích xuất",
     "columns": {
       "name": "Tên",
@@ -184,7 +191,8 @@
       "edges": "{{count}} cạnh",
       "selected": "Đã chọn: {{name}}",
       "limitNote": "Hiển thị {{limit}}/{{total}} thực thể",
-      "limitHint": "Đồ thị giới hạn {{limit}} thực thể để đảm bảo hiệu năng. Dùng chế độ bảng để xem tất cả {{total}} thực thể."
+      "limitHint": "Đồ thị giới hạn {{limit}} thực thể để đảm bảo hiệu năng. Dùng chế độ bảng để xem tất cả {{total}} thực thể.",
+      "ariaLabel": "Đồ thị tri thức với {{entities}} thực thể và {{relations}} quan hệ"
     }
   },
   "toast": {

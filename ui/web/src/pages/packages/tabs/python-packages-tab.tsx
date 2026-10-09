@@ -73,7 +73,7 @@ function PackageSectionBody({ title, placeholder, packages, loading, onInstall, 
       <div className="flex gap-2 mb-3">
         <input
           type="text"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 rounded-md border border-control-border bg-background px-3 py-2 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           placeholder={placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -109,7 +109,7 @@ function PackageSectionBody({ title, placeholder, packages, loading, onInstall, 
                     <td className="py-2 px-3 text-muted-foreground font-mono text-sm">{pkg.version}</td>
                     <td className="py-2 px-3 text-right">
                       {status === "success" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                        <CheckCircle2 className="h-4 w-4 text-success-text inline" />
                       ) : (
                         <Button
                           variant="ghost" size="sm"

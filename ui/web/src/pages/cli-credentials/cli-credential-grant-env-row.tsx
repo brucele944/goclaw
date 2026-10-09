@@ -14,6 +14,7 @@ interface Props {
 
 export function CliCredentialGrantEnvRow({ entry, hasError, onRemove, onUpdate }: Props) {
   const { t } = useTranslation("cli-credentials");
+  const { t: tc } = useTranslation("common");
 
   return (
     <div className="flex flex-wrap items-start gap-2">
@@ -58,11 +59,11 @@ export function CliCredentialGrantEnvRow({ entry, hasError, onRemove, onUpdate }
           <option value="value">{t("form.envKindValue")}</option>
         </select>
       )}
-      <Button type="button" variant="ghost" size="icon" className="mt-0.5 h-8 w-8 shrink-0" onClick={onRemove}>
+      <Button type="button" variant="ghost" size="icon" className="mt-0.5 h-8 w-8 shrink-0" onClick={onRemove} aria-label={tc("remove")}>
         <X className="h-4 w-4" />
       </Button>
       {!entry.masked && entry.kind === "value" && (
-        <p className="basis-full text-xs text-amber-700 dark:text-amber-300">
+        <p className="basis-full text-xs text-warning-text">
           {isSuspiciousPlaintextEnv(entry.key, entry.value)
             ? t("form.envValueSuspicious")
             : t("form.envValueWarning")}

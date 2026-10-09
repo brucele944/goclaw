@@ -58,7 +58,7 @@ export function ModelCatalogueStatus({
     state.tone === "error"
       ? "text-destructive"
       : state.tone === "warning"
-        ? "text-amber-700 dark:text-amber-400"
+        ? "text-warning-text"
         : "text-muted-foreground";
 
   return (

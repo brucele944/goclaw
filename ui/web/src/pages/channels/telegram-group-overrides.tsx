@@ -89,6 +89,7 @@ export function TelegramGroupOverrides({ groups, onChange, knownGroups }: Props)
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                aria-label={t("common:remove")}
                 onClick={() => removeGroup(id)}
               >
                 <Trash2 className="h-4 w-4" />

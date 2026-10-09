@@ -77,6 +77,7 @@
     "allChannels": "全部渠道",
     "activeFilters": "已启用筛选",
     "clearAll": "清除全部",
+    "removeFilter": "移除筛选条件",
     "exportCsv": "导出CSV",
     "requests": "请求数",
     "tokens": "令牌",

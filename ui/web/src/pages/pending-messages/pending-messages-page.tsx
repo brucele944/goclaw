@@ -9,6 +9,7 @@ import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { formatDate } from "@/lib/format";
 import { useMinLoading } from "@/hooks/use-min-loading";
 import { useDeferredLoading } from "@/hooks/use-deferred-loading";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { usePendingMessages } from "./hooks/use-pending-messages";
 import { MessageListDialog } from "./message-list-dialog";
 import { formatPendingGroupLabel, type PendingMessageGroup } from "./types";
@@ -140,8 +141,8 @@ export function PendingMessagesPage() {
                   return (
                     <tr
                       key={rowKey}
-                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
-                      onClick={() => setSelectedGroup(g)}
+                      className="cursor-pointer border-b last:border-0 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      {...getClickableProps(() => setSelectedGroup(g))}
                     >
                       <td className="px-4 py-3 font-medium">{g.channel_name}</td>
                       <td className="max-w-[300px] truncate px-4 py-3">
@@ -237,7 +238,7 @@ function HowItWorksCard() {
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-2 rounded-lg border bg-muted/30 px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
       >
-        <Info className="h-4 w-4 shrink-0 text-blue-500" />
+        <Info className="h-4 w-4 shrink-0 text-info-text" />
         <span className="font-medium">{t("howItWorks.title")}</span>
         {open ? (
           <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
@@ -248,15 +249,15 @@ function HowItWorksCard() {
       {open && (
         <div className="rounded-b-lg border border-t-0 bg-muted/10 px-4 py-3 space-y-2.5 text-sm text-muted-foreground">
           <div className="flex gap-2.5">
-            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">1</span>
+            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-info-subtle text-xs font-semibold text-info-text">1</span>
             <p>{t("howItWorks.step1")}</p>
           </div>
           <div className="flex gap-2.5">
-            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">2</span>
+            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-info-subtle text-xs font-semibold text-info-text">2</span>
             <p>{t("howItWorks.step2")}</p>
           </div>
           <div className="flex gap-2.5">
-            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">3</span>
+            <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-info-subtle text-xs font-semibold text-info-text">3</span>
             <p>{t("howItWorks.step3")}</p>
           </div>
           <hr className="border-border/50" />

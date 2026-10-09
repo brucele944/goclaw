@@ -23,17 +23,17 @@ export function BehaviorUxCard({ value, onChange }: Props) {
   const items: FeatureSwitchItem[] = [
     {
       icon: Brain,
-      iconClass: "text-orange-500",
+      iconClass: "text-warning-text",
       label: t("agents.intentClassify"),
       hint: t("behavior.intentClassifyHint"),
       checked: value.intent_classify !== false,
       onCheckedChange: (v) => onChange({ ...value, intent_classify: v }),
       infoWhenOn: t("behavior.intentClassifyInfo"),
-      infoClass: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-300",
+      infoClass: "border-warning/25 bg-warning-subtle text-warning-text",
     },
     {
       icon: UsersRound,
-      iconClass: "text-blue-500",
+      iconClass: "text-info-text",
       label: t("behavior.teamWorkClassify"),
       hint: t("behavior.teamWorkClassifyHint"),
       checked: value.team_work_classify === true && embeddingConfigured,
@@ -41,7 +41,7 @@ export function BehaviorUxCard({ value, onChange }: Props) {
       disabled: !embeddingConfigured,
       disabledHint: t("behavior.teamWorkClassifyEmbeddingRequired"),
       infoWhenOn: t("behavior.teamWorkClassifyInfo"),
-      infoClass: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300",
+      infoClass: "border-info/25 bg-info-subtle text-info-text",
     },
   ];
 

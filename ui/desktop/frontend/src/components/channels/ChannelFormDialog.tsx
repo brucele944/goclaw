@@ -88,7 +88,7 @@ export function ChannelFormDialog({ open, onOpenChange, agents, telegramExists, 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4 shrink-0">
           <h3 className="text-sm font-semibold text-text-primary">{t('form.createTitle')}</h3>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors cursor-pointer">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors cursor-pointer">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
@@ -149,7 +149,7 @@ export function ChannelFormDialog({ open, onOpenChange, agents, telegramExists, 
           <button onClick={() => onOpenChange(false)} className="px-3 py-1.5 text-xs border border-border rounded-lg text-text-secondary hover:bg-surface-tertiary transition-colors cursor-pointer">
             {t('form.cancel')}
           </button>
-          <button onClick={handleSubmit(onValid)} disabled={!canCreate || isSubmitting} className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer">
+          <button onClick={handleSubmit(onValid)} disabled={!canCreate || isSubmitting} className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer">
             {isSubmitting ? t('form.saving') : t('form.create')}
           </button>
         </div>

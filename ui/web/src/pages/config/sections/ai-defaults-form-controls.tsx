@@ -3,6 +3,7 @@
  * - SubSection: collapsible group panel with title and description
  * - Field: labeled input with optional InfoLabel tooltip
  */
+import { useId } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -58,10 +59,18 @@ export function Field({
   type?: string;
   step?: string;
 }) {
+  const id = useId();
   return (
     <div className="grid gap-1.5">
-      {tip ? <InfoLabel tip={tip}>{label}</InfoLabel> : <Label>{label}</Label>}
+      {tip ? (
+        <InfoLabel tip={tip} htmlFor={id}>
+          {label}
+        </InfoLabel>
+      ) : (
+        <Label htmlFor={id}>{label}</Label>
+      )}
       <Input
+        id={id}
         type={type}
         step={step}
         value={value ?? ""}

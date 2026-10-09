@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,8 @@ export function StepAgent({ provider, model, onComplete, onBack, existingAgent }
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const descriptionId = useId();
 
   // Summoning modal state
   const [summoningOpen, setSummoningOpen] = useState(false);
@@ -288,10 +290,10 @@ export function StepAgent({ provider, model, onComplete, onBack, existingAgent }
 
             {/* Prompt / description with preset selection */}
             <div className="space-y-3">
-              <Label className="inline-flex items-center gap-1.5">
-                {t("agent.personality")}
+              <span className="inline-flex items-center gap-1.5">
+                <Label htmlFor={descriptionId}>{t("agent.personality")}</Label>
                 <InfoTip text={t("agent.personalityHint")} />
-              </Label>
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {agentPresets.map((preset, idx) => (
                   <button
@@ -309,6 +311,7 @@ export function StepAgent({ provider, model, onComplete, onBack, existingAgent }
                 ))}
               </div>
               <Textarea
+                id={descriptionId}
                 value={description}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
                 placeholder={t("agent.personalityPlaceholder")}
@@ -345,8 +348,8 @@ export function StepAgent({ provider, model, onComplete, onBack, existingAgent }
               <p
                 className={`rounded-md border px-3 py-2 text-xs ${
                   gatewayOperatorNotice.variant === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                    : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                    ? "border-success/25 bg-success-subtle dark:text-emerald-200"
+                    : "border-warning/25 bg-warning-subtle dark:text-amber-200"
                 }`}
               >
                 {gatewayOperatorNotice.message}

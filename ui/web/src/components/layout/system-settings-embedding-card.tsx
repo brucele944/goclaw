@@ -39,16 +39,16 @@ export function SystemSettingsEmbeddingCard({
   const { t } = useTranslation("system-settings");
 
   return (
-    <Card className="border-blue-200 dark:border-blue-800">
+    <Card className="border-info/25">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Brain className="h-4 w-4 text-blue-500" />
+          <Brain className="h-4 w-4 text-info-text" />
           {t("embedding.title")}
         </CardTitle>
         <CardDescription>{t("embedding.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
-        <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300">
+        <div className="flex items-start gap-2 rounded-md border border-info/25 bg-info-subtle px-3 py-2 text-xs text-info-text">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="space-y-1">
             <p>{t("embedding.importance")}</p>
@@ -81,7 +81,7 @@ export function SystemSettingsEmbeddingCard({
           {verifyResult && (
             <span className={`flex items-center gap-1 text-xs ${
               verifyResult.valid
-                ? verifyResult.dimension_mismatch ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                ? verifyResult.dimension_mismatch ? "text-warning-text" : "text-success-text"
                 : "text-destructive"
             }`}>
               {verifyResult.valid ? (

@@ -32,7 +32,7 @@ export function StatCard({
             {hasTrend && (
               <span
                 className={`flex items-center gap-0.5 text-xs font-medium ${
-                  trend > 0 ? "text-green-600" : "text-red-600"
+                  trend > 0 ? "text-success-text" : "text-destructive-text"
                 }`}
               >
                 {trend > 0 ? (

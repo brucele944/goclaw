@@ -7,9 +7,9 @@ interface HookHistoryTableProps {
 }
 
 const DECISION_STYLES: Record<string, string> = {
-  allow: "text-emerald-600 dark:text-emerald-400",
-  block: "text-red-600 dark:text-red-400",
-  error: "text-amber-600 dark:text-amber-400",
+  allow: "text-success-text",
+  block: "text-destructive-text",
+  error: "text-warning-text",
   timeout: "text-slate-500",
 };
 

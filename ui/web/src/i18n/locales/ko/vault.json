@@ -69,6 +69,7 @@
     "document": "문서"
   },
   "rescanTooltip": "워크스페이스 재검사",
+  "openSidebar": "사이드바 열기",
   "enriching": "보강 중",
   "enrichComplete": "보강 완료",
   "rescanNew": "{{count}}개 새로운",

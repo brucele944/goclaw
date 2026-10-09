@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -90,6 +90,9 @@ function SortableProviderCard({ entry, index, secretsSet, onUpdate }: SortableCa
     id: entry.id,
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
+  const fieldId = useId();
+  const maxResultsId = `${fieldId}-max-results`;
+  const apiKeyId = `${fieldId}-api-key`;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -114,6 +117,7 @@ function SortableProviderCard({ entry, index, secretsSet, onUpdate }: SortableCa
         <div className="flex items-center gap-2">
           <button
             type="button"
+            aria-label={t("common:dragToReorder")}
             className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
             {...attributes}
             {...listeners}
@@ -131,10 +135,11 @@ function SortableProviderCard({ entry, index, secretsSet, onUpdate }: SortableCa
 
         {/* Max results row */}
         <div className="flex items-center gap-1.5 mt-2 pl-10">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">
+          <Label htmlFor={maxResultsId} className="text-xs text-muted-foreground whitespace-nowrap">
             {t("builtin.searchChain.maxResults")}
           </Label>
           <Input
+            id={maxResultsId}
             type="number"
             min={1}
             max={10}
@@ -146,12 +151,12 @@ function SortableProviderCard({ entry, index, secretsSet, onUpdate }: SortableCa
 
         {/* API key row — Parallel's hosted Search MCP is keyless. */}
         {entry.name !== "parallel" && <div className="flex items-center gap-1.5 mt-2 pl-10">
-          <Label className="text-xs text-muted-foreground whitespace-nowrap">
+          <Label htmlFor={apiKeyId} className="text-xs text-muted-foreground whitespace-nowrap">
             {t("builtin.searchChain.apiKey")}
           </Label>
           {keyIsSet && !showInput ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+              <span className="text-xs text-success-text font-medium">
                 {t("builtin.searchChain.apiKeySet")}
               </span>
               <Button
@@ -165,6 +170,7 @@ function SortableProviderCard({ entry, index, secretsSet, onUpdate }: SortableCa
             </div>
           ) : (
             <Input
+              id={apiKeyId}
               type="password"
               autoComplete="off"
               placeholder={

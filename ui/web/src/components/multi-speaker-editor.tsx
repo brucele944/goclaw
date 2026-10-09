@@ -90,13 +90,13 @@ export function MultiSpeakerEditor({
             onChange={(e) => handleNameChange(idx, e.target.value)}
             placeholder={t("gemini.speakerName")}
             disabled={readonly}
-            className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-base md:text-sm"
+            className="flex-1 rounded-md border border-control-border bg-background px-3 py-1.5 text-sm text-base md:text-sm"
           />
           <select
             value={s.voiceId}
             onChange={(e) => handleVoiceChange(idx, e.target.value)}
             disabled={readonly}
-            className="flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-base md:text-sm"
+            className="flex-1 rounded-md border border-control-border bg-background px-2 py-1.5 text-sm text-base md:text-sm"
           >
             {voices.map((v) => (
               <option key={v} value={v}>{v}</option>

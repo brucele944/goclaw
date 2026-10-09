@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +48,7 @@ function deriveDefaults(job: CronJob): CronAdvancedFormData {
 export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAdvancedDialogProps) {
   const { t } = useTranslation("cron");
   const { t: tc } = useTranslation("common");
+  const uid = useId();
   const ws = useWs();
   const { channels: availableChannels } = useChannels();
   const channelNames = Object.keys(availableChannels);
@@ -139,8 +140,9 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
             description={t("detail.schedulingDesc")}
           />
           <div className="space-y-2">
-            <Label htmlFor="adv-timezone">{t("detail.timezone")}</Label>
+            <Label htmlFor={`${uid}-timezone`}>{t("detail.timezone")}</Label>
             <Combobox
+              id={`${uid}-timezone`}
               value={timezone}
               onChange={(v) => setValue("timezone", v)}
               options={getAllIanaTimezones()}
@@ -164,7 +166,7 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
             {deliver && (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr]">
                 <div className="space-y-2 min-w-0">
-                  <Label>{t("detail.channelLabel")}</Label>
+                  <Label htmlFor={`${uid}-channel`}>{t("detail.channelLabel")}</Label>
                   {channelNames.length > 0 ? (
                     <Select
                       value={channel || "__none__"}
@@ -173,7 +175,7 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
                         setValue("to", "");
                       }}
                     >
-                      <SelectTrigger className="text-base md:text-sm">
+                      <SelectTrigger id={`${uid}-channel`} className="text-base md:text-sm">
                         <SelectValue placeholder={t("detail.channelPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -185,6 +187,7 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
                     </Select>
                   ) : (
                     <Input
+                      id={`${uid}-channel`}
                       value={channel}
                       onChange={(e) => setValue("channel", e.target.value)}
                       placeholder={t("detail.channelPlaceholder")}
@@ -193,11 +196,12 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
                   )}
                 </div>
                 <div className="space-y-2 min-w-0">
-                  <Label>{t("detail.toLabel")}</Label>
+                  <Label htmlFor={`${uid}-to`}>{t("detail.toLabel")}</Label>
                   {(() => {
                     if (!channel) {
                       return (
                         <Input
+                          id={`${uid}-to`}
                           placeholder={t("detail.channelPlaceholder")}
                           disabled
                           className="text-base md:text-sm"
@@ -208,6 +212,7 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
                     if (filtered.length > 0) {
                       return (
                         <Combobox
+                          id={`${uid}-to`}
                           value={to}
                           onChange={(value) => setValue("to", value)}
                           options={filtered.map((target) => ({
@@ -222,6 +227,7 @@ export function CronAdvancedDialog({ open, onOpenChange, job, onUpdate }: CronAd
                     }
                     return (
                       <Input
+                        id={`${uid}-to`}
                         value={to}
                         onChange={(e) => setValue("to", e.target.value)}
                         placeholder={t("detail.toPlaceholder")}

@@ -173,7 +173,7 @@ export function MediaProviderChainForm({ tool, onSave, onClose }: MediaProviderC
         <button type="button" onClick={onClose} className="border border-border rounded-lg px-4 py-1.5 text-sm text-text-secondary hover:bg-surface-tertiary transition-colors">
           {t('builtin.mediaChain.cancel')}
         </button>
-        <button type="button" onClick={handleSave} disabled={saving || hasIncomplete} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
+        <button type="button" onClick={handleSave} disabled={saving || hasIncomplete} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-accent-foreground hover:bg-accent-hover disabled:opacity-50 transition-colors">
           {saving ? t('builtin.mediaChain.saving') : t('builtin.mediaChain.save')}
         </button>
       </div>

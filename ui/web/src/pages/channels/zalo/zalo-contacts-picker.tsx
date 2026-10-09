@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ export function ZaloContactsPicker({ instanceId, hasCredentials, value, onChange
   const [manualId, setManualId] = useState("");
   const { loading, error, call: fetchContacts } = useWsCall<ContactsResult>("zalo.personal.contacts");
   const autoLoaded = useRef(false);
+  const headingId = useId();
 
   // Auto-load contacts when credentials are available (resolve names for badges)
   useEffect(() => {
@@ -101,9 +102,9 @@ export function ZaloContactsPicker({ instanceId, hasCredentials, value, onChange
   ) ?? [];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="group" aria-labelledby={headingId}>
       <div className="flex items-center gap-2">
-        <Label>{t("zalo.allowedUsers")}</Label>
+        <Label id={headingId}>{t("zalo.allowedUsers")}</Label>
         {!contacts && (
           <Button type="button" variant="outline" size="sm" onClick={handleLoad} disabled={loading}>
             {loading ? t("zalo.loading") : t("zalo.loadContacts")}

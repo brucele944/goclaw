@@ -116,8 +116,8 @@ export function UpdateAllModal({
 
   const rowStatusIcon = (name: string) => {
     const s = rowStatus[name];
-    if (s === "updating") return <Loader2 className="h-4 w-4 animate-spin text-sky-500" />;
-    if (s === "succeeded") return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (s === "updating") return <Loader2 className="h-4 w-4 animate-spin text-info-text" />;
+    if (s === "succeeded") return <CheckCircle2 className="h-4 w-4 text-success-text" />;
     if (s === "failed") return <XCircle className="h-4 w-4 text-destructive" />;
     return <Circle className="h-4 w-4 text-muted-foreground/30" />;
   };
@@ -174,7 +174,7 @@ export function UpdateAllModal({
                   <span className="text-xs text-muted-foreground font-mono">
                     {u.currentVersion} → {u.latestVersion}
                     {u.meta?.prerelease && (
-                      <span className="ml-1.5 text-amber-600 dark:text-amber-400">(pre-release)</span>
+                      <span className="ml-1.5 text-warning-text">(pre-release)</span>
                     )}
                   </span>
                 </div>

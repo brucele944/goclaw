@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,19 +35,20 @@ export function CronScheduleSection({
   readonly,
 }: CronScheduleSectionProps) {
   const { t } = useTranslation("cron");
+  const uid = useId();
 
   return (
     <section className="space-y-3 rounded-lg border p-3 sm:p-4 overflow-hidden">
       <h3 className="text-sm font-medium">{t("detail.schedule")}</h3>
 
       <div className="space-y-2">
-        <Label>{t("create.name")}</Label>
-        <Input value={job.name} disabled className="text-base md:text-sm" />
+        <Label htmlFor={`${uid}-name`}>{t("create.name")}</Label>
+        <Input id={`${uid}-name`} value={job.name} disabled className="text-base md:text-sm" />
       </div>
 
       <div className="space-y-2">
-        <Label>{t("create.scheduleType")}</Label>
-        <div className="flex gap-2">
+        <Label id={`${uid}-schedule-type`}>{t("create.scheduleType")}</Label>
+        <div className="flex gap-2" role="group" aria-labelledby={`${uid}-schedule-type`}>
           {(["every", "cron", "at"] as const).map((kind) => (
             <Button
               key={kind}
@@ -64,8 +66,9 @@ export function CronScheduleSection({
 
       {scheduleKind === "every" && (
         <div className="space-y-2">
-          <Label>{t("create.intervalSeconds")}</Label>
+          <Label htmlFor={`${uid}-every`}>{t("create.intervalSeconds")}</Label>
           <Input
+            id={`${uid}-every`}
             type="number" min={1} value={everySeconds}
             onChange={(e) => setEverySeconds(e.target.value)}
             disabled={readonly} className="text-base md:text-sm"
@@ -75,8 +78,9 @@ export function CronScheduleSection({
 
       {scheduleKind === "cron" && (
         <div className="space-y-2">
-          <Label>{t("create.cronExpression")}</Label>
+          <Label htmlFor={`${uid}-cron-expr`}>{t("create.cronExpression")}</Label>
           <Input
+            id={`${uid}-cron-expr`}
             value={cronExpr} onChange={(e) => setCronExpr(e.target.value)}
             disabled={readonly} placeholder="0 * * * *" className="text-base md:text-sm"
           />
@@ -89,8 +93,9 @@ export function CronScheduleSection({
       )}
 
       <div className="space-y-2">
-        <Label>{t("detail.timezone")}</Label>
+        <Label htmlFor={`${uid}-timezone`}>{t("detail.timezone")}</Label>
         <Combobox
+          id={`${uid}-timezone`}
           value={timezone} onChange={setTimezone}
           options={getAllIanaTimezones()}
           placeholder={t("detail.timezone")}

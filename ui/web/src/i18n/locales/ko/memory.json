@@ -5,6 +5,7 @@
   "create": "만들기",
   "indexAll": "전체 인덱싱",
   "indexing": "인덱싱 중...",
+  "reindexDocument": "문서 다시 인덱싱",
   "emptyTitle": "메모리 문서 없음",
   "emptyAgentDescription": "이 에이전트에는 아직 메모리 문서가 없습니다.",
   "emptyGlobalDescription": "모든 에이전트에서 메모리 문서를 찾을 수 없습니다.",
@@ -14,10 +15,6 @@
     "scope": "범위",
     "allScope": "전체 (전체 + 개인)",
     "selectAgent": "에이전트 선택"
-  },
-  "tabs": {
-    "documents": "문서",
-    "knowledgeGraph": "지식 그래프"
   },
   "columns": {
     "path": "경로",
@@ -103,6 +100,11 @@
       "clear": "지우기"
     },
     "refresh": "새로 고침",
+    "viewMode": {
+      "table": "표 보기",
+      "graph": "그래프 보기"
+    },
+    "viewEntity": "엔터티 세부 정보 보기",
     "extract": "추출",
     "columns": {
       "name": "이름",
@@ -217,7 +219,8 @@
   },
   "tabs": {
     "documents": "문서",
-    "episodic": "에피소딕 메모리"
+    "episodic": "에피소딕 메모리",
+    "knowledgeGraph": "지식 그래프"
   },
   "episodic": {
     "noData": "아직 에피소딕 메모리 없음",

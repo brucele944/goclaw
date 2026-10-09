@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
 
@@ -14,6 +15,7 @@ export function MultiSelect({
   onChange: (values: string[]) => void;
   placeholder: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <Combobox
@@ -35,6 +37,7 @@ export function MultiSelect({
                 type="button"
                 onClick={() => onChange(selected.filter((s) => s !== id))}
                 className="ml-0.5 cursor-pointer rounded-full p-0.5 hover:bg-muted"
+                aria-label={t("remove")}
               >
                 <X className="h-3 w-3" />
               </button>

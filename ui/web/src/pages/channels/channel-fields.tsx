@@ -110,7 +110,7 @@ function isChatBehaviorField(key: string) {
 }
 
 function FieldLabel({ htmlFor, text, tip }: { htmlFor?: string; text: string; tip?: string }) {
-  return tip ? <InfoLabel tip={tip}>{text}</InfoLabel> : <Label htmlFor={htmlFor}>{text}</Label>;
+  return tip ? <InfoLabel tip={tip} htmlFor={htmlFor}>{text}</InfoLabel> : <Label htmlFor={htmlFor}>{text}</Label>;
 }
 
 function DeliveryProviderModelField({

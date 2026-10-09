@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
@@ -26,6 +26,7 @@ interface SubagentsSectionProps {
 
 export function SubagentsSection({ enabled, value, onToggle, onChange }: SubagentsSectionProps) {
   const { t } = useTranslation("agents");
+  const uid = useId();
   const s = "configSections.subagents";
   const { providers } = useProviders();
   const enabledProviders = providers.filter((p) => p.enabled);
@@ -48,8 +49,9 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <InfoLabel tip="Maximum number of sub-agents that can run simultaneously for this agent.">{t(`${s}.maxConcurrent`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxConcurrent`} tip="Maximum number of sub-agents that can run simultaneously for this agent.">{t(`${s}.maxConcurrent`)}</InfoLabel>
           <Input
+            id={`${uid}-maxConcurrent`}
             type="number"
             placeholder={String(d.maxConcurrent)}
             value={value.maxConcurrent ?? ""}
@@ -57,12 +59,12 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
           />
         </div>
         <div className="space-y-2">
-          <InfoLabel tip={t(`${s}.maxSpawnDepthTip`)}>{t(`${s}.maxSpawnDepth`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxSpawnDepth`} tip={t(`${s}.maxSpawnDepthTip`)}>{t(`${s}.maxSpawnDepth`)}</InfoLabel>
           <Select
             value={String(value.maxSpawnDepth ?? "")}
             onValueChange={(v) => onChange({ ...value, maxSpawnDepth: Number(v) })}
           >
-            <SelectTrigger><SelectValue placeholder={String(d.maxSpawnDepth)} /></SelectTrigger>
+            <SelectTrigger id={`${uid}-maxSpawnDepth`}><SelectValue placeholder={String(d.maxSpawnDepth)} /></SelectTrigger>
             <SelectContent>
               {[1, 2, 3, 4, 5].map((n) => (
                 <SelectItem key={n} value={String(n)}>{n}</SelectItem>
@@ -73,8 +75,9 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <InfoLabel tip="Maximum number of sub-agents a single parent agent can spawn in one session.">{t(`${s}.maxChildrenPerAgent`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxChildrenPerAgent`} tip="Maximum number of sub-agents a single parent agent can spawn in one session.">{t(`${s}.maxChildrenPerAgent`)}</InfoLabel>
           <Input
+            id={`${uid}-maxChildrenPerAgent`}
             type="number"
             placeholder={String(d.maxChildrenPerAgent)}
             value={value.maxChildrenPerAgent ?? ""}
@@ -82,8 +85,9 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
           />
         </div>
         <div className="space-y-2">
-          <InfoLabel tip="Idle time in minutes before a sub-agent session is automatically archived and cleaned up.">{t(`${s}.archiveAfter`)}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-archiveAfterMinutes`} tip="Idle time in minutes before a sub-agent session is automatically archived and cleaned up.">{t(`${s}.archiveAfter`)}</InfoLabel>
           <Input
+            id={`${uid}-archiveAfterMinutes`}
             type="number"
             placeholder={String(d.archiveAfterMinutes)}
             value={value.archiveAfterMinutes ?? ""}
@@ -93,8 +97,9 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <InfoLabel tip="Maximum number of retry attempts when a sub-agent LLM call fails. Applies to transient errors.">{t(`${s}.maxRetries`, "Max retries")}</InfoLabel>
+          <InfoLabel htmlFor={`${uid}-maxRetries`} tip="Maximum number of retry attempts when a sub-agent LLM call fails. Applies to transient errors.">{t(`${s}.maxRetries`, "Max retries")}</InfoLabel>
           <Input
+            id={`${uid}-maxRetries`}
             type="number"
             min={0}
             max={10}
@@ -105,8 +110,9 @@ export function SubagentsSection({ enabled, value, onToggle, onChange }: Subagen
         </div>
       </div>
       <div className="space-y-2">
-        <InfoLabel tip="LLM model for sub-agents. Leave empty to inherit the parent agent's model.">{t(`${s}.modelOverride`)}</InfoLabel>
+        <InfoLabel htmlFor={`${uid}-modelOverride`} tip="LLM model for sub-agents. Leave empty to inherit the parent agent's model.">{t(`${s}.modelOverride`)}</InfoLabel>
         <Combobox
+          id={`${uid}-modelOverride`}
           value={value.model ?? ""}
           onChange={(v) => onChange({ ...value, model: v || undefined })}
           options={modelOptions}

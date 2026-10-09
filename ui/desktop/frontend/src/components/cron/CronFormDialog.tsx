@@ -78,7 +78,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <span className="text-sm font-semibold text-text-primary">{t('create.title')}</span>
-          <button onClick={() => onOpenChange(false)} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button aria-label={t('common:close')} onClick={() => onOpenChange(false)} className="p-2 text-text-muted hover:text-text-primary transition-colors">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
@@ -96,7 +96,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
               placeholder={t('create.namePlaceholder')}
               className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent font-mono"
             />
-            <p className="text-[11px] text-text-muted">{t('create.nameHint')}</p>
+            <p className="text-2xs text-text-muted">{t('create.nameHint')}</p>
             {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
           </div>
 
@@ -163,7 +163,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
                   placeholder="0 * * * *"
                   className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
                 />
-                <p className="text-[11px] text-text-muted">
+                <p className="text-2xs text-text-muted">
                   {t('create.cronHint')} — TZ: {Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </p>
               </div>
@@ -189,7 +189,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
                 <p className="text-xs font-medium text-text-primary">{t('detail.deleteAfterRun')}</p>
-                <p className="text-[11px] text-text-muted">{t('detail.deleteAfterRunDesc')}</p>
+                <p className="text-2xs text-text-muted">{t('detail.deleteAfterRunDesc')}</p>
               </div>
               <Switch checked={watch('deleteAfterRun')} onCheckedChange={(v) => setValue('deleteAfterRun', v)} />
             </div>
@@ -201,7 +201,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
           <button type="button" onClick={() => onOpenChange(false)} className="border border-border rounded-lg px-4 py-1.5 text-sm text-text-secondary hover:bg-surface-tertiary transition-colors">
             {t('create.cancel')}
           </button>
-          <button type="button" onClick={handleSubmit(onValid)} disabled={!canSubmit || isSubmitting} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
+          <button type="button" onClick={handleSubmit(onValid)} disabled={!canSubmit || isSubmitting} className="bg-accent rounded-lg px-4 py-1.5 text-sm text-accent-foreground hover:bg-accent-hover disabled:opacity-50 transition-colors">
             {isSubmitting ? t('create.creating') : t('create.create')}
           </button>
         </div>

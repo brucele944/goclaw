@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2, Plus, Pencil } from "lucide-react";
 import {
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn, uniqueId } from "@/lib/utils";
+import { getClickableProps } from "@/hooks/use-clickable";
 import { useAgents } from "@/pages/agents/hooks/use-agents";
 import type { MCPServerData, MCPAgentGrant, MCPToolInfo } from "./hooks/use-mcp";
 import { ToolMultiSelect } from "./mcp-tool-multi-select";
@@ -42,6 +43,7 @@ export function MCPGrantsDialog({
   onLoadTools,
 }: MCPGrantsDialogProps) {
   const { t } = useTranslation("mcp");
+  const uid = useId();
   const { agents } = useAgents();
   const portalRef = useRef<HTMLDivElement>(null);
   const [agentId, setAgentId] = useState("");
@@ -153,8 +155,8 @@ export function MCPGrantsDialog({
         <div className="space-y-4 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto min-h-0">
           {/* Existing grants list */}
           {grants.length > 0 && (
-            <div className="space-y-2">
-              <Label>{t("grants.currentGrants")}</Label>
+            <div role="group" aria-labelledby={`${uid}-current-grants`} className="space-y-2">
+              <Label id={`${uid}-current-grants`}>{t("grants.currentGrants")}</Label>
               <div className="grid gap-2">
                 {grants.map((grant) => {
                   const hasAllow = Array.isArray(grant.tool_allow) && grant.tool_allow.length > 0;
@@ -164,10 +166,11 @@ export function MCPGrantsDialog({
                     <div
                       key={grant.id}
                       className={cn(
-                        "rounded-md border px-3 py-2.5 cursor-pointer transition-colors",
+                        "rounded-md border px-3 py-2.5 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         isActive ? "border-ring bg-accent/50 ring-1 ring-ring/30" : "bg-muted/30 hover:bg-muted/50",
                       )}
-                      onClick={() => selectGrant(grant)}
+                      {...getClickableProps(() => selectGrant(grant))}
+                      aria-pressed={isActive}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -205,6 +208,7 @@ export function MCPGrantsDialog({
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 shrink-0"
+                          aria-label={t("common:remove")}
                           onClick={(e) => { e.stopPropagation(); handleRevoke(grant); }}
                           disabled={loading}
                         >
@@ -219,9 +223,9 @@ export function MCPGrantsDialog({
           )}
 
           {/* Grant form (add or edit) */}
-          <div className="space-y-3 rounded-md border p-3">
+          <div role="group" aria-labelledby={`${uid}-grant-form`} className="space-y-3 rounded-md border p-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">
+              <Label id={`${uid}-grant-form`} className="text-sm font-medium">
                 {isEditing ? t("grants.editGrant") : t("grants.addGrant")}
               </Label>
               {isEditing && (
@@ -246,8 +250,9 @@ export function MCPGrantsDialog({
               </Select>
 
               <div className="grid gap-1">
-                <Label className="text-xs text-muted-foreground">{t("grants.toolAllowList")}</Label>
+                <Label htmlFor={`${uid}-tool-allow`} className="text-xs text-muted-foreground">{t("grants.toolAllowList")}</Label>
                 <ToolMultiSelect
+                  id={`${uid}-tool-allow`}
                   value={toolAllow}
                   onChange={setToolAllow}
                   options={serverTools}
@@ -257,8 +262,9 @@ export function MCPGrantsDialog({
               </div>
 
               <div className="grid gap-1">
-                <Label className="text-xs text-muted-foreground">{t("grants.toolDenyList")}</Label>
+                <Label htmlFor={`${uid}-tool-deny`} className="text-xs text-muted-foreground">{t("grants.toolDenyList")}</Label>
                 <ToolMultiSelect
+                  id={`${uid}-tool-deny`}
                   value={toolDeny}
                   onChange={setToolDeny}
                   options={serverTools}

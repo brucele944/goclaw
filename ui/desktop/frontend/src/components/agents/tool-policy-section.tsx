@@ -31,7 +31,7 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       onToggle={onToggle}
     >
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.toolPolicy.profile')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.toolPolicy.profile')}</label>
         <select
           value={value.profile ?? ''}
           onChange={(e) => update({ profile: e.target.value || undefined })}
@@ -45,18 +45,18 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.toolPolicy.toolCallPrefix')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.toolPolicy.toolCallPrefix')}</label>
         <input
           type="text"
           value={value.toolCallPrefix ?? ''}
           onChange={(e) => update({ toolCallPrefix: e.target.value || undefined })}
           className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary font-mono focus:outline-none focus:ring-1 focus:ring-accent"
         />
-        <p className="text-[10px] text-text-muted">{t('configSections.toolPolicy.toolCallPrefixHint')}</p>
+        <p className="text-2xs text-text-muted">{t('configSections.toolPolicy.toolCallPrefixHint')}</p>
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.toolPolicy.allow')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.toolPolicy.allow')}</label>
         <input
           type="text"
           value={arrayToTags(value.allow)}
@@ -67,7 +67,7 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.toolPolicy.deny')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.toolPolicy.deny')}</label>
         <input
           type="text"
           value={arrayToTags(value.deny)}
@@ -78,7 +78,7 @@ export function ToolPolicySection({ enabled, value, onToggle, onChange }: ToolPo
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-text-secondary">{t('configSections.toolPolicy.alsoAllow')}</label>
+        <label className="text-2xs font-medium text-text-secondary">{t('configSections.toolPolicy.alsoAllow')}</label>
         <input
           type="text"
           value={arrayToTags(value.alsoAllow)}

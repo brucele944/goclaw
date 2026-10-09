@@ -10,20 +10,18 @@
       - script-src 'self' — no 'unsafe-eval'; Prism uses static highlighting only
         so the script editor stays XSS-safe even when users paste malicious JS
         source (it is rendered as text, never executed in-page).
-      - style-src 'self' 'unsafe-inline' — Tailwind/inline loader keyframes +
-        Google Fonts stylesheet require inline styles.
-      - font-src self + gstatic — Google Fonts woff2 files.
+      - style-src 'self' 'unsafe-inline' — tailwind bundle + the inline loader
+        keyframes in <head>; Radix/recharts also inject inline styles.
+      - font-src 'self' data: — self-hosted Inter (fontsource) and KaTeX woff2
+        assets emitted by Vite; data: for inlined small fonts.
       - img-src self + data: + blob: — base64 avatars/thumbnails, blob previews.
       - media-src self + blob: — TTS audio playback via blob URLs.
       - connect-src self + ws:/wss: — websocket to gateway. Same-origin only;
         if the gateway is hosted on a different domain in production, add the
         explicit origin here rather than wildcard-allowing all http(s):.
     -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' ws: wss:; base-uri 'self';" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' ws: wss:; base-uri 'self';" />
+    <script src="/theme-init.js"></script>
     <title>GoClaw Dashboard</title>
     <style>
       #app-loader{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff}
@@ -35,11 +33,9 @@
       @keyframes shimmer{from{transform:translateX(-10rem)}to{transform:translateX(10rem)}}
       .fade-out{opacity:0;transition:opacity 300ms ease}
       @media(prefers-reduced-motion:reduce){.loader-logo{animation:none;opacity:1}.shimmer-bar{animation:none}}
-      @media(prefers-color-scheme:dark){
-        #app-loader{background:#09090b}
-        .loader-shimmer{background:#27272a}
-        .shimmer-bar{background:linear-gradient(90deg,transparent,#52525b,transparent)}
-      }
+      html.dark #app-loader{background:#09090b}
+      html.dark .loader-shimmer{background:#27272a}
+      html.dark .shimmer-bar{background:linear-gradient(90deg,transparent,#52525b,transparent)}
     </style>
   </head>
   <body>

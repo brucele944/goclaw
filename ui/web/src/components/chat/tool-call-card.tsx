@@ -51,7 +51,7 @@ export function ToolCallCard({ entry, compact }: ToolCallCardProps) {
       {expanded && canExpand && (
         <div className="border-t border-muted px-2 py-1.5 space-y-1.5">
           {hasError && (
-            <pre className="text-red-500 whitespace-pre-wrap text-xs">{entry.errorContent}</pre>
+            <pre className="text-destructive-text whitespace-pre-wrap text-xs">{entry.errorContent}</pre>
           )}
           {entry.arguments && Object.keys(entry.arguments).length > 0 && (
             <div>
@@ -79,16 +79,16 @@ function ToolIcon({ phase, isSkill }: { phase: ToolStreamEntry["phase"]; isSkill
   const cls = "h-3.5 w-3.5";
   if (isSkill) {
     switch (phase) {
-      case "calling": return <Zap className={`${cls} animate-pulse text-amber-500`} />;
-      case "completed": return <Zap className={`${cls} text-amber-500`} />;
-      case "error": return <AlertTriangle className={`${cls} text-red-500`} />;
+      case "calling": return <Zap className={`${cls} animate-pulse text-warning-text`} />;
+      case "completed": return <Zap className={`${cls} text-warning-text`} />;
+      case "error": return <AlertTriangle className={`${cls} text-destructive-text`} />;
       default: return <Zap className={`${cls} text-muted-foreground`} />;
     }
   }
   switch (phase) {
-    case "calling": return <Wrench className={`${cls} animate-wobble text-blue-500`} />;
-    case "completed": return <Wrench className={`${cls} text-blue-500`} />;
-    case "error": return <AlertTriangle className={`${cls} text-red-500`} />;
+    case "calling": return <Wrench className={`${cls} animate-wobble text-info-text`} />;
+    case "completed": return <Wrench className={`${cls} text-info-text`} />;
+    case "error": return <AlertTriangle className={`${cls} text-destructive-text`} />;
     default: return <Wrench className={`${cls} text-muted-foreground`} />;
   }
 }
@@ -99,9 +99,9 @@ function PhaseLabel({ phase, isSkill }: { phase: ToolStreamEntry["phase"]; isSki
     ? { calling: t("skillActivating"), completed: t("skillActivated"), error: t("toolFailed") }
     : { calling: t("toolRunning"), completed: t("toolDone"), error: t("toolFailed") };
   const colors: Record<string, string> = {
-    calling: "text-blue-500",
-    completed: "text-blue-500",
-    error: "text-red-500",
+    calling: "text-info-text",
+    completed: "text-info-text",
+    error: "text-destructive-text",
   };
   return <span className={`text-xs-plus ${colors[phase] ?? "text-muted-foreground"}`}>{labels[phase] ?? phase}</span>;
 }

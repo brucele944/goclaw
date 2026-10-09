@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface Props {
 
 export function ProvidersSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ProvidersData>(data ?? {});
   const [dirty, setDirty] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -111,8 +112,9 @@ export function ProvidersSection({ data, onSave, saving }: Props) {
                 {isOpen && (
                   <div className="space-y-3 border-t px-3 py-3">
                     <div className="grid gap-1.5">
-                      <Label>{t("providers.apiKey")}</Label>
+                      <Label htmlFor={`${uid}-${p.key}-api-key`}>{t("providers.apiKey")}</Label>
                       <Input
+                        id={`${uid}-${p.key}-api-key`}
                         type="password"
                         value={entry.api_key ?? ""}
                         disabled={isSecret(entry.api_key)}
@@ -124,8 +126,9 @@ export function ProvidersSection({ data, onSave, saving }: Props) {
                       )}
                     </div>
                     <div className="grid gap-1.5">
-                      <Label>{t("providers.apiBaseUrl")}</Label>
+                      <Label htmlFor={`${uid}-${p.key}-api-base`}>{t("providers.apiBaseUrl")}</Label>
                       <Input
+                        id={`${uid}-${p.key}-api-base`}
                         value={entry.api_base ?? ""}
                         onChange={(e) => updateProvider(p.key, { api_base: e.target.value })}
                         placeholder={t("providers.apiBaseUrlPlaceholder")}

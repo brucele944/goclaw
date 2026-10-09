@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -69,6 +69,9 @@ interface SortableCardProps {
 
 function SortableExtractorCard({ entry, index, onUpdate }: SortableCardProps) {
   const { t } = useTranslation("tools");
+  const fieldId = useId();
+  const timeoutId = `${fieldId}-timeout`;
+  const baseUrlId = `${fieldId}-base-url`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
   });
@@ -98,6 +101,7 @@ function SortableExtractorCard({ entry, index, onUpdate }: SortableCardProps) {
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <button
           type="button"
+          aria-label={t("common:dragToReorder")}
           className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
           {...attributes}
           {...listeners}
@@ -128,11 +132,12 @@ function SortableExtractorCard({ entry, index, onUpdate }: SortableCardProps) {
         <div className="flex flex-wrap items-center gap-3 px-3 pb-3 pt-1">
           {showTimeout && (
             <div className="flex items-center gap-1.5">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">
+              <Label htmlFor={timeoutId} className="text-xs text-muted-foreground whitespace-nowrap">
                 {t("builtin.extractorChain.timeout")}
               </Label>
               <div className="relative">
                 <Input
+                  id={timeoutId}
                   type="number"
                   min={0}
                   max={600}
@@ -148,10 +153,11 @@ function SortableExtractorCard({ entry, index, onUpdate }: SortableCardProps) {
           )}
           {showBaseUrl && (
             <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">
+              <Label htmlFor={baseUrlId} className="text-xs text-muted-foreground whitespace-nowrap">
                 {t("builtin.extractorChain.baseUrl")}
               </Label>
               <Input
+                id={baseUrlId}
                 value={entry.base_url}
                 onChange={(e) => onUpdate(entry.id, { base_url: e.target.value })}
                 placeholder="https://fetch.goclaw.sh/"

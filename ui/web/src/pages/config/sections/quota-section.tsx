@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface Props {
 
 export function QuotaSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<QuotaData>(
     data?.quota ?? DEFAULT_QUOTA
   );
@@ -87,8 +88,9 @@ export function QuotaSection({ data, onSave, saving }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <InfoLabel tip={t("quota.enabledTip")}>{t("quota.enabled")}</InfoLabel>
+          <InfoLabel tip={t("quota.enabledTip")} htmlFor={`${uid}-enabled`}>{t("quota.enabled")}</InfoLabel>
           <Switch
+            id={`${uid}-enabled`}
             checked={draft.enabled}
             onCheckedChange={(v) => update({ enabled: v })}
           />
@@ -96,7 +98,7 @@ export function QuotaSection({ data, onSave, saving }: Props) {
 
         {draft.enabled && (
           <>
-            <div className="space-y-2">
+            <div className="space-y-2" role="group" aria-label={t("quota.defaultLimits")}>
               <InfoLabel tip={t("quota.defaultLimitsTip")}>
                 {t("quota.defaultLimits")}
               </InfoLabel>

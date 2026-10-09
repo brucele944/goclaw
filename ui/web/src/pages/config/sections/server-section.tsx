@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ interface Props {
 
 export function ServerSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ServerData>(data ?? DEFAULT);
   const [dirty, setDirty] = useState(false);
 
@@ -65,16 +66,18 @@ export function ServerSection({ data, onSave, saving }: Props) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("gateway.hostTip")}>{t("gateway.host")}</InfoLabel>
+            <InfoLabel tip={t("gateway.hostTip")} htmlFor={`${uid}-host`}>{t("gateway.host")}</InfoLabel>
             <Input
+              id={`${uid}-host`}
               value={draft.host ?? ""}
               onChange={(e) => update({ host: e.target.value })}
               placeholder="0.0.0.0"
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("gateway.portTip")}>{t("gateway.port")}</InfoLabel>
+            <InfoLabel tip={t("gateway.portTip")} htmlFor={`${uid}-port`}>{t("gateway.port")}</InfoLabel>
             <Input
+              id={`${uid}-port`}
               type="number"
               value={draft.port ?? ""}
               onChange={(e) => update({ port: Number(e.target.value) })}
@@ -82,8 +85,9 @@ export function ServerSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("gateway.tokenTip")}>{t("gateway.token")}</InfoLabel>
+            <InfoLabel tip={t("gateway.tokenTip")} htmlFor={`${uid}-token`}>{t("gateway.token")}</InfoLabel>
             <Input
+              id={`${uid}-token`}
               type="password"
               value={draft.token ?? ""}
               disabled={isSecret(draft.token)}
@@ -98,16 +102,18 @@ export function ServerSection({ data, onSave, saving }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("gateway.ownerIdsTip")}>{t("gateway.ownerIds")}</InfoLabel>
+            <InfoLabel tip={t("gateway.ownerIdsTip")} htmlFor={`${uid}-owner-ids`}>{t("gateway.ownerIds")}</InfoLabel>
             <TagInput
+              id={`${uid}-owner-ids`}
               value={draft.owner_ids ?? []}
               onChange={(v) => update({ owner_ids: v })}
               placeholder={t("gateway.ownerIdsPlaceholder")}
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("gateway.allowedOriginsTip")}>{t("gateway.allowedOrigins")}</InfoLabel>
+            <InfoLabel tip={t("gateway.allowedOriginsTip")} htmlFor={`${uid}-allowed-origins`}>{t("gateway.allowedOrigins")}</InfoLabel>
             <TagInput
+              id={`${uid}-allowed-origins`}
               value={draft.allowed_origins ?? []}
               onChange={(v) => update({ allowed_origins: v })}
               placeholder={t("gateway.allowedOriginsPlaceholder")}

@@ -108,7 +108,7 @@ export function ChatModelSelect({ value, onChange, disabled }: ChatModelSelectPr
           onClick={() => void refresh(degradedProviderIds)}
           title={warning}
           aria-label={warning}
-          className="text-amber-700 hover:text-amber-600 dark:text-amber-400"
+          className="text-warning-text hover:text-warning-text"
         >
           <AlertTriangle className="h-3.5 w-3.5" />
         </button>

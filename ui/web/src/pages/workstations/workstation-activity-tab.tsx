@@ -39,11 +39,11 @@ function ExitCodeCell({ exitCode }: { exitCode: number | null }) {
   return (
     <span className="flex items-center gap-1">
       {ok ? (
-        <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+        <CheckCircle className="h-3.5 w-3.5 text-success-text" />
       ) : (
-        <XCircle className="h-3.5 w-3.5 text-red-500" />
+        <XCircle className="h-3.5 w-3.5 text-destructive-text" />
       )}
-      <span className={ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}>
+      <span className={ok ? "text-success-text" : "text-destructive-text"}>
         {exitCode}
       </span>
     </span>

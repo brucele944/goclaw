@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ interface Props {
 
 export function ChannelsSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<ChannelsData>(data ?? {});
   const [dirty, setDirty] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -118,8 +119,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                 {isOpen && (
                   <div className="space-y-3 border-t px-3 py-3">
                     <div className="flex items-center justify-between">
-                      <Label>{t("channels.enabled")}</Label>
+                      <Label htmlFor={`${uid}-${ch}-enabled`}>{t("channels.enabled")}</Label>
                       <Switch
+                        id={`${uid}-${ch}-enabled`}
                         checked={chData.enabled ?? false}
                         onCheckedChange={(v) => updateChannel(ch, { enabled: v })}
                       />
@@ -128,8 +130,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                     {/* Secret token */}
                     {meta.secretField && chData[meta.secretField] !== undefined && (
                       <div className="grid gap-1.5">
-                        <Label>{t("channels.token")}</Label>
+                        <Label htmlFor={`${uid}-${ch}-token`}>{t("channels.token")}</Label>
                         <Input
+                          id={`${uid}-${ch}-token`}
                           type="password"
                           value={chData[meta.secretField] ?? ""}
                           disabled={isSecret(chData[meta.secretField])}
@@ -146,9 +149,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {chData.dm_policy !== undefined && (
                         <div className="grid gap-1.5">
-                          <Label>{t("channels.dmPolicy")}</Label>
+                          <Label htmlFor={`${uid}-${ch}-dm-policy`}>{t("channels.dmPolicy")}</Label>
                           <Select value={chData.dm_policy ?? "pairing"} onValueChange={(v) => updateChannel(ch, { dm_policy: v })}>
-                            <SelectTrigger>
+                            <SelectTrigger id={`${uid}-${ch}-dm-policy`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -161,9 +164,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                       )}
                       {chData.group_policy !== undefined && (
                         <div className="grid gap-1.5">
-                          <Label>{t("channels.groupPolicy")}</Label>
+                          <Label htmlFor={`${uid}-${ch}-group-policy`}>{t("channels.groupPolicy")}</Label>
                           <Select value={chData.group_policy ?? "open"} onValueChange={(v) => updateChannel(ch, { group_policy: v })}>
-                            <SelectTrigger>
+                            <SelectTrigger id={`${uid}-${ch}-group-policy`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -179,8 +182,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                     {/* Allow from */}
                     {chData.allow_from !== undefined && (
                       <div className="grid gap-1.5">
-                        <Label>{t("channels.allowFrom")}</Label>
+                        <Label htmlFor={`${uid}-${ch}-allow-from`}>{t("channels.allowFrom")}</Label>
                         <MultiUserPicker
+                          id={`${uid}-${ch}-allow-from`}
                           value={chData.allow_from ?? []}
                           onChange={(v) =>
                             updateChannel(ch, {
@@ -230,12 +234,12 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                             </div>
                           )}
                           <div className="rounded-md border px-3 py-2 grid gap-1.5 sm:col-span-2">
-                            <Label>{t("channels.reasoningDelivery")}</Label>
+                            <Label htmlFor={`${uid}-${ch}-reasoning-delivery`}>{t("channels.reasoningDelivery")}</Label>
                             <Select
                               value={resolveReasoningDeliveryValue(chData)}
                               onValueChange={(v) => updateChannel(ch, { reasoning_delivery: v, reasoning_stream: undefined })}
                             >
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger id={`${uid}-${ch}-reasoning-delivery`}><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="streaming_only">{t("channels.reasoningStreamingOnly")}</SelectItem>
                                 <SelectItem value="always_bubbles">{t("channels.reasoningAlwaysBubbles")}</SelectItem>
@@ -247,9 +251,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                         </div>
                         {chData.reaction_level !== undefined && (
                           <div className="grid gap-1.5">
-                            <Label>{t("channels.reactionLevel")}</Label>
+                            <Label htmlFor={`${uid}-${ch}-reaction-level`}>{t("channels.reactionLevel")}</Label>
                             <Select value={chData.reaction_level ?? "off"} onValueChange={(v) => updateChannel(ch, { reaction_level: v })}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger id={`${uid}-${ch}-reaction-level`}><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="off">{t("channels.reactionOff")}</SelectItem>
                                 <SelectItem value="minimal">{t("channels.reactionMinimal")}</SelectItem>
@@ -264,9 +268,9 @@ export function ChannelsSection({ data, onSave, saving }: Props) {
                     {/* Feishu-specific */}
                     {ch === "feishu" && chData.connection_mode !== undefined && (
                       <div className="grid gap-1.5">
-                        <Label>{t("channels.connectionMode")}</Label>
+                        <Label htmlFor={`${uid}-${ch}-connection-mode`}>{t("channels.connectionMode")}</Label>
                         <Select value={chData.connection_mode ?? "websocket"} onValueChange={(v) => updateChannel(ch, { connection_mode: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger id={`${uid}-${ch}-connection-mode`}><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="websocket">{t("channels.connectionWebsocket")}</SelectItem>
                             <SelectItem value="webhook">{t("channels.connectionWebhook")}</SelectItem>

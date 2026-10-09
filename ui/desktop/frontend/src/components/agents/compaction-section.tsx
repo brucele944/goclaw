@@ -16,13 +16,13 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
     <div className="space-y-3">
       <div className="space-y-0.5">
         <h4 className="text-xs font-semibold text-text-primary">{t('configSections.compaction.title')}</h4>
-        <p className="text-[11px] text-text-muted">{t('configSections.compaction.description')}</p>
+        <p className="text-2xs text-text-muted">{t('configSections.compaction.description')}</p>
       </div>
 
       <div className="rounded-lg border border-border p-3 space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-text-secondary">{t('configSections.compaction.maxHistoryShare')}</label>
+            <label className="text-2xs font-medium text-text-secondary">{t('configSections.compaction.maxHistoryShare')}</label>
             <input
               type="number"
               step={0.05}
@@ -34,7 +34,7 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-text-secondary">{t('configSections.compaction.keepLastMessages')}</label>
+            <label className="text-2xs font-medium text-text-secondary">{t('configSections.compaction.keepLastMessages')}</label>
             <input
               type="number"
               min={0}
@@ -47,7 +47,7 @@ export function CompactionSection({ value, onChange }: CompactionSectionProps) {
         <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
           <div className="space-y-0.5">
             <span className="text-xs font-medium text-text-primary">{t('configSections.compaction.memoryFlush')}</span>
-            <p className="text-[10px] text-text-muted">{t('configSections.compaction.memoryFlushTip')}</p>
+            <p className="text-2xs text-text-muted">{t('configSections.compaction.memoryFlushTip')}</p>
           </div>
           <Switch
             checked={value.memoryFlush?.enabled ?? false}

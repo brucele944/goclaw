@@ -25,7 +25,7 @@ export function SetupCompleteModal({ open, onGoToDashboard }: SetupCompleteModal
         <div className="flex flex-col items-center gap-6 py-6">
           {/* Animated checkmark */}
           <motion.div
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-4xl dark:bg-emerald-900/30"
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-success-subtle text-4xl"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15 }}

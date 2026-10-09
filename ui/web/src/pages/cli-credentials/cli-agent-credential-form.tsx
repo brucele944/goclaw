@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { Dispatch, SetStateAction } from "react";
+import { useId, type Dispatch, type SetStateAction } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -32,13 +32,15 @@ interface Props {
 export function CliAgentCredentialForm(props: Props) {
   const { t } = useTranslation("cli-credentials");
   const isGit = props.binary.adapter_name === "git";
+  const agentSelectId = useId();
+  const envLabelId = useId();
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-1.5">
-        <Label>{t("agentCredentials.agent")}</Label>
+        <Label htmlFor={agentSelectId}>{t("agentCredentials.agent")}</Label>
         <Select value={props.agentId} onValueChange={props.setAgentId} disabled={props.editing}>
-          <SelectTrigger className="text-base md:text-sm">
+          <SelectTrigger id={agentSelectId} className="text-base md:text-sm">
             <SelectValue placeholder={t("grants.selectAgent")} />
           </SelectTrigger>
           <SelectContent>
@@ -67,8 +69,8 @@ export function CliAgentCredentialForm(props: Props) {
       ) : null}
 
       {(!isGit || props.gitType === "env") ? (
-        <div className="grid gap-1.5">
-          <Label>{t("agentCredentials.env")}</Label>
+        <div className="grid gap-1.5" role="group" aria-labelledby={envLabelId}>
+          <Label id={envLabelId}>{t("agentCredentials.env")}</Label>
           <CliCredentialEnvVarsSection
             isManualMode
             activePreset={null}

@@ -44,7 +44,7 @@ export function TeamNotificationsSection({
       <h3 className="text-sm font-medium">{t("settings.notifications")}</h3>
       <div className="rounded-lg border bg-gradient-to-r from-blue-500/5 to-orange-500/5 p-4 space-y-3">
         <div className="flex items-start gap-4">
-          <div className="rounded-lg bg-blue-500/10 p-2.5 text-blue-600 dark:text-blue-400">
+          <div className="rounded-lg bg-info-subtle p-2.5 text-info-text">
             <Bell className="h-5 w-5" />
           </div>
           <div className="flex-1 space-y-3">
@@ -92,7 +92,7 @@ export function TeamNotificationsSection({
                 ))}
               </div>
               {notifyMode === "leader" && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
+                <p className="text-xs text-warning-text">
                   ⚠️ {t("settings.notifyModeLeaderWarning")}
                 </p>
               )}

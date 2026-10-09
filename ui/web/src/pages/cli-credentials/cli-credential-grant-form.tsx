@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,11 @@ export function CliCredentialGrantForm({
 }: Props) {
   const { t } = useTranslation("cli-credentials");
   const { t: tc } = useTranslation("common");
+  const baseId = useId();
+  const denyArgsId = `${baseId}-deny-args`;
+  const denyVerboseId = `${baseId}-deny-verbose`;
+  const timeoutId = `${baseId}-timeout`;
+  const tipsId = `${baseId}-tips`;
 
   return (
     <div className="space-y-3 rounded-md border p-3">
@@ -88,8 +94,9 @@ export function CliCredentialGrantForm({
         </Select>
 
         <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">{t("grants.overrideDenyArgs")}</Label>
+          <Label htmlFor={denyArgsId} className="text-xs text-muted-foreground">{t("grants.overrideDenyArgs")}</Label>
           <Input
+            id={denyArgsId}
             value={denyArgs}
             onChange={(e) => setDenyArgs(e.target.value)}
             placeholder={binary.deny_args?.join(", ") || t("grants.defaultPlaceholder")}
@@ -98,8 +105,9 @@ export function CliCredentialGrantForm({
         </div>
 
         <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">{t("grants.overrideDenyVerbose")}</Label>
+          <Label htmlFor={denyVerboseId} className="text-xs text-muted-foreground">{t("grants.overrideDenyVerbose")}</Label>
           <Input
+            id={denyVerboseId}
             value={denyVerbose}
             onChange={(e) => setDenyVerbose(e.target.value)}
             placeholder={binary.deny_verbose?.join(", ") || t("grants.defaultPlaceholder")}
@@ -108,8 +116,9 @@ export function CliCredentialGrantForm({
         </div>
 
         <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">{t("grants.overrideTimeout")}</Label>
+          <Label htmlFor={timeoutId} className="text-xs text-muted-foreground">{t("grants.overrideTimeout")}</Label>
           <Input
+            id={timeoutId}
             type="number"
             min={1}
             value={timeout}
@@ -120,8 +129,9 @@ export function CliCredentialGrantForm({
         </div>
 
         <div className="grid gap-1.5">
-          <Label className="text-xs text-muted-foreground">{t("grants.overrideTips")}</Label>
+          <Label htmlFor={tipsId} className="text-xs text-muted-foreground">{t("grants.overrideTips")}</Label>
           <Textarea
+            id={tipsId}
             value={tips}
             onChange={(e) => setTips(e.target.value)}
             placeholder={binary.tips || t("grants.defaultPlaceholder")}

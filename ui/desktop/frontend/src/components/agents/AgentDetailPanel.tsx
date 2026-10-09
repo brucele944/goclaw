@@ -106,8 +106,8 @@ export function AgentDetailPanel({ agent, onSave, onResummon, onClose }: AgentDe
           </h2>
           <div className="flex items-center gap-2">
             <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'active' ? 'bg-success' : s.status === 'summon_failed' ? 'bg-error' : 'bg-text-muted/50'}`} />
-            <span className="text-[11px] text-text-muted font-mono">{agent.agent_key}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{agent.agent_type}</span>
+            <span className="text-2xs text-text-muted font-mono">{agent.agent_key}</span>
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-surface-tertiary text-text-muted">{agent.agent_type}</span>
           </div>
         </div>
         <button
@@ -255,9 +255,9 @@ export function AgentDetailPanel({ agent, onSave, onResummon, onClose }: AgentDe
               <button
                 onClick={s.handleSave}
                 disabled={s.saving || s.saveBlocked}
-                className="px-5 py-2 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {s.saving && <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                {s.saving && <span className="w-3.5 h-3.5 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />}
                 {s.saving ? t('common:saving') : s.saveBlocked ? t('agents:create.check') : t('common:saveChanges')}
               </button>
             </div>

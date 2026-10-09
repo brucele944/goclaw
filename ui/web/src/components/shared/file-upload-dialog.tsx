@@ -168,6 +168,7 @@ export function FileUploadDialog({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); removeEntry(entry.id); }}
+                    aria-label={t("remove")}
                     className="shrink-0 rounded-sm p-1 text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -217,7 +218,7 @@ function StatusIcon({ status }: { status: FileStatus }) {
     case "ready":
       return <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />;
     case "success":
-      return <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />;
+      return <CheckCircle2 className="h-4 w-4 shrink-0 text-success-text" />;
     case "error":
       return <XCircle className="h-4 w-4 shrink-0 text-destructive" />;
   }

@@ -100,7 +100,7 @@ export function Topbar({ settingsOpen, onSettingsOpenChange }: TopbarProps) {
             <Settings2 className="h-4 w-4" />
             <span
               className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ${
-                embStatus?.configured ? "bg-emerald-500" : "bg-amber-500"
+                embStatus?.configured ? "bg-success" : "bg-warning"
               }`}
             />
           </button>

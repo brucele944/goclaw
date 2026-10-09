@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Archive, Clock, Hash, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface Props {
 /** Global pending message compaction thresholds with visual emphasis. */
 export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
 
   const update = (patch: Partial<PendingCompactionValues>) =>
     onChange({ ...value, ...patch });
@@ -63,9 +65,9 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
         <div className="border-b py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <Archive className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
+              <Archive className="mt-0.5 h-4 w-4 shrink-0 text-warning-text" />
               <div className="space-y-1">
-                <Label className="text-sm font-medium">
+                <Label htmlFor={`${uid}-threshold`} className="text-sm font-medium">
                   {t("behavior.pendingCompactionThreshold")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -74,6 +76,7 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
               </div>
             </div>
             <Input
+              id={`${uid}-threshold`}
               type="number"
               value={value.threshold ?? ""}
               onChange={(e) => update({ threshold: Number(e.target.value) })}
@@ -88,9 +91,9 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
         <div className="border-b py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-info-text" />
               <div className="space-y-1">
-                <Label className="text-sm font-medium">
+                <Label htmlFor={`${uid}-keep-recent`} className="text-sm font-medium">
                   {t("behavior.pendingCompactionKeepRecent")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -99,6 +102,7 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
               </div>
             </div>
             <Input
+              id={`${uid}-keep-recent`}
               type="number"
               value={value.keep_recent ?? ""}
               onChange={(e) => update({ keep_recent: Number(e.target.value) })}
@@ -113,9 +117,9 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
         <div className="py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <Hash className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" />
+              <Hash className="mt-0.5 h-4 w-4 shrink-0 text-warning-text" />
               <div className="space-y-1">
-                <Label className="text-sm font-medium">
+                <Label htmlFor={`${uid}-max-tokens`} className="text-sm font-medium">
                   {t("behavior.pendingCompactionMaxTokens")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -124,6 +128,7 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
               </div>
             </div>
             <Input
+              id={`${uid}-max-tokens`}
               type="number"
               value={value.max_tokens ?? ""}
               onChange={(e) => update({ max_tokens: Number(e.target.value) })}
@@ -135,7 +140,7 @@ export function BehaviorPendingCompactionCard({ value, onChange }: Props) {
         </div>
 
         {/* Info banner */}
-        <div className="flex items-start gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-300">
+        <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-xs text-warning-text">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{t("behavior.pendingCompactionInfo")}</span>
         </div>

@@ -142,7 +142,7 @@ export function VaultDetailDialog({ doc, open, onOpenChange, onDeleted }: Props)
               </div>
 
               {!editMode && (
-                <Button variant="ghost" size="xs" className="h-7 w-7 p-0 shrink-0" onClick={startEdit}>
+                <Button variant="ghost" size="xs" className="h-7 w-7 p-0 shrink-0" onClick={startEdit} aria-label={t("common:edit")}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               )}

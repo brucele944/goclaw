@@ -148,7 +148,7 @@ export function TreeItem({
   )
 
   const sizeLabel = showSize && !node.isDir && node.size > 0 && (
-    <span className="ml-auto shrink-0 text-[10px] text-text-muted tabular-nums">
+    <span className="ml-auto shrink-0 text-2xs text-text-muted tabular-nums">
       {formatSize(node.size)}
     </span>
   )
@@ -179,7 +179,7 @@ export function TreeItem({
         ))}
         {expanded && node.hasChildren && node.children.length === 0 && !node.loading && (
           <div
-            className="flex items-center gap-1 text-[11px] text-text-muted cursor-pointer hover:text-text-primary"
+            className="flex items-center gap-1 text-2xs text-text-muted cursor-pointer hover:text-text-primary"
             style={{ paddingLeft: `${(depth + 1) * 16 + 20}px` }}
             onClick={() => onLoadMore?.(node.path)}
           >

@@ -81,7 +81,7 @@ export function ModelBudgetSection({
       <div className="space-y-1.5">
         <Label htmlFor="budget" className="text-xs">
           <span className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3 text-emerald-500" />
+            <DollarSign className="h-3 w-3 text-success-text" />
             {t("general.budgetLabel")}
           </span>
         </Label>

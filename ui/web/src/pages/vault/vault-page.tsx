@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } fro
 import { useTranslation } from "react-i18next";
 import { Search, FileArchive, Plus, PanelLeftOpen, FolderSync, Loader2, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHttp } from "@/hooks/use-ws";
 import { useAgents } from "@/pages/agents/hooks/use-agents";
@@ -107,38 +108,45 @@ export function VaultPage() {
 
   const handleCloseDetail = () => { setDetailDoc(null); };
 
+  const documentSidebar = (
+    <VaultDocumentSidebar
+      tree={tree}
+      meta={meta}
+      selectedPath={selectedPath}
+      onSelect={handleTreeSelect}
+      onLoadMore={loadSubtree}
+      loading={loading}
+      docType={docType}
+      onDocTypeChange={handleDocTypeChange}
+      agentId={selectedAgent}
+      teamId={selectedTeam}
+      treeVersion={treeVersion}
+    />
+  );
+
   return (
     <div className="relative flex h-full overflow-hidden">
-      {isMobile && sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setSidebarOpen(false)} />
+      {/* Sidebar — focus-trapped Sheet on mobile, inline column on desktop */}
+      {isMobile ? (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent
+            side="left"
+            title={t("title")}
+            showCloseButton={false}
+            className="w-80 max-w-[85vw] gap-0 border-r-0"
+          >
+            {documentSidebar}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <div className="w-80 shrink-0 lg:w-96">{documentSidebar}</div>
       )}
-
-      {/* Sidebar */}
-      <div className={
-        isMobile
-          ? `fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`
-          : "w-80 md:w-80 lg:w-96 shrink-0"
-      }>
-        <VaultDocumentSidebar
-          tree={tree}
-          meta={meta}
-          selectedPath={selectedPath}
-          onSelect={handleTreeSelect}
-          onLoadMore={loadSubtree}
-          loading={loading}
-          docType={docType}
-          onDocTypeChange={handleDocTypeChange}
-          agentId={selectedAgent}
-          teamId={selectedTeam}
-          treeVersion={treeVersion}
-        />
-      </div>
 
       {/* Main: header + graph + detail panel */}
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex h-10 items-center gap-2 px-3 border-b shrink-0">
           {isMobile && (
-            <Button variant="ghost" size="xs" className="h-7 w-7 p-0" onClick={() => setSidebarOpen(true)}>
+            <Button variant="ghost" size="xs" className="h-7 w-7 p-0" onClick={() => setSidebarOpen(true)} aria-label={t("openSidebar")}>
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
           )}
@@ -155,7 +163,7 @@ export function VaultPage() {
             <option value="">{t("allTeams", "All teams")}</option>
             {(teams ?? []).map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
-          <Button size="sm" variant="outline" onClick={() => setSearchOpen(true)} disabled={!selectedAgent}>
+          <Button size="sm" variant="outline" onClick={() => setSearchOpen(true)} disabled={!selectedAgent} aria-label={t("common:search")}>
             <Search className="h-3.5 w-3.5" />
           </Button>
           <TooltipProvider>
@@ -166,6 +174,7 @@ export function VaultPage() {
                   variant="outline"
                   onClick={enriching ? () => setStopConfirmOpen(true) : async () => { await rescan(); loadRoot(); }}
                   disabled={rescanPending || stopPending}
+                  aria-label={enriching ? t("stopEnrich", "Stop enrichment") : t("rescanTooltip", "Rescan workspace")}
                 >
                   {rescanPending || stopPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -183,7 +192,7 @@ export function VaultPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Button size="sm" onClick={() => setCreateOpen(true)} aria-label={t("common:create")}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </span>

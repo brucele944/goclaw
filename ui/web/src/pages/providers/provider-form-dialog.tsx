@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -284,11 +284,12 @@ function ProviderTypeSelect({ value, hasClaudeCLI, alreadyAddedLabel, providerTy
   providerTypeLabel: string;
   onChange: (value: string) => void;
 }) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <Label>{providerTypeLabel}</Label>
+      <Label htmlFor={id}>{providerTypeLabel}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
+        <SelectTrigger id={id}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

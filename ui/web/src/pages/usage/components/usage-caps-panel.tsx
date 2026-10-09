@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Save, ShieldAlert, X } from "lucide-react";
@@ -18,6 +18,7 @@ const ALL = "__all__";
 
 export function UsageCapsPanel() {
   const { t } = useTranslation("usage");
+  const fieldId = useId();
   const { agents } = useAgents();
   const { providers } = useProviders();
   const { utilization, events, refreshing, refresh, createPolicy, updatePolicy, deletePolicy } = useUsageCaps();
@@ -101,41 +102,41 @@ export function UsageCapsPanel() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-7">
-        <Field label={t("caps.window")}>
+        <Field label={t("caps.window")} htmlFor={`${fieldId}-window`}>
           <Select value={windowValue} onValueChange={(value) => setWindowValue(value as UsageCapPolicy["window"])}>
-            <SelectTrigger className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${fieldId}-window`} className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               {["hour", "day", "week", "month"].map((value) => <SelectItem key={value} value={value}>{t(`caps.windows.${value}`)}</SelectItem>)}
             </SelectContent>
           </Select>
         </Field>
-        <Field label={t("caps.agent")}>
+        <Field label={t("caps.agent")} htmlFor={`${fieldId}-agent`}>
           <Select value={agentId} onValueChange={setAgentId}>
-            <SelectTrigger className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${fieldId}-agent`} className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>{t("caps.allAgents")}</SelectItem>
               {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.display_name || a.agent_key || a.id}</SelectItem>)}
             </SelectContent>
           </Select>
         </Field>
-        <Field label={t("caps.provider")}>
+        <Field label={t("caps.provider")} htmlFor={`${fieldId}-provider`}>
           <Select value={providerId} onValueChange={setProviderId}>
-            <SelectTrigger className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${fieldId}-provider`} className="w-full text-base md:text-sm"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>{t("caps.allProviders")}</SelectItem>
               {providers.map((p) => <SelectItem key={p.id} value={p.id}>{p.display_name || p.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </Field>
-        <Field label={t("caps.model")}>
-          <Input value={modelId} onChange={(e) => setModelId(e.target.value)} placeholder="openai/gpt-4o-mini" className="text-base md:text-sm" />
+        <Field label={t("caps.model")} htmlFor={`${fieldId}-model`}>
+          <Input id={`${fieldId}-model`} value={modelId} onChange={(e) => setModelId(e.target.value)} placeholder="openai/gpt-4o-mini" className="text-base md:text-sm" />
         </Field>
-        <Field label={t("caps.maxTokens")}>
-          <Input value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)} inputMode="numeric" placeholder="500000" className="text-base md:text-sm" />
+        <Field label={t("caps.maxTokens")} htmlFor={`${fieldId}-max-tokens`}>
+          <Input id={`${fieldId}-max-tokens`} value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)} inputMode="numeric" placeholder="500000" className="text-base md:text-sm" />
         </Field>
-        <Field label={t("caps.maxCost")}>
+        <Field label={t("caps.maxCost")} htmlFor={`${fieldId}-max-cost`}>
           <div className="flex gap-2">
-            <Input value={maxCost} onChange={(e) => setMaxCost(e.target.value)} inputMode="decimal" placeholder="25" className="text-base md:text-sm" />
+            <Input id={`${fieldId}-max-cost`} value={maxCost} onChange={(e) => setMaxCost(e.target.value)} inputMode="decimal" placeholder="25" className="text-base md:text-sm" />
             <Button type="button" size="icon" onClick={() => void onSubmit()} disabled={saving} aria-label={isEditing ? t("caps.save") : t("caps.create")}>
               {isEditing ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             </Button>
@@ -146,9 +147,9 @@ export function UsageCapsPanel() {
             ) : null}
           </div>
         </Field>
-        <Field label={t("columns.status")}>
+        <Field label={t("columns.status")} htmlFor={`${fieldId}-enabled`}>
           <div className="flex h-10 items-center gap-2">
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch id={`${fieldId}-enabled`} checked={enabled} onCheckedChange={setEnabled} />
             <span className="text-xs text-muted-foreground">{enabled ? t("caps.enabled") : t("caps.disabled")}</span>
           </div>
         </Field>
@@ -193,6 +194,6 @@ export function UsageCapsPanel() {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
+  return <div className="space-y-1.5"><Label htmlFor={htmlFor} className="text-xs">{label}</Label>{children}</div>;
 }

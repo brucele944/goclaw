@@ -1,29 +1,31 @@
 import louvain from "graphology-communities-louvain";
 import type Graph from "graphology";
+import { graphColor, type GraphColorName } from "./graph-color-tokens";
 
-/** 16-color palette for community detection — high contrast, distinct hues. */
-const COMMUNITY_PALETTE = [
-  "#e6194B", "#3cb44b", "#4363d8", "#f58231",
-  "#42d4f4", "#f032e6", "#bfef45", "#fabed4",
-  "#469990", "#dcbeff", "#9A6324", "#ffe119",
-  "#800000", "#aaffc3", "#808000", "#000075",
-] as const;
+/** Categorical palette for community detection — resolved from theme tokens so
+ *  community colours follow the active light/dark theme. */
+const COMMUNITY_PALETTE: GraphColorName[] = [
+  "red", "green", "blue", "orange",
+  "cyan", "pink", "amber", "rose",
+  "teal", "violet", "purple", "slate",
+  "emerald", "red", "green", "blue",
+];
 
 /** Run Louvain community detection and assign `community` + `color` attrs.
  *  Call AFTER graph is built (nodes + edges added). */
-export function assignCommunityColors(graph: Graph): void {
+export function assignCommunityColors(graph: Graph, isDark = false): void {
   if (graph.order === 0) return;
   const communities = louvain(graph, { resolution: 1.0 });
   graph.forEachNode((node) => {
     const c = communities[node] ?? 0;
     graph.setNodeAttribute(node, "community", c);
-    graph.setNodeAttribute(node, "color", COMMUNITY_PALETTE[c % COMMUNITY_PALETTE.length]);
+    graph.setNodeAttribute(node, "color", graphColor(COMMUNITY_PALETTE[c % COMMUNITY_PALETTE.length]!, isDark));
   });
 }
 
 /** Get community palette color by index (for legend). */
-export function getCommunityColor(idx: number): string {
-  return COMMUNITY_PALETTE[idx % COMMUNITY_PALETTE.length]!;
+export function getCommunityColor(idx: number, isDark = false): string {
+  return graphColor(COMMUNITY_PALETTE[idx % COMMUNITY_PALETTE.length]!, isDark);
 }
 
 /** Degree-based node sizing, scaled by graph density.
@@ -104,8 +106,6 @@ export const SIGMA_SETTINGS = {
   labelDensity: 0.04,
   /** Grid cell size for label collision avoidance */
   labelGridCellSize: 200,
-  /** Default edge color (overridden per-theme) */
-  defaultEdgeColor: "#334155",
   /** Minimum camera ratio (most zoomed in) */
   minCameraRatio: 0.02,
   /** Maximum camera ratio (most zoomed out) */

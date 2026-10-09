@@ -21,7 +21,7 @@ export function ThinkingSection({ reasoningMode, thinkingLevel, onReasoningModeC
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-text-primary">{t('configSections.thinking.title')}</h3>
-      <p className="text-[11px] text-text-muted">{t('configSections.thinking.description')}</p>
+      <p className="text-2xs text-text-muted">{t('configSections.thinking.description')}</p>
 
       {/* Inherit / Custom toggle */}
       <div className="flex gap-2">
@@ -32,7 +32,7 @@ export function ThinkingSection({ reasoningMode, thinkingLevel, onReasoningModeC
             className={[
               'px-3 py-1.5 text-xs rounded-lg border transition-colors',
               reasoningMode === m
-                ? 'bg-accent text-white border-accent'
+                ? 'bg-accent text-accent-foreground border-accent'
                 : 'border-border text-text-secondary hover:bg-surface-tertiary',
             ].join(' ')}
           >
@@ -52,7 +52,7 @@ export function ThinkingSection({ reasoningMode, thinkingLevel, onReasoningModeC
                 className={[
                   'flex-1 px-2 py-1.5 text-xs rounded-lg border transition-colors text-center',
                   thinkingLevel === lv.key
-                    ? 'bg-accent text-white border-accent'
+                    ? 'bg-accent text-accent-foreground border-accent'
                     : 'border-border text-text-secondary hover:bg-surface-tertiary',
                 ].join(' ')}
               >
@@ -60,12 +60,12 @@ export function ThinkingSection({ reasoningMode, thinkingLevel, onReasoningModeC
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-text-muted">
+          <p className="text-2xs text-text-muted">
             {LEVELS.find((l) => l.key === thinkingLevel)?.desc}
           </p>
         </div>
       ) : (
-        <p className="text-[11px] text-text-muted italic">Using provider defaults</p>
+        <p className="text-2xs text-text-muted italic">Using provider defaults</p>
       )}
     </div>
   )

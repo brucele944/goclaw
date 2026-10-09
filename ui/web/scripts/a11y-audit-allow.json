@@ -1,0 +1,92 @@
+{
+  "src/components/chat/media-gallery.tsx": {
+    "iconButton": 1
+  },
+  "src/components/graph/sigma-graph-minimap.tsx": {
+    "clickable": 1
+  },
+  "src/components/layout/sidebar.tsx": {
+    "clickable": 1
+  },
+  "src/components/shared/image-lightbox.tsx": {
+    "clickable": 3
+  },
+  "src/components/shared/skill-name-select.tsx": {
+    "clickable": 1
+  },
+  "src/components/shared/tag-input.tsx": {
+    "clickable": 1
+  },
+  "src/components/shared/tool-name-select.tsx": {
+    "clickable": 1
+  },
+  "src/components/shared/tool-single-combobox.tsx": {
+    "clickable": 1
+  },
+  "src/pages/agents/agent-detail/config-sections/tool-policy-section.tsx": {
+    "label": 1
+  },
+  "src/pages/agents/agent-detail/general-sections/workspace-section.tsx": {
+    "label": 1
+  },
+  "src/pages/agents/agent-detail/overview-sections/personality-section.tsx": {
+    "label": 1
+  },
+  "src/pages/channels/zalo/zalo-contacts-picker.tsx": {
+    "label": 1
+  },
+  "src/pages/cli-credentials/cli-credential-grant-form.tsx": {
+    "label": 1
+  },
+  "src/pages/cli-credentials/cli-credential-grants-content.tsx": {
+    "label": 1
+  },
+  "src/pages/config/sections/quota-section.tsx": {
+    "label": 1
+  },
+  "src/pages/config/sections/system-messages-section.tsx": {
+    "label": 1
+  },
+  "src/pages/config/sections/telemetry-section.tsx": {
+    "label": 1
+  },
+  "src/pages/contacts/contacts-table.tsx": {
+    "clickable": 1
+  },
+  "src/pages/hooks/components/hook-list-row.tsx": {
+    "clickable": 2
+  },
+  "src/pages/mcp/mcp-tool-multi-select.tsx": {
+    "clickable": 1
+  },
+  "src/pages/pending-messages/pending-messages-page.tsx": {
+    "clickable": 1
+  },
+  "src/pages/providers/provider-detail/provider-embedding-section.tsx": {
+    "label": 1
+  },
+  "src/pages/providers/provider-detail/provider-oauth-account-section.tsx": {
+    "label": 2
+  },
+  "src/pages/providers/provider-detail/provider-overview.tsx": {
+    "label": 2
+  },
+  "src/pages/skills/skill-agent-grants-dialog.tsx": {
+    "label": 1
+  },
+  "src/pages/skills/skill-upload-dialog.tsx": {
+    "label": 1
+  },
+  "src/pages/vault/vault-create-dialog.tsx": {
+    "label": 1
+  },
+  "src/pages/webhooks/webhook-secret-dialog.tsx": {
+    "label": 1
+  },
+  "src/pages/webhooks/webhook-test-dialog.tsx": {
+    "label": 1
+  },
+  "src/pages/workstations/workstations-page.tsx": {
+    "clickable": 1
+  }
+}

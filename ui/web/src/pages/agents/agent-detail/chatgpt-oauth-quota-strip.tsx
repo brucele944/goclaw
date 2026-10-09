@@ -31,8 +31,8 @@ interface ChatGPTOAuthQuotaStripProps {
 
 function quotaBarClass(remaining: number): string {
   if (remaining <= 20) return "bg-destructive";
-  if (remaining <= 50) return "bg-amber-500";
-  return "bg-emerald-500";
+  if (remaining <= 50) return "bg-warning";
+  return "bg-success";
 }
 
 export function ChatGPTOAuthQuotaStrip({
@@ -101,7 +101,7 @@ export function ChatGPTOAuthQuotaStrip({
                     key={signal.shortLabel}
                     className="flex items-center gap-1 rounded-full border bg-background/70 px-1.5 py-1"
                   >
-                    <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {signal.shortLabel}
                     </span>
                     <div className="h-1.5 w-11 overflow-hidden rounded-full bg-muted">

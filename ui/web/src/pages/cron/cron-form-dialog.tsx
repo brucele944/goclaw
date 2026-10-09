@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -33,6 +34,7 @@ interface CronFormDialogProps {
 export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogProps) {
   const { t } = useTranslation("cron");
   const { agents } = useAgents();
+  const uid = useId();
 
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<CronCreateFormData>({
     resolver: zodResolver(cronCreateSchema),
@@ -97,8 +99,9 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
         </DialogHeader>
         <div className="space-y-4 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto min-h-0">
           <div className="space-y-2">
-            <Label>{t("create.name")}</Label>
+            <Label htmlFor={`${uid}-name`}>{t("create.name")}</Label>
             <Input
+              id={`${uid}-name`}
               {...register("name")}
               onChange={(e) => setValue("name", slugify(e.target.value), { shouldValidate: true })}
               placeholder={t("create.namePlaceholder")}
@@ -111,7 +114,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
           </div>
 
           <div className="space-y-2">
-            <Label>{t("create.agentId")}</Label>
+            <Label htmlFor={`${uid}-agent`}>{t("create.agentId")}</Label>
             <Controller
               control={control}
               name="agentId"
@@ -120,7 +123,7 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
                   value={field.value || "__default__"}
                   onValueChange={(v) => field.onChange(v === "__default__" ? "" : v)}
                 >
-                  <SelectTrigger className="text-base md:text-sm">
+                  <SelectTrigger id={`${uid}-agent`} className="text-base md:text-sm">
                     <SelectValue placeholder={t("create.agentIdPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -138,8 +141,8 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
 
 
           <div className="space-y-2">
-            <Label>{t("create.payloadType")}</Label>
-            <div className="flex gap-2">
+            <Label id={`${uid}-payload-type`}>{t("create.payloadType")}</Label>
+            <div className="flex gap-2" role="group" aria-labelledby={`${uid}-payload-type`}>
               {(["agent_turn", "command"] as const).map((kind) => (
                 <Button
                   key={kind}
@@ -155,8 +158,8 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
           </div>
 
           <div className="space-y-2">
-            <Label>{t("create.scheduleType")}</Label>
-            <div className="flex gap-2">
+            <Label id={`${uid}-schedule-type`}>{t("create.scheduleType")}</Label>
+            <div className="flex gap-2" role="group" aria-labelledby={`${uid}-schedule-type`}>
               {(["every", "cron", "at"] as const).map((kind) => (
                 <Button
                   key={kind}
@@ -172,8 +175,9 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
 
           {scheduleKind === "every" && (
             <div className="space-y-2">
-              <Label>{t("create.intervalSeconds")}</Label>
+              <Label htmlFor={`${uid}-every`}>{t("create.intervalSeconds")}</Label>
               <Input
+                id={`${uid}-every`}
                 type="number"
                 min={1}
                 {...register("everyValue")}
@@ -184,8 +188,9 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
 
           {scheduleKind === "cron" && (
             <div className="space-y-2">
-              <Label>{t("create.cronExpression")}</Label>
+              <Label htmlFor={`${uid}-cron-expr`}>{t("create.cronExpression")}</Label>
               <Input
+                id={`${uid}-cron-expr`}
                 {...register("cronExpr")}
                 placeholder="0 * * * *"
               />
@@ -201,8 +206,9 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
 
           {payloadKind === "agent_turn" ? (
             <div className="space-y-2">
-              <Label>{t("create.message")}</Label>
+              <Label htmlFor={`${uid}-message`}>{t("create.message")}</Label>
               <Textarea
+                id={`${uid}-message`}
                 {...register("message")}
                 placeholder={t("create.messagePlaceholder")}
                 rows={3}
@@ -214,8 +220,8 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
           ) : (
             <div className="space-y-3 rounded-md border p-3">
               <div className="space-y-2">
-                <Label>{t("detail.commandArgv")}</Label>
-                <Textarea {...register("commandArgvText")} rows={4} className="font-mono text-base md:text-sm" />
+                <Label htmlFor={`${uid}-cmd-argv`}>{t("detail.commandArgv")}</Label>
+                <Textarea id={`${uid}-cmd-argv`} {...register("commandArgvText")} rows={4} className="font-mono text-base md:text-sm" />
                 {errors.commandArgvText ? (
                   <p className="text-xs text-destructive">{errors.commandArgvText.message}</p>
                 ) : (
@@ -224,28 +230,28 @@ export function CronFormDialog({ open, onOpenChange, onSubmit }: CronFormDialogP
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>{t("detail.commandCwd")}</Label>
-                  <Input {...register("commandCwd")} placeholder={t("detail.defaultWorkingDirectory")} />
+                  <Label htmlFor={`${uid}-cmd-cwd`}>{t("detail.commandCwd")}</Label>
+                  <Input id={`${uid}-cmd-cwd`} {...register("commandCwd")} placeholder={t("detail.defaultWorkingDirectory")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("detail.commandTimeout")}</Label>
-                  <Input type="number" min={0} {...register("commandTimeoutSeconds")} placeholder={t("detail.defaultValue")} />
+                  <Label htmlFor={`${uid}-cmd-timeout`}>{t("detail.commandTimeout")}</Label>
+                  <Input id={`${uid}-cmd-timeout`} type="number" min={0} {...register("commandTimeoutSeconds")} placeholder={t("detail.defaultValue")} />
                   {errors.commandTimeoutSeconds && <p className="text-xs text-destructive">{errors.commandTimeoutSeconds.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("detail.commandNoOutputTimeout")}</Label>
-                  <Input type="number" min={0} {...register("commandNoOutputTimeoutSeconds")} placeholder={t("detail.none")} />
+                  <Label htmlFor={`${uid}-cmd-no-output-timeout`}>{t("detail.commandNoOutputTimeout")}</Label>
+                  <Input id={`${uid}-cmd-no-output-timeout`} type="number" min={0} {...register("commandNoOutputTimeoutSeconds")} placeholder={t("detail.none")} />
                   {errors.commandNoOutputTimeoutSeconds && <p className="text-xs text-destructive">{errors.commandNoOutputTimeoutSeconds.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("detail.commandOutputLimit")}</Label>
-                  <Input type="number" min={0} {...register("commandOutputMaxBytes")} placeholder={t("detail.defaultValue")} />
+                  <Label htmlFor={`${uid}-cmd-output-limit`}>{t("detail.commandOutputLimit")}</Label>
+                  <Input id={`${uid}-cmd-output-limit`} type="number" min={0} {...register("commandOutputMaxBytes")} placeholder={t("detail.defaultValue")} />
                   {errors.commandOutputMaxBytes && <p className="text-xs text-destructive">{errors.commandOutputMaxBytes.message}</p>}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t("detail.commandInput")}</Label>
-                <Textarea {...register("commandInput")} rows={3} className="font-mono text-base md:text-sm" placeholder={t("detail.none")} />
+                <Label htmlFor={`${uid}-cmd-input`}>{t("detail.commandInput")}</Label>
+                <Textarea id={`${uid}-cmd-input`} {...register("commandInput")} rows={3} className="font-mono text-base md:text-sm" placeholder={t("detail.none")} />
               </div>
             </div>
           )}

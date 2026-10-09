@@ -55,7 +55,7 @@ export function RequestVolumeChart({ data, loading, granularity }: RequestVolume
             yAxisId="left"
             dataKey="request_count"
             name={t("analytics.requestChart.requests")}
-            fill="#E85D24"
+            fill="var(--chart-1)"
             radius={[2, 2, 0, 0]}
             isAnimationActive={false}
           />
@@ -64,9 +64,9 @@ export function RequestVolumeChart({ data, loading, granularity }: RequestVolume
             type="monotone"
             dataKey="error_count"
             name={t("analytics.requestChart.errors")}
-            stroke="#ef4444"
+            stroke="var(--destructive)"
             strokeWidth={2}
-            dot={{ r: 3, fill: "#ef4444" }}
+            dot={{ r: 3, fill: "var(--destructive)" }}
             isAnimationActive={false}
           />
         </ComposedChart>

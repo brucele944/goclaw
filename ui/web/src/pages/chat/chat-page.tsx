@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router";
 import { Eye, PanelLeftOpen } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useIsMobile } from "@/hooks/use-media-query";
-import { cn } from "@/lib/utils";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatThread } from "./chat-thread";
 import { ChatInput, type AttachedFile } from "@/components/chat/chat-input";
@@ -190,18 +190,12 @@ export function ChatPage() {
     <div className="relative flex h-full overflow-hidden">
       {/* Chat Sidebar */}
       {isMobile ? (
-        <>
-          {chatSidebarOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/50"
-              onClick={() => setChatSidebarOpen(false)}
-            />
-          )}
-          <div
-            className={cn(
-              "fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out",
-              chatSidebarOpen ? "translate-x-0" : "-translate-x-full",
-            )}
+        <Sheet open={chatSidebarOpen} onOpenChange={setChatSidebarOpen}>
+          <SheetContent
+            side="left"
+            title={t("openSessions")}
+            showCloseButton={false}
+            className="w-72 max-w-[85vw] gap-0 border-r-0 p-0"
           >
             <ChatSidebar
               agentId={agentId}
@@ -213,8 +207,8 @@ export function ChatPage() {
               onDeleteSession={handleDeleteSession}
               onNewChat={handleNewChatMobile}
             />
-          </div>
-        </>
+          </SheetContent>
+        </Sheet>
       ) : (
         <ChatSidebar
           agentId={agentId}
@@ -299,12 +293,7 @@ export function ChatPage() {
         </DropZone>
       </div>
 
-      {/* Mobile overlay backdrop — must render before TaskPanel so panel sits above */}
-      {isMobile && taskPanelOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setTaskPanelOpen(false)} />
-      )}
-
-      {/* Task panel — toggleable sidebar on the right */}
+      {/* Task panel — toggleable sidebar on the right (Sheet on mobile) */}
       <TaskPanel tasks={teamTasks} open={taskPanelOpen} onClose={() => setTaskPanelOpen(false)} />
     </div>
   );

@@ -147,7 +147,7 @@ export function AgentOverviewTab({ agent, onUpdate, heartbeat, onManageCodexPool
 
       <ChatGPTOAuthRoutingSummarySection agent={agent} onManage={onManageCodexPool} />
       {provider !== agent.provider && !!agent.chatgpt_oauth_routing && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 -mt-2 px-1">
+        <p className="text-xs text-warning-text -mt-2 px-1">
           {t("chatgptOAuthRouting.providerChangedWarning")}
         </p>
       )}

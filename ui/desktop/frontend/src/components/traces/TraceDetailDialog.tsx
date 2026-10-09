@@ -83,7 +83,7 @@ export function TraceDetailDialog({ traceId, onClose }: Props) {
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-sm font-medium text-text-primary truncate">{trace?.name || t('unnamed')}</span>
             {trace && (
-              <span className={`rounded-full px-2 py-0.5 border text-[10px] font-medium shrink-0 ${statusClass(trace.status)}`}>
+              <span className={`rounded-full px-2 py-0.5 border text-2xs font-medium shrink-0 ${statusClass(trace.status)}`}>
                 {trace.status}
               </span>
             )}
@@ -117,7 +117,7 @@ export function TraceDetailDialog({ traceId, onClose }: Props) {
                 </button>
               </>
             )}
-            <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary transition-colors cursor-pointer">
+            <button aria-label={t('common:close')} onClick={onClose} className="p-2 text-text-muted hover:text-text-primary transition-colors cursor-pointer">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path d="M18 6 6 18" /><path d="m6 6 12 12" />
               </svg>

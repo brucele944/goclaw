@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Loader2 } from "lucide-react";
 import {
@@ -31,6 +31,7 @@ interface SkillEditDialogProps {
 
 export function SkillEditDialog({ skill, onClose, onSave }: SkillEditDialogProps) {
   const { t } = useTranslation("skills");
+  const uid = useId();
   const [name, setName] = useState(skill.name);
   const [description, setDescription] = useState(skill.description);
   const [accessMode, setAccessMode] = useState(skill.visibility ?? "private");
@@ -98,9 +99,9 @@ export function SkillEditDialog({ skill, onClose, onSave }: SkillEditDialogProps
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("edit.accessMode")}</Label>
+            <Label htmlFor={`${uid}-accessMode`}>{t("edit.accessMode")}</Label>
             <Select value={accessMode} onValueChange={setAccessMode}>
-              <SelectTrigger>
+              <SelectTrigger id={`${uid}-accessMode`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -112,9 +113,10 @@ export function SkillEditDialog({ skill, onClose, onSave }: SkillEditDialogProps
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("edit.tags")}</Label>
+            <Label htmlFor={`${uid}-tagInput`}>{t("edit.tags")}</Label>
             <div className="flex gap-2">
               <Input
+                id={`${uid}-tagInput`}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -132,7 +134,7 @@ export function SkillEditDialog({ skill, onClose, onSave }: SkillEditDialogProps
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="gap-1">
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                    <button type="button" onClick={() => removeTag(tag)} aria-label={t("common:remove")} className="hover:text-destructive">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>

@@ -5,6 +5,7 @@
   "create": "Create",
   "indexAll": "Index All",
   "indexing": "Indexing...",
+  "reindexDocument": "Reindex document",
   "emptyTitle": "No memory documents",
   "emptyAgentDescription": "This agent has no memory documents yet.",
   "emptyGlobalDescription": "No memory documents found across any agent.",
@@ -14,10 +15,6 @@
     "scope": "Scope",
     "allScope": "All (global + personal)",
     "selectAgent": "Select an agent"
-  },
-  "tabs": {
-    "documents": "Documents",
-    "knowledgeGraph": "Knowledge Graph"
   },
   "columns": {
     "path": "Path",
@@ -103,6 +100,11 @@
       "clear": "Clear"
     },
     "refresh": "Refresh",
+    "viewMode": {
+      "table": "Table view",
+      "graph": "Graph view"
+    },
+    "viewEntity": "View entity details",
     "extract": "Extract",
     "columns": {
       "name": "Name",
@@ -184,7 +186,8 @@
       "edges": "{{count}} edges",
       "selected": "Selected: {{name}}",
       "limitNote": "Showing top {{limit}} of {{total}} entities",
-      "limitHint": "Graph is limited to {{limit}} entities for performance. Use the table view to browse all {{total}} entities."
+      "limitHint": "Graph is limited to {{limit}} entities for performance. Use the table view to browse all {{total}} entities.",
+      "ariaLabel": "Knowledge graph with {{entities}} entities and {{relations}} relations"
     }
   },
   "toast": {
@@ -217,7 +220,8 @@
   },
   "tabs": {
     "documents": "Documents",
-    "episodic": "Episodic Memory"
+    "episodic": "Episodic Memory",
+    "knowledgeGraph": "Knowledge Graph"
   },
   "episodic": {
     "noData": "No episodic memories yet",

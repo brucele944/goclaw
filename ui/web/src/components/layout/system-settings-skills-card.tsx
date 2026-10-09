@@ -33,10 +33,10 @@ export function SystemSettingsSkillsCard({
   const { t } = useTranslation("system-settings");
 
   return (
-    <Card className="border-sky-200 dark:border-sky-800">
+    <Card className="border-info/25">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Upload className="h-4 w-4 text-sky-500" />
+          <Upload className="h-4 w-4 text-info-text" />
           {t("skills.title")}
         </CardTitle>
         <CardDescription>{t("skills.description")}</CardDescription>

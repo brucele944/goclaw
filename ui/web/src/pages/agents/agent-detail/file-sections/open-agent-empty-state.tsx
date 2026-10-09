@@ -12,8 +12,8 @@ export function OpenAgentEmptyState({ files }: OpenAgentEmptyStateProps) {
   const { t } = useTranslation("agents");
   return (
     <div className="max-w-2xl space-y-4">
-      <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-sky-500/5 p-4">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+      <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-info-subtle p-4">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-info-text" />
         <div className="space-y-2 text-sm">
           <p className="font-medium">{t("files.openAgentTitle")}</p>
           <p className="text-muted-foreground">

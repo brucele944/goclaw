@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { MessageSquareText, RotateCcw, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ interface Props {
 
 export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
   const { t, i18n } = useTranslation("config");
+  const uid = useId();
   const definitions = useMemo(() => systemMessageDefinitionsFromSchema(schema), [schema]);
   const [draft, setDraft] = useState<SystemMessagesDraft>(() => normalizeSystemMessagesDraft(data, definitions));
   const [selectedKey, setSelectedKey] = useState("");
@@ -81,9 +82,9 @@ export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
       <CardContent className="space-y-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_12rem_12rem]">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("systemMessages.messageTip")}>{t("systemMessages.message")}</InfoLabel>
+            <InfoLabel tip={t("systemMessages.messageTip")} htmlFor={`${uid}-message`}>{t("systemMessages.message")}</InfoLabel>
             <Select value={activeKey} onValueChange={setSelectedKey}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`${uid}-message`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -103,9 +104,9 @@ export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("systemMessages.localeTip")}>{t("systemMessages.locale")}</InfoLabel>
+            <InfoLabel tip={t("systemMessages.localeTip")} htmlFor={`${uid}-locale`}>{t("systemMessages.locale")}</InfoLabel>
             <Select value={selectedLocale} onValueChange={(value) => setSelectedLocale(value as typeof selectedLocale)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`${uid}-locale`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -118,7 +119,7 @@ export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("systemMessages.defaultLocaleTip")}>{t("systemMessages.defaultLocale")}</InfoLabel>
+            <InfoLabel tip={t("systemMessages.defaultLocaleTip")} htmlFor={`${uid}-default-locale`}>{t("systemMessages.defaultLocale")}</InfoLabel>
             <Select
               value={defaultLocale}
               onValueChange={(value) => {
@@ -126,7 +127,7 @@ export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
                 setDirty(true);
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`${uid}-default-locale`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -156,8 +157,9 @@ export function SystemMessagesSection({ data, schema, onSave, saving }: Props) {
             )}
 
             <div className="grid gap-1.5">
-              <InfoLabel tip={t("systemMessages.overrideTip")}>{t("systemMessages.override")}</InfoLabel>
+              <InfoLabel tip={t("systemMessages.overrideTip")} htmlFor={`${uid}-override`}>{t("systemMessages.override")}</InfoLabel>
               <Textarea
+                id={`${uid}-override`}
                 value={currentValue}
                 onChange={(event) => updateTemplate(event.target.value)}
                 className="min-h-[150px] font-mono text-base md:text-sm"

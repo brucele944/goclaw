@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { X, ChevronDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePortalDropdownClose } from "@/hooks/use-portal-dropdown-close";
@@ -11,6 +12,8 @@ interface ToolMultiSelectProps {
   options: MCPToolInfo[];
   placeholder?: string;
   portalContainer?: React.RefObject<HTMLDivElement | null>;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 /** Multi-select input for MCP tool names with dropdown + free-text/keyboard support. */
@@ -20,7 +23,9 @@ export function ToolMultiSelect({
   options,
   placeholder = "Select or type tool names...",
   portalContainer,
+  id,
 }: ToolMultiSelectProps) {
+  const { t } = useTranslation("mcp");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +85,7 @@ export function ToolMultiSelect({
     <div ref={containerRef} className="relative">
       <div
         className={cn(
-          "border-input dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
+          "border-control-border dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
           "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-2",
         )}
         onClick={() => inputRef.current?.focus()}
@@ -94,6 +99,7 @@ export function ToolMultiSelect({
             <button
               type="button"
               className="hover:text-destructive ml-0.5"
+              aria-label={`${t("common:remove")} ${name}`}
               onClick={(e) => { e.stopPropagation(); removeTool(name); }}
             >
               <X className="h-3 w-3" />
@@ -102,6 +108,7 @@ export function ToolMultiSelect({
         ))}
         <input
           ref={inputRef}
+          id={id}
           value={search}
           onChange={(e) => { setSearch(e.target.value); if (!open) setOpen(true); }}
           onFocus={() => setOpen(true)}

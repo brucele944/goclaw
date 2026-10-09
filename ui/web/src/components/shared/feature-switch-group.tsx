@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,7 @@ import {
 
 export interface FeatureSwitchItem {
   icon?: LucideIcon;
-  /** Accent class for icon color, e.g. "text-blue-500" */
+  /** Accent class for icon color, e.g. "text-info-text" */
   iconClass?: string;
   label: string;
   /** Short description below the label explaining the impact */
@@ -45,6 +46,7 @@ export function FeatureSwitchGroup({
   items,
   highlight,
 }: FeatureSwitchGroupProps) {
+  const idPrefix = useId();
   return (
     <Card
       className={cn(highlight && "border-primary/20 bg-primary/[0.02]")}
@@ -70,16 +72,17 @@ export function FeatureSwitchGroup({
                 )}
                 <div className="space-y-1">
                   {item.tooltip ? (
-                    <InfoLabel tip={item.tooltip} labelClassName="text-sm font-medium">
+                    <InfoLabel tip={item.tooltip} htmlFor={`${idPrefix}-${i}`} labelClassName="text-sm font-medium">
                       {item.label}
                     </InfoLabel>
                   ) : (
-                    <Label className="text-sm font-medium">{item.label}</Label>
+                    <Label htmlFor={`${idPrefix}-${i}`} className="text-sm font-medium">{item.label}</Label>
                   )}
                   <p className="text-xs text-muted-foreground">{item.hint}</p>
                 </div>
               </div>
               <Switch
+                id={`${idPrefix}-${i}`}
                 checked={item.checked}
                 onCheckedChange={item.onCheckedChange}
                 disabled={item.disabled}

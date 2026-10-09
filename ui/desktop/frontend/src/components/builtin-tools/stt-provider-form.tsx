@@ -207,7 +207,7 @@ export function SttProviderForm({ initialSettings, onSave, onCancel }: Props) {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          className="px-4 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
         >
           {saving && (
             <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">

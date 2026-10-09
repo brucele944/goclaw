@@ -34,7 +34,7 @@ export function CronListRow({ job, onClick, onRun, onDelete }: CronListRowProps)
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-semibold">{job.name}</span>
-          <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${job.enabled ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+          <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${job.enabled ? "bg-success" : "bg-muted-foreground/40"}`} />
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Badge variant="outline" className="text-2xs px-1 py-0">{job.schedule.kind}</Badge>
@@ -68,6 +68,7 @@ export function CronListRow({ job, onClick, onRun, onDelete }: CronListRowProps)
             size="xs"
             className="text-muted-foreground hover:text-primary"
             disabled={isRunning}
+            aria-label={t("runNow")}
             onClick={(e) => { e.stopPropagation(); onRun(); }}
           >
             {isRunning
@@ -80,6 +81,7 @@ export function CronListRow({ job, onClick, onRun, onDelete }: CronListRowProps)
             variant="ghost"
             size="xs"
             className="text-muted-foreground hover:text-destructive"
+            aria-label={t("common:delete")}
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
           >
             <Trash2 className="h-3.5 w-3.5" />

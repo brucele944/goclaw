@@ -10,7 +10,7 @@
  * Save flow: POST /v1/tts/config via useTtsConfig().save().
  * Params blob is merged into the provider sub-config before save (dual-write).
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,7 @@ function isCredentialsSaved(provider: string, tts: TtsConfig): boolean {
 export function TtsPage() {
   const { t } = useTranslation("tts");
   const { t: tc } = useTranslation("common");
+  const uid = useId();
   const { tts, loading, saving, error, refresh, save, synthesize, testConnection } = useTtsConfig();
   const { data: caps = [] } = useTtsCapabilities();
   const spinning = useMinLoading(loading);
@@ -207,8 +208,9 @@ export function TtsPage() {
           <CardContent className="space-y-4">
             {/* Voice picker */}
             <div className="grid gap-1.5">
-              <Label>{t("voice_label")}</Label>
+              <Label htmlFor={`${uid}-voice`}>{t("voice_label")}</Label>
               <VoicePicker
+                id={`${uid}-voice`}
                 provider={(draft.provider as TtsProviderId) || ""}
                 value={getVoiceId(draft)}
                 onChange={handleVoiceChange}
@@ -218,8 +220,9 @@ export function TtsPage() {
             {/* Model select — driven by capabilities */}
             {models.length > 0 && (
               <div className="grid gap-1.5">
-                <Label>{t("model_label")}</Label>
+                <Label htmlFor={`${uid}-model`}>{t("model_label")}</Label>
                 <select
+                  id={`${uid}-model`}
                   className="border rounded px-2 py-1 text-sm w-full h-9"
                   value={getModelId(draft)}
                   onChange={(e) => handleModelChange(e.target.value)}

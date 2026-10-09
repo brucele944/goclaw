@@ -17,7 +17,7 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
       <div className="flex justify-end mb-4">
         <div className="max-w-[85%] bg-surface-secondary border border-border shadow-sm border-r-2 border-r-accent rounded-xl px-4 py-3">
           <p className="text-sm text-text-primary whitespace-pre-wrap break-words">{message.content}</p>
-          <time className="text-[10px] text-text-muted mt-1 block text-right">
+          <time className="text-2xs text-text-muted mt-1 block text-right">
             {formatTimestamp(message.timestamp)}
           </time>
         </div>
@@ -62,7 +62,7 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
 
       {message.media?.length ? <MediaBlock items={message.media} /> : null}
 
-      <div className="flex items-center gap-2 mt-1.5 text-[10px] text-text-muted">
+      <div className="flex items-center gap-2 mt-1.5 text-2xs text-text-muted">
         <time>{formatTimestamp(message.timestamp)}</time>
         {outputTokens > 0 && (
           <span>· {outputTokens.toLocaleString()} tokens</span>

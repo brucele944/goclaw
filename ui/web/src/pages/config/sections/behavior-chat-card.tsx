@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { MessageSquareText, Timer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Methods } from "@/api/protocol";
@@ -65,6 +65,7 @@ const sample = [
 
 export function BehaviorChatCard({ value, onChange }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const ws = useWs();
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
 
@@ -100,7 +101,7 @@ export function BehaviorChatCard({ value, onChange }: Props) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <MessageSquareText className="h-4 w-4 text-emerald-500" />
+          <MessageSquareText className="h-4 w-4 text-success-text" />
           {t("behavior.chatTitle")}
         </CardTitle>
         <CardDescription>{t("behavior.chatDescription")}</CardDescription>
@@ -108,20 +109,21 @@ export function BehaviorChatCard({ value, onChange }: Props) {
       <CardContent className="space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <Label>{t("behavior.chatEnabled")}</Label>
+            <Label htmlFor={`${uid}-enabled`}>{t("behavior.chatEnabled")}</Label>
             <p className="text-xs text-muted-foreground">{t("behavior.chatEnabledHint")}</p>
           </div>
-          <Switch checked={value.enabled ?? false} onCheckedChange={(enabled) => patch({ enabled })} />
+          <Switch id={`${uid}-enabled`} checked={value.enabled ?? false} onCheckedChange={(enabled) => patch({ enabled })} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-3 rounded-md border p-3">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <InfoLabel tip={t("behavior.quickAckPurpose")}>{t("behavior.quickAck")}</InfoLabel>
+                <InfoLabel tip={t("behavior.quickAckPurpose")} htmlFor={`${uid}-ack-enabled`}>{t("behavior.quickAck")}</InfoLabel>
                 <p className="text-xs text-muted-foreground">{t("behavior.quickAckHint")}</p>
               </div>
               <Switch
+                id={`${uid}-ack-enabled`}
                 checked={value.quick_ack?.enabled ?? true}
                 onCheckedChange={(enabled) => patchAck({ enabled })}
                 disabled={!value.enabled}
@@ -168,7 +170,7 @@ export function BehaviorChatCard({ value, onChange }: Props) {
               providerPlaceholder={t("behavior.providerPlaceholder")}
               modelPlaceholder={t("behavior.modelPlaceholder")}
             />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <NumberField label={t("behavior.timeoutMs")} value={value.quick_ack?.timeout_ms ?? 2500} disabled={!value.enabled} onChange={(timeout_ms) => patchAck({ timeout_ms })} />
               <NumberField label={t("behavior.maxTokens")} value={value.quick_ack?.max_tokens ?? 40} disabled={!value.enabled} onChange={(max_tokens) => patchAck({ max_tokens })} />
               <NumberField label={t("behavior.maxChars")} value={value.quick_ack?.max_chars ?? 120} disabled={!value.enabled} onChange={(max_chars) => patchAck({ max_chars })} />
@@ -191,10 +193,11 @@ export function BehaviorChatCard({ value, onChange }: Props) {
           <div className="space-y-3 rounded-md border p-3">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <InfoLabel tip={t("behavior.intermediatePurpose")}>{t("behavior.intermediate")}</InfoLabel>
+                <InfoLabel tip={t("behavior.intermediatePurpose")} htmlFor={`${uid}-intermediate-enabled`}>{t("behavior.intermediate")}</InfoLabel>
                 <p className="text-xs text-muted-foreground">{t("behavior.intermediateHint")}</p>
               </div>
               <Switch
+                id={`${uid}-intermediate-enabled`}
                 checked={value.intermediate_replies?.enabled ?? false}
                 onCheckedChange={(enabled) => patchIntermediate({ enabled })}
                 disabled={!value.enabled}
@@ -229,7 +232,7 @@ export function BehaviorChatCard({ value, onChange }: Props) {
               providerPlaceholder={t("behavior.providerPlaceholder")}
               modelPlaceholder={t("behavior.modelPlaceholder")}
             />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <NumberField label={t("behavior.timeoutMs")} value={value.intermediate_replies?.timeout_ms ?? 2500} disabled={!value.enabled} onChange={(timeout_ms) => patchIntermediate({ timeout_ms })} />
               <NumberField label={t("behavior.maxTokens")} value={value.intermediate_replies?.max_tokens ?? 60} disabled={!value.enabled} onChange={(max_tokens) => patchIntermediate({ max_tokens })} />
               <NumberField label={t("behavior.maxChars")} value={value.intermediate_replies?.max_chars ?? 180} disabled={!value.enabled} onChange={(max_chars) => patchIntermediate({ max_chars })} />
@@ -239,16 +242,17 @@ export function BehaviorChatCard({ value, onChange }: Props) {
           <div className="space-y-3 rounded-md border p-3">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <Label>{t("behavior.finalSplit")}</Label>
+                <Label htmlFor={`${uid}-split-enabled`}>{t("behavior.finalSplit")}</Label>
                 <p className="text-xs text-muted-foreground">{t("behavior.finalSplitHint")}</p>
               </div>
               <Switch
+                id={`${uid}-split-enabled`}
                 checked={value.final_split?.enabled ?? true}
                 onCheckedChange={(enabled) => patchSplit({ enabled })}
                 disabled={!value.enabled}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <NumberField label={t("behavior.finalSplitMinChars")} value={value.final_split?.min_chars ?? 1200} disabled={!value.enabled} onChange={(min_chars) => patchSplit({ min_chars })} />
               <NumberField label={t("behavior.finalSplitMaxMessages")} value={value.final_split?.max_messages ?? 3} disabled={!value.enabled} onChange={(max_messages) => patchSplit({ max_messages })} />
               <NumberField label={t("behavior.finalSplitDelay")} value={value.final_split?.delay_ms ?? 500} disabled={!value.enabled} onChange={(delay_ms) => patchSplit({ delay_ms })} />
@@ -281,10 +285,11 @@ function formatAckPreview(preview: PreviewResponse | null, t: (key: string, opti
 }
 
 function NumberField({ label, value, disabled, onChange }: { label: string; value: number; disabled: boolean; onChange: (v: number) => void }) {
+  const uid = useId();
   return (
     <div className="grid gap-1.5">
-      <Label>{label}</Label>
-      <Input className="text-base md:text-sm" type="number" min={0} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
+      <Label htmlFor={uid}>{label}</Label>
+      <Input id={uid} className="text-base md:text-sm" type="number" min={0} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
     </div>
   );
 }

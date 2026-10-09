@@ -149,8 +149,8 @@ function EmptyState({ agentName, onSuggestion }: { agentName?: string; onSuggest
           ))}
         </div>
       )}
-      <p className="text-[10px] text-text-muted mt-4">
-        Press <kbd className="px-1 py-0.5 bg-surface-tertiary rounded text-[10px] font-mono">⌘N</kbd> {t('sidebar.newChat').toLowerCase()}
+      <p className="text-2xs text-text-muted mt-4">
+        Press <kbd className="px-1 py-0.5 bg-surface-tertiary rounded text-2xs font-mono">⌘N</kbd> {t('sidebar.newChat').toLowerCase()}
       </p>
     </div>
   )

@@ -150,6 +150,7 @@ export function HeartbeatLogsDialog({
               className="h-7 w-7 p-0"
               onClick={() => load(offset - PAGE_SIZE)}
               disabled={!hasPrev || fetching}
+              aria-label={t("common:previousPage")}
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
@@ -159,6 +160,7 @@ export function HeartbeatLogsDialog({
               className="h-7 w-7 p-0"
               onClick={() => load(offset + PAGE_SIZE)}
               disabled={!hasNext || fetching}
+              aria-label={t("common:nextPage")}
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>

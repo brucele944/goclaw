@@ -173,7 +173,7 @@ export function InlineEditText({
     };
 
     const inputBase = cn(
-      "w-full min-w-0 rounded-md border border-input bg-transparent px-2 py-1",
+      "w-full min-w-0 rounded-md border border-control-border bg-transparent px-2 py-1",
       "text-base md:text-sm outline-none transition-shadow",
       "focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:border-ring",
       "disabled:opacity-60",
@@ -215,7 +215,7 @@ export function InlineEditText({
       className={cn(
         "group inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 -ml-1 -my-0.5",
         "hover:bg-muted/60 focus-visible:bg-muted/60 outline-none",
-        "focus-visible:ring-1 focus-visible:ring-ring/50",
+        "focus-visible:ring-2 focus-visible:ring-ring/80",
         "disabled:cursor-not-allowed disabled:opacity-60",
         // Mobile: ≥44px touch target via min-height on coarse pointers
         "text-left min-h-[32px] [@media(pointer:coarse)]:min-h-[44px]",

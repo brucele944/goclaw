@@ -29,7 +29,7 @@ export function MemorySection({ config, onChange }: MemorySectionProps) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">Memory</h3>
-          <p className="text-[11px] text-text-muted">Vector-based long-term memory for this agent</p>
+          <p className="text-2xs text-text-muted">Vector-based long-term memory for this agent</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
@@ -104,7 +104,7 @@ export function MemorySection({ config, onChange }: MemorySectionProps) {
       )}
 
       {!enabled && (
-        <p className="text-[11px] text-text-muted italic">Using global defaults</p>
+        <p className="text-2xs text-text-muted italic">Using global defaults</p>
       )}
     </div>
   )
@@ -124,7 +124,7 @@ function NumberField({ label, hint, value, onChange, step }: {
         onChange={(e) => onChange(Number(e.target.value) || 0)}
         className="w-full bg-surface-tertiary border border-border rounded-lg px-3 py-2 text-base md:text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
       />
-      <p className="text-[10px] text-text-muted">{hint}</p>
+      <p className="text-2xs text-text-muted">{hint}</p>
     </div>
   )
 }

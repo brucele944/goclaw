@@ -92,7 +92,7 @@ export function ProviderEmbeddingSection({
                 className={`flex items-center gap-1 text-xs ${
                   verifyResult.valid
                     ? verifyResult.dimension_mismatch
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-warning-text"
                       : "text-success"
                     : "text-destructive"
                 }`}

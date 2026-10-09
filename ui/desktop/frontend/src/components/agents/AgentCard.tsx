@@ -50,15 +50,15 @@ export function AgentCard({ agent, onEdit, onDelete, onResummon }: AgentCardProp
         </div>
         {/* Status badge — colors match web UI badge variants */}
         {isSummoning ? (
-          <span className="shrink-0 animate-pulse rounded-full border border-orange-500/25 bg-orange-500/15 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:text-orange-400 dark:bg-orange-500/10 dark:border-orange-500/20">
+          <span className="shrink-0 animate-pulse rounded-full border border-orange-500/25 bg-orange-500/15 px-2 py-0.5 text-2xs font-medium text-orange-700 dark:text-orange-400 dark:bg-orange-500/10 dark:border-orange-500/20">
             Summoning
           </span>
         ) : isFailed ? (
-          <span className="shrink-0 rounded-full bg-error px-2 py-0.5 text-[11px] font-medium text-white dark:bg-error/60">
+          <span className="shrink-0 rounded-full bg-error px-2 py-0.5 text-2xs font-medium text-white dark:bg-error/60">
             Failed
           </span>
         ) : (
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-medium ${
             agent.status === 'active'
               ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20'
               : 'bg-surface-tertiary text-text-secondary'
@@ -84,11 +84,11 @@ export function AgentCard({ agent, onEdit, onDelete, onResummon }: AgentCardProp
 
       {/* Bottom badges + actions */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-primary">
+        <span className="rounded-full border border-border px-2 py-0.5 text-2xs text-text-primary">
           {agent.agent_type}
         </span>
         {agent.agent_type === 'predefined' && (
-          <span className={`rounded-full px-2 py-0.5 text-[11px] flex items-center gap-0.5 ${
+          <span className={`rounded-full px-2 py-0.5 text-2xs flex items-center gap-0.5 ${
             selfEvolve
               ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
               : 'border border-border text-text-muted'
@@ -100,7 +100,7 @@ export function AgentCard({ agent, onEdit, onDelete, onResummon }: AgentCardProp
           </span>
         )}
         {agent.context_window > 0 && (
-          <span className="text-[11px] text-text-muted">
+          <span className="text-2xs text-text-muted">
             {(agent.context_window / 1000).toFixed(0)}K ctx
           </span>
         )}
@@ -109,7 +109,7 @@ export function AgentCard({ agent, onEdit, onDelete, onResummon }: AgentCardProp
         {isFailed && (
           <button
             onClick={(e) => { e.stopPropagation(); onResummon(agent) }}
-            className="ml-auto rounded border border-border px-2 py-0.5 text-[11px] text-text-secondary hover:bg-surface-tertiary transition-colors flex items-center gap-1"
+            className="ml-auto rounded border border-border px-2 py-0.5 text-2xs text-text-secondary hover:bg-surface-tertiary transition-colors flex items-center gap-1"
           >
             <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
@@ -120,7 +120,7 @@ export function AgentCard({ agent, onEdit, onDelete, onResummon }: AgentCardProp
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(agent) }}
-          className={`rounded px-2 py-0.5 text-[11px] text-text-muted hover:text-error transition-colors flex items-center gap-1 ${isFailed ? '' : 'ml-auto'}`}
+          className={`rounded px-2 py-0.5 text-2xs text-text-muted hover:text-error transition-colors flex items-center gap-1 ${isFailed ? '' : 'ml-auto'}`}
         >
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />

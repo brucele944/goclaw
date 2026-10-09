@@ -88,7 +88,7 @@ export function TeamLinksTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">{t("links.title")}</h3>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={load} disabled={spinning} className="gap-1">
+          <Button variant="outline" size="sm" onClick={load} disabled={spinning} className="gap-1" aria-label={t("common:refresh")}>
             <RefreshCw className={"h-3.5 w-3.5" + (spinning ? " animate-spin" : "")} />
           </Button>
           <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
@@ -155,6 +155,7 @@ export function TeamLinksTab() {
                         size="icon"
                         className="h-7 w-7"
                         onClick={() => { setEditLink(link); setCreateOpen(true); }}
+                        aria-label={t("common:edit")}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -163,6 +164,7 @@ export function TeamLinksTab() {
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => setDeleteTargetId(link.id)}
+                        aria-label={t("common:delete")}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

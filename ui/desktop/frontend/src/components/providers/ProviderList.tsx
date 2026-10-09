@@ -73,7 +73,7 @@ export function ProviderList() {
           <h3 className="text-sm font-semibold text-text-primary">{t('providers:title')}</h3>
           <button
             onClick={handleCreate}
-            className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg font-medium hover:bg-accent-hover transition-colors"
+            className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg font-medium hover:bg-accent-hover transition-colors"
           >
             + {t('providers:addProvider')}
           </button>

@@ -56,8 +56,8 @@ export function WebhookSecretDialog({ payload, onClose }: Props) {
           <DialogDescription>{t("secret.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-          <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 rounded-md border border-warning/25 bg-warning-subtle px-3 py-2 text-sm">
+          <ShieldAlert className="h-4 w-4 text-warning-text shrink-0 mt-0.5" />
           <span>{t("secret.warning")}</span>
         </div>
 

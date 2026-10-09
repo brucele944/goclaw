@@ -59,7 +59,7 @@ export function WhatsAppReauthDialog({
         {status === "connected" && (
           <div className="flex flex-col items-center gap-4 py-2">
             <div className="text-center space-y-2">
-              <p className="text-sm text-green-600 font-medium">{t("whatsapp.alreadyLinked")}</p>
+              <p className="text-sm text-success-text font-medium">{t("whatsapp.alreadyLinked")}</p>
               <p className="text-xs text-muted-foreground">
                 {t("whatsapp.alreadyLinkedDetail")}
               </p>
@@ -74,7 +74,7 @@ export function WhatsAppReauthDialog({
         {/* Done state */}
         {status === "done" && (
           <div className="flex flex-col items-center gap-4 py-4">
-            <p className="text-sm text-green-600 font-medium">{t("whatsapp.connectedSuccess")}</p>
+            <p className="text-sm text-success-text font-medium">{t("whatsapp.connectedSuccess")}</p>
           </div>
         )}
 

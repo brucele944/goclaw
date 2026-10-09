@@ -8,6 +8,8 @@ interface TagInputProps {
   onChange: (value: string[]) => void;
   placeholder?: string;
   className?: string;
+  /** Forwarded to the inner input, so a `<Label htmlFor>` can associate with it. */
+  id?: string;
 }
 
 export function TagInput({
@@ -15,6 +17,7 @@ export function TagInput({
   onChange,
   placeholder,
   className,
+  id,
 }: TagInputProps) {
   const { t } = useTranslation("common");
   const [input, setInput] = useState("");
@@ -45,7 +48,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        "border-input dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
+        "border-control-border dark:bg-input/30 flex min-h-9 flex-wrap items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-sm shadow-xs transition-[color,box-shadow]",
         "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
         className,
       )}
@@ -60,6 +63,7 @@ export function TagInput({
           <button
             type="button"
             className="hover:text-destructive ml-0.5"
+            aria-label={t("remove")}
             onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
           >
             <X className="h-3 w-3" />
@@ -67,6 +71,7 @@ export function TagInput({
         </span>
       ))}
       <input
+        id={id}
         ref={inputRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}

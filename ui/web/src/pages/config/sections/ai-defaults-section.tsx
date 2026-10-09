@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface Props {
 
 export function AiDefaultsSection({ data, onSave, saving }: Props) {
   const { t } = useTranslation("config");
+  const uid = useId();
   const [draft, setDraft] = useState<AgentsData>(data ?? DEFAULT);
   const [dirty, setDirty] = useState(false);
   const [openSubs, setOpenSubs] = useState<Set<string>>(new Set());
@@ -87,8 +88,9 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("agents.maxTokensTip")}>{t("agents.maxTokens")}</InfoLabel>
+            <InfoLabel tip={t("agents.maxTokensTip")} htmlFor={`${uid}-max-tokens`}>{t("agents.maxTokens")}</InfoLabel>
             <Input
+              id={`${uid}-max-tokens`}
               type="number"
               value={defaults.max_tokens ?? ""}
               onChange={(e) => updateDefaults({ max_tokens: Number(e.target.value) })}
@@ -96,8 +98,9 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("agents.temperatureTip")}>{t("agents.temperature")}</InfoLabel>
+            <InfoLabel tip={t("agents.temperatureTip")} htmlFor={`${uid}-temperature`}>{t("agents.temperature")}</InfoLabel>
             <Input
+              id={`${uid}-temperature`}
               type="number"
               step="0.1"
               value={defaults.temperature ?? ""}
@@ -108,8 +111,9 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("agents.maxToolIterationsTip")}>{t("agents.maxToolIterations")}</InfoLabel>
+            <InfoLabel tip={t("agents.maxToolIterationsTip")} htmlFor={`${uid}-max-tool-iterations`}>{t("agents.maxToolIterations")}</InfoLabel>
             <Input
+              id={`${uid}-max-tool-iterations`}
               type="number"
               value={defaults.max_tool_iterations ?? ""}
               onChange={(e) => updateDefaults({ max_tool_iterations: Number(e.target.value) })}
@@ -117,8 +121,9 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("agents.contextWindowTip")}>{t("agents.contextWindow")}</InfoLabel>
+            <InfoLabel tip={t("agents.contextWindowTip")} htmlFor={`${uid}-context-window`}>{t("agents.contextWindow")}</InfoLabel>
             <Input
+              id={`${uid}-context-window`}
               type="number"
               value={defaults.context_window ?? ""}
               onChange={(e) => updateDefaults({ context_window: Number(e.target.value) })}
@@ -129,8 +134,9 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <InfoLabel tip={t("agents.workspaceTip")}>{t("agents.workspace")}</InfoLabel>
+            <InfoLabel tip={t("agents.workspaceTip")} htmlFor={`${uid}-workspace`}>{t("agents.workspace")}</InfoLabel>
             <Input
+              id={`${uid}-workspace`}
               value={defaults.workspace ?? ""}
               onChange={(e) => updateDefaults({ workspace: e.target.value })}
               placeholder="~/.goclaw/workspace"
@@ -161,8 +167,8 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
           onToggle={() => toggleSub("memory")}
         >
           <div className="flex items-center justify-between">
-            <Label>{t("agents.memory.enabled")}</Label>
-            <Switch checked={memory.enabled !== false} onCheckedChange={(v) => updateNested("memory", { enabled: v })} />
+            <Label htmlFor={`${uid}-memory-enabled`}>{t("agents.memory.enabled")}</Label>
+            <Switch id={`${uid}-memory-enabled`} checked={memory.enabled !== false} onCheckedChange={(v) => updateNested("memory", { enabled: v })} />
           </div>
           <ProviderModelSelect
             provider={memory.embedding_provider ?? ""}
@@ -208,12 +214,12 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label>{t("agents.pruning.mode")}</Label>
+              <Label htmlFor={`${uid}-pruning-mode`}>{t("agents.pruning.mode")}</Label>
               <Select value={pruning.mode ?? "auto"} onValueChange={(v) => updateNested("contextPruning", { mode: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`${uid}-pruning-mode`}><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="off">Off</SelectItem>
-                  <SelectItem value="cache-ttl">Cache TTL</SelectItem>
+                  <SelectItem value="off">{t("agents.pruning.modeOff")}</SelectItem>
+                  <SelectItem value="cache-ttl">{t("agents.pruning.modeCacheTtl")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -229,13 +235,13 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label>{t("agents.sandbox.mode")}</Label>
+              <Label htmlFor={`${uid}-sandbox-mode`}>{t("agents.sandbox.mode")}</Label>
               <Select value={sandbox.mode ?? "off"} onValueChange={(v) => updateNested("sandbox", { mode: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id={`${uid}-sandbox-mode`}><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="off">Off</SelectItem>
-                  <SelectItem value="non-main">Non-Main Only</SelectItem>
-                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="off">{t("agents.sandbox.modeOff")}</SelectItem>
+                  <SelectItem value="non-main">{t("agents.sandbox.modeNonMain")}</SelectItem>
+                  <SelectItem value="all">{t("agents.sandbox.modeAll")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -244,8 +250,8 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
             <Field label={t("agents.sandbox.cpus")} tip={t("agents.sandbox.cpusTip")} type="number" step="0.5" value={sandbox.cpus} onChange={(v) => updateNested("sandbox", { cpus: Number(v) })} placeholder="1.0" />
             <Field label={t("agents.sandbox.timeoutSec")} tip={t("agents.sandbox.timeoutSecTip")} type="number" value={sandbox.timeout_sec} onChange={(v) => updateNested("sandbox", { timeout_sec: Number(v) })} placeholder="300" />
             <div className="flex items-center justify-between">
-              <Label>{t("agents.sandbox.networkEnabled")}</Label>
-              <Switch checked={sandbox.network_enabled ?? false} onCheckedChange={(v) => updateNested("sandbox", { network_enabled: v })} />
+              <Label htmlFor={`${uid}-sandbox-network-enabled`}>{t("agents.sandbox.networkEnabled")}</Label>
+              <Switch id={`${uid}-sandbox-network-enabled`} checked={sandbox.network_enabled ?? false} onCheckedChange={(v) => updateNested("sandbox", { network_enabled: v })} />
             </div>
           </div>
         </SubSection>

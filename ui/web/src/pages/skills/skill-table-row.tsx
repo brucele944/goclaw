@@ -66,7 +66,7 @@ export function SkillTableRow({
             {skill.name}
           </button>
           {skill.is_system && (
-            <Badge variant="outline" className="border-blue-500 text-blue-600 text-2xs">
+            <Badge variant="outline" className="border-info/25 text-info-text text-2xs">
               {t("system")}
             </Badge>
           )}

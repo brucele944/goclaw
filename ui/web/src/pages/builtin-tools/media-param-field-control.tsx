@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -20,12 +21,13 @@ export function ParamFieldControl({
   value: unknown;
   onChange: (v: unknown) => void;
 }) {
+  const id = useId();
   return (
     <div className="space-y-1">
-      <Label className="text-xs">{field.label}</Label>
+      <Label htmlFor={id} className="text-xs">{field.label}</Label>
       {field.type === "select" && field.options && (
         <Select value={String(value ?? "")} onValueChange={onChange}>
-          <SelectTrigger className="h-8 text-sm">
+          <SelectTrigger id={id} className="h-8 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -40,6 +42,7 @@ export function ParamFieldControl({
       {field.type === "toggle" && (
         <div className="flex items-center h-8">
           <Switch
+            id={id}
             size="sm"
             checked={Boolean(value)}
             onCheckedChange={onChange}
@@ -48,6 +51,7 @@ export function ParamFieldControl({
       )}
       {field.type === "number" && (
         <Input
+          id={id}
           type="number"
           min={field.min}
           max={field.max}
@@ -60,6 +64,7 @@ export function ParamFieldControl({
       {field.type === "text" && (
         <div className="space-y-1">
           <Input
+            id={id}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.description}

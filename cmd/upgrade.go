@@ -45,7 +45,7 @@ func runUpgradeStatus() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	fmt.Printf("  App version:     %s (protocol %d)\n", Version, protocol.ProtocolVersion)
+	fmt.Printf("  App version:     %s%s (protocol %d)\n", Version, commitSuffix(), protocol.ProtocolVersion)
 
 	if cfg.Database.PostgresDSN == "" {
 		fmt.Println("  Database:        NOT CONFIGURED (set GOCLAW_POSTGRES_DSN)")
@@ -124,7 +124,7 @@ func runUpgrade(dryRun bool) error {
 		return fmt.Errorf("check schema: %w", err)
 	}
 
-	fmt.Printf("  App version:     %s (protocol %d)\n", Version, protocol.ProtocolVersion)
+	fmt.Printf("  App version:     %s%s (protocol %d)\n", Version, commitSuffix(), protocol.ProtocolVersion)
 	fmt.Printf("  Schema current:  %d\n", s.CurrentVersion)
 	fmt.Printf("  Schema required: %d\n", s.RequiredVersion)
 	fmt.Println()

@@ -47,6 +47,8 @@ const (
 	ProviderAtlasCloud      = "atlascloud"      // Atlas Cloud (OpenAI-compatible endpoint)
 	ProviderOpenCode        = "opencode"        // OpenCode Zen gateway (OpenAI-compatible, one OpenCode API key)
 	ProviderOpenCodeGo      = "opencode_go"     // OpenCode Go subscription gateway (OpenAI-compatible, same key)
+	ProviderAPIRoute        = "api_route"       // API Route (OpenAI-compatible endpoint)
+	ProviderRequesty        = "requesty"        // Requesty (OpenAI-compatible router)
 
 	// MiniMax defaults.
 	MiniMaxDefaultAPIBase = "https://api.minimax.io/v1"
@@ -76,6 +78,15 @@ const (
 	// Atlas Cloud defaults.
 	AtlasCloudDefaultAPIBase = "https://api.atlascloud.ai/v1"
 	AtlasCloudDefaultModel   = "qwen/qwen3.5-flash"
+
+	// API Route defaults.
+	APIRouteDefaultAPIBase = "https://global.api-route.com/v1"
+	APIRouteDefaultModel   = "gpt-5.4-mini"
+
+	// Requesty defaults. Regional endpoints (e.g. https://router.eu.requesty.ai/v1)
+	// can be set through api_base.
+	RequestyDefaultAPIBase = "https://router.requesty.ai/v1"
+	RequestyDefaultModel   = "openai/gpt-4o-mini"
 )
 
 // Vertex AI constants live in internal/providers/vertex.go to avoid a store→providers import cycle
@@ -114,6 +125,8 @@ var ValidProviderTypes = map[string]bool{
 	ProviderAtlasCloud:      true,
 	ProviderOpenCode:        true,
 	ProviderOpenCodeGo:      true,
+	ProviderAPIRoute:        true,
+	ProviderRequesty:        true,
 }
 
 // --- Provider declaration: wire protocol + auth shape (provider rework, phase 1) ---

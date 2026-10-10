@@ -86,7 +86,8 @@ Document registry: metadata pointers. Content lives on filesystem; registry hold
 | `doc_type` | TEXT | context, memory, note, skill, episodic |
 | `content_hash` | TEXT | SHA-256 of file content (detects changes) |
 | `embedding` | vector(1536) | pgvector: semantic similarity |
-| `tsv` | tsvector | Generated: FTS index on title+path |
+| `tsv` | tsvector | Generated: FTS index on title+path+summary |
+| `body_indexed_hash` | TEXT | `content_hash` the body chunks were built from (NULL = not chunked yet) |
 | `metadata` | JSONB | Optional custom fields |
 | `created_at`, `updated_at` | TIMESTAMPTZ | Timestamps |
 | **Unique constraint** | (agent_id, scope, path) | One doc per path per scope |
@@ -98,6 +99,19 @@ Document registry: metadata pointers. Content lives on filesystem; registry hold
 - `idx_vault_docs_hash` — content_hash (change detection)
 - `idx_vault_docs_embedding` — HNSW vector (semantic search)
 - `idx_vault_docs_tsv` — GIN FTS index (keyword search)
+
+### vault_document_chunks
+
+The body of each text document, split into ~1000-char chunks (200-char overlap), so search reaches content that the auto-summary leaves out. The enrich worker rebuilds the chunks from the workspace file whenever `content_hash` moves past `body_indexed_hash`. `POST /v1/vault/rescan` also backfills docs that have no chunks yet. Media and `document` types are not chunked.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `document_id` | UUID | Parent doc (cascade delete) |
+| `chunk_index` | INT | Position in the body |
+| `start_line`, `end_line` | INT | Line range in the file |
+| `text` | TEXT | Chunk content |
+| `embedding` | vector(1536) | Only the first 64 chunks of a doc are embedded |
+| `tsv` | tsvector | Generated: FTS on `text` ('simple' config) |
 
 ### vault_links
 
@@ -192,8 +206,8 @@ Hybrid search integrates vault FTS, vector embeddings, episodic memory, and know
 
 `VaultStore.Search(ctx, opts VaultSearchOptions)` on single vault:
 
-- **FTS**: PostgreSQL `plainto_tsquery()` on tsv (title+path keywords)
-- **Vector**: pgvector cosine similarity on embedding (semantic)
+- **FTS**: matches any query word (OR), so natural-language questions work; docs matching more words rank higher. Runs on the doc `tsv` and on body chunks, and a doc scores by its best hit
+- **Vector**: pgvector cosine similarity on the doc embedding and on chunk embeddings, best hit per doc
 - **Combined scoring**: Normalize each method's scores (0–1), then apply query-time weights
 - **Results:** Top N documents with score
 

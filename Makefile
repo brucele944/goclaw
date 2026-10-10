@@ -1,5 +1,6 @@
 VERSION ?= $(shell git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo dev)
-LDFLAGS  = -s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=$(VERSION)
+COMMIT_SHA ?= $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+LDFLAGS  = -s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=$(VERSION) -X github.com/nextlevelbuilder/goclaw/cmd.CommitSHA=$(COMMIT_SHA)
 BINARY   = goclaw
 
 .PHONY: build build-full build-tui run clean version up up-build down logs reset test vet check-web dev migrate setup ci desktop-dev desktop-build desktop-dmg test-hooks test-hooks-unit test-hooks-e2e test-hooks-chaos test-hooks-rbac test-hooks-tracing

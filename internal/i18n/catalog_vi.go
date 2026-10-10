@@ -19,6 +19,8 @@ func init() {
 		MsgFailedToDelete:   "không thể xóa %s: %s",
 		MsgFailedToSave:     "không thể lưu %s: %s",
 		MsgInvalidUpdates:   "cập nhật không hợp lệ",
+		// TODO(i18n): translate to vi
+		MsgAgentDeleteVaultConflict: "failed to delete agent: a vault document of this agent is at a path another deleted owner already orphaned; delete or re-path this agent's vault documents first, or upgrade to schema version 99 or later",
 
 		// Agent
 		MsgAgentNotFound:                       "không tìm thấy agent: %s",
@@ -249,8 +251,8 @@ func init() {
 		MsgSkillNudge70Pct:          "[System] Bạn đã dùng 70% ngân sách vòng lặp. Cân nhắc xem các mẫu trong phiên này có nên lưu thành kỹ năng không.",
 		MsgSkillNudge90Pct:          "[System] Bạn đã dùng 90% ngân sách vòng lặp. Nếu phiên này có quy trình tái sử dụng, hãy cân nhắc lưu thành kỹ năng trước khi hoàn thành.",
 		MsgEmptyReplyFallback:       "⚠️ Agent không thể tạo phản hồi. Lưu ý: một số thao tác công cụ có thể đã được thực hiện — vui lòng kiểm tra trước khi thử lại",
-		MsgContextOverBudgetAbort:   "⚠️ Hội thoại này đã vượt ngân sách ngữ cảnh và không thể tóm tắt, nên agent không trả lời được. Hãy bắt đầu hội thoại mới (/reset) hoặc gửi tin nhắn ngắn hơn.",
 		MsgModelWithoutVisionNotice: "⚠️ Model đang chọn không nhận hình ảnh, nên (các) hình trong tin nhắn của bạn đã không được gửi. Chuyển sang model có hỗ trợ hình ảnh nếu bạn muốn gửi kèm.",
+		MsgContextBudgetExceeded: "⚠️ Cuộc hội thoại đã quá dài so với cửa sổ ngữ cảnh của model nên tôi đã dừng trước khi trả lời. Một số thao tác công cụ trong lượt này có thể đã được thực hiện. Vui lòng mở phiên mới để tiếp tục.",
 
 		MsgInvalidRole: "vai trò không hợp lệ: giá trị cho phép là owner, admin, operator, member, viewer",
 

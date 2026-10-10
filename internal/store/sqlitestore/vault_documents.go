@@ -345,6 +345,16 @@ func (s *SQLiteVaultStore) FindSimilarDocs(ctx context.Context, tenantID, agentI
 	return nil, nil
 }
 
+// ReplaceDocumentChunks is a no-op in SQLite (search is LIKE on title/path, no FTS).
+func (s *SQLiteVaultStore) ReplaceDocumentChunks(ctx context.Context, tenantID, docID, contentHash string, chunks []store.VaultChunk) error {
+	return nil
+}
+
+// ListDocsNeedingBodyIndex is a no-op in SQLite (body chunks are not stored).
+func (s *SQLiteVaultStore) ListDocsNeedingBodyIndex(ctx context.Context, tenantID string, limit int) ([]store.VaultDocument, error) {
+	return nil, nil
+}
+
 // Search performs LIKE-based search on vault documents (no FTS/vector in lite).
 func (s *SQLiteVaultStore) Search(ctx context.Context, opts store.VaultSearchOptions) ([]store.VaultSearchResult, error) {
 	query := opts.Query

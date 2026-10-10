@@ -126,7 +126,9 @@ Prompt delivery for **claude_cli**: the prompt travels as a CLI argument up to 2
 |----------|----------|---------------|-------|
 | openai | `https://api.openai.com/v1` | `gpt-4o` | |
 | atlascloud | `https://api.atlascloud.ai/v1` | `qwen/qwen3.5-flash` | Atlas Cloud OpenAI-compatible LLM endpoint |
+| api_route | `https://global.api-route.com/v1` | `gpt-5.4-mini` | API Route branded OpenAI-compatible endpoint |
 | openrouter | `https://openrouter.ai/api/v1` | `anthropic/claude-sonnet-4-5-20250929` | Model must contain `/` |
+| requesty | `https://router.requesty.ai/v1` | `openai/gpt-4o-mini` | Requesty router; regional bases such as `https://router.eu.requesty.ai/v1` |
 | groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` | |
 | deepseek | `https://api.deepseek.com/v1` | `deepseek-chat` | |
 | opencode | `https://opencode.ai/zen/v1` | `deepseek-v4.1-flash` | OpenCode Zen catalogue; one OpenCode API key |
@@ -143,6 +145,48 @@ Prompt delivery for **claude_cli**: the prompt travels as a CLI argument up to 2
 | zai-coding | `https://api.z.ai/api/coding/paas/v4` | `glm-5.2` | 1M context, 128K max output |
 | byteplus | `https://ark.ap-southeast.bytepluses.com/api/v3` | `seed-2-0-lite-260228` | Seed 2.0 models |
 | byteplus_coding | `https://ark.ap-southeast.bytepluses.com/api/coding/v3` | `seed-2-0-lite-260228` | Seed 2.0 Coding Plan |
+
+### API Route setup
+
+Set `GOCLAW_API_ROUTE_API_KEY` in the environment, or add the key through the setup wizard. The base URL and model below are defaults and can be overridden:
+
+```json5
+{
+  providers: {
+    api_route: {
+      api_key: "your-api-route-key",
+      api_base: "https://global.api-route.com/v1"
+    }
+  },
+  agents: {
+    defaults: {
+      provider: "api_route",
+      model: "gpt-5.4-mini"
+    }
+  }
+}
+```
+
+### Requesty setup
+
+Set `GOCLAW_REQUESTY_API_KEY` in the environment (keys are created at https://app.requesty.ai/api-keys), or add the key through the setup wizard. Set `GOCLAW_REQUESTY_BASE_URL` or `api_base` to use a regional endpoint, for example `https://router.eu.requesty.ai/v1` for EU routing. Models use `vendor/model` ids such as `anthropic/claude-sonnet-4-5`, or managed policy ids such as `claude-sonnet-4-5`; the provider models list shows both.
+
+```json5
+{
+  providers: {
+    requesty: {
+      api_key: "rqsty-...",
+      api_base: "https://router.requesty.ai/v1"
+    }
+  },
+  agents: {
+    defaults: {
+      provider: "requesty",
+      model: "openai/gpt-4o-mini"
+    }
+  }
+}
+```
 
 ---
 
@@ -353,7 +397,7 @@ flowchart LR
 
 ### Model Catalogue (`llm_models`)
 
-Each provider's models live in `llm_models` rows, keyed `UNIQUE (provider_id, model_id)`. Scope is inherited through `provider_id`, so there is no second tenant column to keep in sync (`migrations/000098_provider_declaration.up.sql`). A row carries the context window (`context_window`), the output cap (`max_tokens`), the request-budget clamp (`max_context_window`), costs (`cost_input`, `cost_output`, `cost_cache_read`, `cost_cache_write`), `modalities`, `capabilities`, `reasoning`, `tokenizer`, `compat`, provenance (`source`, `authoritative`, `fetched_at`, `static_fingerprint`), and `enabled` (`internal/store/provider_store.go:355-380`).
+Each provider's models live in `llm_models` rows, keyed `UNIQUE (provider_id, model_id)`. Scope is inherited through `provider_id`, so there is no second tenant column to keep in sync (`migrations/000100_provider_declaration.up.sql`). A row carries the context window (`context_window`), the output cap (`max_tokens`), the request-budget clamp (`max_context_window`), costs (`cost_input`, `cost_output`, `cost_cache_read`, `cost_cache_write`), `modalities`, `capabilities`, `reasoning`, `tokenizer`, `compat`, provenance (`source`, `authoritative`, `fetched_at`, `static_fingerprint`), and `enabled` (`internal/store/provider_store.go:355-380`).
 
 Two sources feed the catalogue: the bundled snapshot GoClaw ships (`discovery.Bundled(providerType)`) and live discovery against the provider's upstream. `source` is `bundled`, `discovered` or `operator` (`internal/store/provider_store.go:557-561`), and each model in the capability DTO repeats the provider's `stale` flag.
 
@@ -365,13 +409,13 @@ Per-model capabilities are consumed by the request path, not just displayed: `to
 
 ### Compatibility as Data
 
-Provider compatibility is declared, not sniffed from a provider name or URL. `provider_quirks` rows replace the old sniffing: a `NULL` `tenant_id` is a bundled/global rule shipped with the binary, a tenant row overrides it, and a matching row with `enabled=false` suppresses the bundled rule (`migrations/000098_provider_declaration.up.sql`; row shape `internal/store/provider_store.go:383-393`). `internal/providers/compat` resolves one `Resolved` request-shaping fragment from four fixed layers — endpoint family, gateway/auth overlay (bundled seeds then operator rows), per-model `llm_models.compat`, and request context (`internal/providers/compat/compat.go:11-39`). `Resolve` runs once per provider and once per catalogue model when the provider is built, so the request path only reads the result; `ResolveCount()` instruments that invariant (`internal/providers/compat/compat.go:130-135`, `:163-181`). Five bundled seeds cover the families GoClaw wires today: `openai-native`, `ollama`, `together`, `fireworks`, `dashscope` (`internal/providers/compat/quirks.go:84-128`).
+Provider compatibility is declared, not sniffed from a provider name or URL. `provider_quirks` rows replace the old sniffing: a `NULL` `tenant_id` is a bundled/global rule shipped with the binary, a tenant row overrides it, and a matching row with `enabled=false` suppresses the bundled rule (`migrations/000100_provider_declaration.up.sql`; row shape `internal/store/provider_store.go:383-393`). `internal/providers/compat` resolves one `Resolved` request-shaping fragment from four fixed layers — endpoint family, gateway/auth overlay (bundled seeds then operator rows), per-model `llm_models.compat`, and request context (`internal/providers/compat/compat.go:11-39`). `Resolve` runs once per provider and once per catalogue model when the provider is built, so the request path only reads the result; `ResolveCount()` instruments that invariant (`internal/providers/compat/compat.go:130-135`, `:163-181`). Five bundled seeds cover the families GoClaw wires today: `openai-native`, `ollama`, `together`, `fireworks`, `dashscope` (`internal/providers/compat/quirks.go:84-128`).
 
 Tool-call dialects are data too. Some models emit tool calls as in-band text (Qwen3, DeepSeek-V3, Kimi-K2, GLM, Hermes/XML, harmony); `internal/providers/dialect` registers one converter per family, and selection is `GOCLAW_TOOL_DIALECT` (global escape hatch) → `llm_models.compat.tool_dialect` → the per-wire default, where an empty selection means the wire carries tool calls natively (`internal/providers/dialect/dialect.go:14-16`, `:84-106`; registered names `internal/providers/dialect/converters.go:10-17`).
 
 ### Durable Provider Health
 
-Cooldown is durable across restarts. `provider_health` keeps at most one row per *failed* provider — `consecutive_failures`, `cooldown_until`, `last_error_class`, `last_probe_at` — and `provider_error_counts` is the error-class histogram keyed `(provider_id, error_class)` (`migrations/000100_provider_health.up.sql:18-32`). A missing row means "never failed", so a fresh provider reads as a zero-value health (`internal/store/pg/providers.go:482-490`). Before this, cooldown lived only in the in-memory `CooldownTracker` map, so every gateway restart forgot a cooling provider and retried the failing endpoint immediately.
+Cooldown is durable across restarts. `provider_health` keeps at most one row per *failed* provider — `consecutive_failures`, `cooldown_until`, `last_error_class`, `last_probe_at` — and `provider_error_counts` is the error-class histogram keyed `(provider_id, error_class)` (`migrations/000102_provider_health.up.sql:18-32`). A missing row means "never failed", so a fresh provider reads as a zero-value health (`internal/store/pg/providers.go:482-490`). Before this, cooldown lived only in the in-memory `CooldownTracker` map, so every gateway restart forgot a cooling provider and retried the failing endpoint immediately.
 
 `providers.MaxCooldown` is one hour and clamps both the in-memory deadline and the persisted one; it bites only on the overload-escalation path, since the longest flat per-reason cooldown is 1h (`internal/providers/cooldown.go:78-87`, `:113-120`, `:172-176`). The tracker keeps the hot state and hydrates from the store on first use per key, and the runtime path writes failures, probe stamps and successes through `providers.CooldownStore`, adapted onto `store.ProviderStore` by `internal/providerresolve/agent_provider.go:224-246`.
 

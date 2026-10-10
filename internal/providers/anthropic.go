@@ -159,12 +159,18 @@ func (p *AnthropicProvider) chatImpl(ctx context.Context, req ChatRequest) (*Cha
 		}
 		defer respBody.Close()
 
+		raw, err := io.ReadAll(respBody)
+		if err != nil {
+			return nil, fmt.Errorf("anthropic: read response: %w", err)
+		}
 		var parsed anthropicResponse
-		if err := json.NewDecoder(respBody).Decode(&parsed); err != nil {
+		if err := json.Unmarshal(raw, &parsed); err != nil {
 			return nil, fmt.Errorf("anthropic: decode response: %w", err)
 		}
 
-		return p.parseResponse(&parsed), nil
+		result := p.parseResponse(&parsed)
+		preserveAnthropicToolContent(result, raw)
+		return result, nil
 	})
 	// Drop user-visible reasoning after parsing for models flagged as leakers.
 	// Usage.ThinkingTokens and RawAssistantContent remain intact so billing
@@ -192,11 +198,10 @@ func (p *AnthropicProvider) doRequest(ctx context.Context, body any) (io.ReadClo
 	httpReq.Header.Set("x-api-key", p.apiKey)
 	httpReq.Header.Set("anthropic-version", anthropicAPIVersion)
 
-	// Add beta header for interleaved thinking when thinking is enabled
-	if bodyMap, ok := body.(map[string]any); ok {
-		if _, hasThinking := bodyMap["thinking"]; hasThinking {
-			httpReq.Header.Set("anthropic-beta", "interleaved-thinking-2025-05-14")
-		}
+	// Legacy manual thinking still needs the interleaved-thinking beta header.
+	// Adaptive thinking (Claude 4.7+ / Claude 5) does not.
+	if bodyMap, ok := body.(map[string]any); ok && anthropicManualThinking(bodyMap) {
+		httpReq.Header.Set("anthropic-beta", "interleaved-thinking-2025-05-14")
 	}
 
 	resp, err := p.client.Do(httpReq)
@@ -266,14 +271,26 @@ func (p *AnthropicProvider) parseResponse(resp *anthropicResponse) *ChatResponse
 		result.Usage.ThinkingTokens = thinkingChars / 4
 	}
 
-	// Preserve raw content blocks for tool use passback
-	if len(result.ToolCalls) > 0 {
-		if b, err := json.Marshal(resp.Content); err == nil {
-			result.RawAssistantContent = b
-		}
-	}
-
 	return result
+}
+
+// preserveAnthropicToolContent keeps the provider's content array for tool-loop
+// passback. Re-encoding anthropicContentBlock drops an empty thinking string
+// (json omitempty). Adaptive thinking returns that empty string, and the next
+// request fails with "thinking.thinking: Field required" when the field is absent.
+func preserveAnthropicToolContent(result *ChatResponse, raw []byte) {
+	if result == nil || len(result.ToolCalls) == 0 || len(raw) == 0 {
+		return
+	}
+	var envelope struct {
+		Content []json.RawMessage `json:"content"`
+	}
+	if err := json.Unmarshal(raw, &envelope); err != nil || len(envelope.Content) == 0 {
+		return
+	}
+	if b, err := json.Marshal(envelope.Content); err == nil {
+		result.RawAssistantContent = b
+	}
 }
 
 // --- Anthropic API types (internal) ---

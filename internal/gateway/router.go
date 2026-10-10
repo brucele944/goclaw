@@ -67,7 +67,16 @@ func (r *MethodRouter) Handle(ctx context.Context, client *Client, req *protocol
 	// Permission check: skip for connect, health, and browser pairing status (used by unauthenticated clients)
 	if req.Method != protocol.MethodConnect && req.Method != protocol.MethodHealth && req.Method != protocol.MethodBrowserPairingStatus {
 		if pe := r.server.policyEngine; pe != nil {
-			if !pe.CanAccess(client.role, req.Method) {
+			// provisionScopeAllowed implements the narrow method-scoped
+			// exception for operator.provision credentials (issue #1524, a
+			// regression from the CVE #866 fail-closed hardening). The tenant
+			// handlers already admit ScopeProvision on tenants.create and
+			// tenants.users.add, but the role-only check below maps
+			// provision-only keys to viewer and rejects them before the
+			// handler runs. The exception grants exactly those two methods to
+			// credentials carrying ScopeProvision — no role promotion, and
+			// every other admin/write surface stays denied.
+			if !pe.CanAccess(client.role, req.Method) && !provisionScopeAllowed(client, req.Method) {
 				required := permissions.MethodRole(req.Method)
 				slog.Warn("security.permission_denied",
 					"method", req.Method,
@@ -119,6 +128,13 @@ func (r *MethodRouter) registerDefaults() {
 	r.Register(protocol.MethodConnect, r.handleConnect)
 	r.Register(protocol.MethodHealth, r.handleHealth)
 	r.Register(protocol.MethodStatus, r.handleStatus)
+}
+
+// provisionScopeAllowed reports whether a client carrying the operator.provision
+// scope may call the given method. True only for the two tenant-provisioning
+// RPCs — see permissions.IsProvisionMethod.
+func provisionScopeAllowed(c *Client, method string) bool {
+	return permissions.HasProvisionScope(c.scopes) && permissions.IsProvisionMethod(method)
 }
 
 // --- Built-in handlers ---

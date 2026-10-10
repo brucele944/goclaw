@@ -34,6 +34,7 @@ services:
         ENABLE_PYTHON: "${ENABLE_PYTHON:-true}"
         ENABLE_FULL_SKILLS: "${ENABLE_FULL_SKILLS:-false}"
         VERSION: "${GOCLAW_VERSION:-dev}"
+        COMMIT_SHA: "${GOCLAW_COMMIT_SHA:-}"
     # Uncomment to test update UI: GOCLAW_VERSION=v1.0.0
     ports:
       - "${GOCLAW_PORT:-18790}:18790"

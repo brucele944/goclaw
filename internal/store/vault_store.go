@@ -67,6 +67,14 @@ type VaultSearchOptions struct {
 	MinScore   float64  // default 0.0
 }
 
+// VaultChunk is one piece of a vault document body, indexed for search.
+type VaultChunk struct {
+	Index     int
+	StartLine int
+	EndLine   int
+	Text      string
+}
+
 // VaultListOptions configures a list query for vault documents.
 type VaultListOptions struct {
 	TeamID   *string  // nil = no filter, ptr-to-empty = personal (NULL team_id), ptr-to-uuid = specific team
@@ -150,6 +158,13 @@ type VaultStore interface {
 	// FindSimilarDocs finds documents with similar embeddings to the given docID.
 	// Returns top-N neighbors excluding the source doc. Score = cosine similarity.
 	FindSimilarDocs(ctx context.Context, tenantID, agentID, docID string, limit int) ([]VaultSearchResult, error)
+	// ReplaceDocumentChunks swaps the indexed body chunks of a document and
+	// embeds them. It is a no-op when the chunks were already built from
+	// contentHash, so unchanged files are not re-embedded.
+	ReplaceDocumentChunks(ctx context.Context, tenantID, docID, contentHash string, chunks []VaultChunk) error
+	// ListDocsNeedingBodyIndex returns text documents whose body chunks are
+	// missing or were built from an older content_hash.
+	ListDocsNeedingBodyIndex(ctx context.Context, tenantID string, limit int) ([]VaultDocument, error)
 	// BatchFindByDelegationIDs returns vault docs sharing any of the given
 	// delegation_ids in their metadata, keyed by delegation_id. Each
 	// delegation's bucket is capped at `limit` (ordered by created_at DESC).

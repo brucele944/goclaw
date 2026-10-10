@@ -104,7 +104,7 @@ jobs:
           VERSION: v${{ needs.release.outputs.version }}
         run: |
           CGO_ENABLED=0 go build -tags embedui \
-            -ldflags="-s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=${VERSION}" \
+            -ldflags="-s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=${VERSION} -X github.com/nextlevelbuilder/goclaw/cmd.CommitSHA=${{ github.sha }}" \
             -o goclaw .
           tar -czf "goclaw-${{ needs.release.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz" goclaw migrations/ skills/
 
@@ -167,16 +167,19 @@ jobs:
             enable_embedui: "false"
             enable_python: "false"
             enable_full_skills: "false"
+            enable_media_probes: "false"
           - variant: latest
             suffix: ""
             enable_embedui: "true"
             enable_python: "true"
             enable_full_skills: "false"
+            enable_media_probes: "true"
           - variant: full
             suffix: "-full"
             enable_embedui: "true"
             enable_python: "true"
             enable_full_skills: "true"
+            enable_media_probes: "true"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -223,7 +226,9 @@ jobs:
             ENABLE_EMBEDUI=${{ matrix.enable_embedui }}
             ENABLE_PYTHON=${{ matrix.enable_python }}
             ENABLE_FULL_SKILLS=${{ matrix.enable_full_skills }}
+            ENABLE_MEDIA_PROBES=${{ matrix.enable_media_probes }}
             VERSION=v${{ needs.release.outputs.version }}
+            COMMIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=release-${{ matrix.variant }}
           cache-to: type=gha,mode=max,scope=release-${{ matrix.variant }}
           provenance: false

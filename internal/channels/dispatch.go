@@ -148,7 +148,16 @@ func (m *Manager) deliverOutbound(ctx context.Context, msg bus.OutboundMessage) 
 	msg.Media = kept
 
 	// If only media was in this message and every file is gone, skip entirely.
-	if len(msg.Media) == 0 && msg.Content == "" {
+	// Exception: empty content carrying placeholder routing metadata is the
+	// agent loop's NO_REPLY / silent-reply cleanup signal — channels such as
+	// Slack, Telegram and Discord implement an empty-content branch in Send()
+	// that deletes their streamed "Thinking..." placeholder. Dropping the
+	// message here leaves the partial streamed draft visible in the thread
+	// (issue #1475). Messages without that metadata are not cleanup signals
+	// and stay skipped so channels without an empty-content branch never
+	// render empty bubbles.
+	if len(msg.Media) == 0 && msg.Content == "" &&
+		msg.Metadata["placeholder_key"] == "" && msg.Metadata["local_key"] == "" {
 		return
 	}
 

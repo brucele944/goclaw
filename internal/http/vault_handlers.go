@@ -218,6 +218,11 @@ func (h *VaultHandler) handleRescan(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Backfill body chunks for docs indexed before chunking existed, or whose
+	// file changed without the chunks catching up. Detached from the request
+	// so a big vault is not cut off by the rescan timeout.
+	go vault.IndexStaleBodies(context.WithoutCancel(r.Context()), h.store, tenantID, wsPath)
+
 	if h.enrichProgress != nil && total > 0 {
 		h.enrichProgress.Start(total, store.TenantIDFromContext(r.Context()))
 	}

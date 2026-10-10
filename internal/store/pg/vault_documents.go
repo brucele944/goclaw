@@ -123,7 +123,11 @@ func (s *PGVaultStore) UpsertDocument(ctx context.Context, doc *store.VaultDocum
 		INSERT INTO vault_documents
 			(id, tenant_id, agent_id, team_id, chat_id, scope, custom_scope, path, title, doc_type, content_hash, summary, embedding, metadata, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
-		ON CONFLICT (tenant_id, COALESCE(agent_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(team_id, '00000000-0000-0000-0000-000000000000'::uuid), scope, path) DO UPDATE SET
+		-- The conflict target must name uq_vault_docs_agent_team_scope_path exactly, including the
+		-- orphaned_from_id expression migration 000099 appended; a target Postgres cannot match an
+		-- index for is SQLSTATE 42P10 on every upsert. A live document carries a NULL there, so it
+		-- conflicts with other live documents and never with an orphan.
+		ON CONFLICT (tenant_id, COALESCE(agent_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(team_id, '00000000-0000-0000-0000-000000000000'::uuid), scope, path, COALESCE(orphaned_from_id, '00000000-0000-0000-0000-000000000000'::uuid)) DO UPDATE SET
 			title        = EXCLUDED.title,
 			doc_type     = EXCLUDED.doc_type,
 			content_hash = EXCLUDED.content_hash,
@@ -440,7 +444,7 @@ func (s *PGVaultStore) UpdateHash(ctx context.Context, tenantID, id, newHash str
 // UpdateSummaryAndReembed updates summary and re-generates embedding from title+path+summary.
 // UpdateSummaryAndReembed and FindSimilarDocs moved to vault_documents_enrichment.go.
 
-// Search performs hybrid FTS + vector search on vault_documents.
+// Search performs hybrid FTS + vector search on vault documents and their body chunks.
 func (s *PGVaultStore) Search(ctx context.Context, opts store.VaultSearchOptions) ([]store.VaultSearchResult, error) {
 	tid, err := parseUUID(opts.TenantID)
 	if err != nil {
@@ -451,10 +455,14 @@ func (s *PGVaultStore) Search(ctx context.Context, opts store.VaultSearchOptions
 		return nil, fmt.Errorf("vault search: agent: %w", err)
 	}
 
-	// Build team filter for search sub-queries.
-	tf := buildSearchTeamFilter(opts.TeamID, opts.TeamIDs)
-	// Chat-scope filter (applies only when team is isolated + chat_id non-nil/non-empty).
-	cf := buildSearchChatFilter(opts.ChatID, opts.TeamIsolated)
+	f := vaultSearchScope{
+		agentID: aid,
+		team:    buildSearchTeamFilter(opts.TeamID, opts.TeamIDs),
+		// Chat-scope filter (applies only when team is isolated + chat_id non-nil/non-empty).
+		chat:     buildSearchChatFilter(opts.ChatID, opts.TeamIsolated),
+		scope:    opts.Scope,
+		docTypes: opts.DocTypes,
+	}
 
 	maxResults := opts.MaxResults
 	if maxResults <= 0 {
@@ -462,7 +470,7 @@ func (s *PGVaultStore) Search(ctx context.Context, opts store.VaultSearchOptions
 	}
 
 	// FTS search
-	ftsResults, err := s.ftsSearch(ctx, opts.Query, tid, aid, tf, cf, opts.Scope, opts.DocTypes, maxResults*2)
+	ftsResults, err := s.ftsSearch(ctx, opts.Query, tid, f, maxResults*2)
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +481,7 @@ func (s *PGVaultStore) Search(ctx context.Context, opts store.VaultSearchOptions
 		vecs, embErr := s.embProvider.Embed(ctx, []string{opts.Query})
 		if embErr == nil && len(vecs) > 0 {
 			var vecErr error
-			vecResults, vecErr = s.vectorSearch(ctx, vecs[0], tid, aid, tf, cf, opts.Scope, opts.DocTypes, maxResults*2)
+			vecResults, vecErr = s.vectorSearch(ctx, vecs[0], tid, f, maxResults*2)
 			if vecErr != nil {
 				slog.Debug("vault.vector_search_fallback", "err", vecErr)
 				vecResults = nil
@@ -569,35 +577,55 @@ func (cf searchChatFilter) append(q string, args []any, p int) (string, []any, i
 	return q, args, p
 }
 
-func (s *PGVaultStore) ftsSearch(ctx context.Context, query string, tenantID uuid.UUID, agentID *uuid.UUID, tf searchTeamFilter, cf searchChatFilter, scope string, docTypes []string, limit int) ([]store.VaultSearchResult, error) {
-	q := `SELECT id, tenant_id, agent_id, team_id, chat_id, scope, custom_scope, path, path_basename, title, doc_type, content_hash, summary, metadata, created_at, updated_at,
-			ts_rank(tsv, plainto_tsquery('simple', $1)) AS score
-		FROM vault_documents
-		WHERE tenant_id = $2 AND tsv @@ plainto_tsquery('simple', $1)`
-	args := []any{query, tenantID}
-	p := 3
+// vaultAnyTermQuery matches docs containing any word of $1. plainto_tsquery
+// ANDs every word, and the 'simple' config keeps filler words like "what" or
+// "the", so a plain question never matched anything. Lexemes come out of
+// plainto_tsquery already quoted and never contain spaces, so swapping the
+// operators is safe. ts_rank still puts docs matching more words first.
+const vaultAnyTermQuery = `replace(plainto_tsquery('simple', $1)::text, ' & ', ' | ')::tsquery`
 
-	if agentID != nil {
+// vaultDocCols is the vault_documents column list scanned into vaultDocRow,
+// qualified for queries that join the chunks table.
+const vaultDocCols = `d.id, d.tenant_id, d.agent_id, d.team_id, d.chat_id, d.scope, d.custom_scope, d.path, d.path_basename,
+	d.title, d.doc_type, d.content_hash, d.summary, d.metadata, d.created_at, d.updated_at`
+
+// vaultSearchScope holds the visibility filters shared by every search sub-query.
+type vaultSearchScope struct {
+	agentID  *uuid.UUID
+	team     searchTeamFilter
+	chat     searchChatFilter
+	scope    string
+	docTypes []string
+}
+
+// append adds the filters to q. Columns are unqualified; that works for the
+// chunk joins too because none of them exist on vault_document_chunks.
+func (f vaultSearchScope) append(q string, args []any, p int) (string, []any, int) {
+	if f.agentID != nil {
 		q += fmt.Sprintf(" AND (agent_id = $%d OR agent_id IS NULL)", p)
-		args = append(args, *agentID)
+		args = append(args, *f.agentID)
 		p++
 	}
-
-	q, args, p = tf.append(q, args, p)
-	q, args, p = cf.append(q, args, p)
-
-	if scope != "" {
+	q, args, p = f.team.append(q, args, p)
+	q, args, p = f.chat.append(q, args, p)
+	if f.scope != "" {
 		q += fmt.Sprintf(" AND scope = $%d", p)
-		args = append(args, scope)
+		args = append(args, f.scope)
 		p++
 	}
-	if len(docTypes) > 0 {
+	if len(f.docTypes) > 0 {
 		q += fmt.Sprintf(" AND doc_type = ANY($%d)", p)
-		args = append(args, pqStringArray(docTypes))
+		args = append(args, pqStringArray(f.docTypes))
 		p++
 	}
+	return q, args, p
+}
 
-	q += fmt.Sprintf(" ORDER BY score DESC LIMIT $%d", p)
+// selectSearchRows applies the scope filters, appends tail (which gets the
+// LIMIT placeholder number) and runs the query.
+func selectSearchRows(ctx context.Context, q string, args []any, f vaultSearchScope, tail string, limit int) ([]store.VaultSearchResult, error) {
+	q, args, p := f.append(q, args, len(args)+1)
+	q += fmt.Sprintf(tail, p)
 	args = append(args, limit)
 
 	var scanned []vaultSearchRow
@@ -607,43 +635,77 @@ func (s *PGVaultStore) ftsSearch(ctx context.Context, query string, tenantID uui
 	return vaultSearchRowsToResults(scanned, "vault"), nil
 }
 
-func (s *PGVaultStore) vectorSearch(ctx context.Context, embedding []float32, tenantID uuid.UUID, agentID *uuid.UUID, tf searchTeamFilter, cf searchChatFilter, scope string, docTypes []string, limit int) ([]store.VaultSearchResult, error) {
-	vecStr := vectorToString(embedding)
-	q := `SELECT id, tenant_id, agent_id, team_id, chat_id, scope, custom_scope, path, path_basename, title, doc_type, content_hash, summary, metadata, created_at, updated_at,
-			1 - (embedding <=> $1) AS score
+// ftsSearch matches the query against the document header (title, path,
+// summary) and the body chunks, scoring each doc by its best hit.
+func (s *PGVaultStore) ftsSearch(ctx context.Context, query string, tenantID uuid.UUID, f vaultSearchScope, limit int) ([]store.VaultSearchResult, error) {
+	docHits, err := selectSearchRows(ctx, `SELECT id, tenant_id, agent_id, team_id, chat_id, scope, custom_scope, path, path_basename, title, doc_type, content_hash, summary, metadata, created_at, updated_at,
+			ts_rank(tsv, `+vaultAnyTermQuery+`) AS score
 		FROM vault_documents
-		WHERE tenant_id = $2 AND embedding IS NOT NULL`
-	args := []any{vecStr, tenantID}
-	p := 3
-
-	if agentID != nil {
-		q += fmt.Sprintf(" AND (agent_id = $%d OR agent_id IS NULL)", p)
-		args = append(args, *agentID)
-		p++
-	}
-
-	q, args, p = tf.append(q, args, p)
-	q, args, p = cf.append(q, args, p)
-
-	if scope != "" {
-		q += fmt.Sprintf(" AND scope = $%d", p)
-		args = append(args, scope)
-		p++
-	}
-	if len(docTypes) > 0 {
-		q += fmt.Sprintf(" AND doc_type = ANY($%d)", p)
-		args = append(args, pqStringArray(docTypes))
-		p++
-	}
-
-	q += fmt.Sprintf(" ORDER BY embedding <=> $1 LIMIT $%d", p)
-	args = append(args, limit)
-
-	var scanned []vaultSearchRow
-	if err := pkgSqlxDB.SelectContext(ctx, &scanned, q, args...); err != nil {
+		WHERE tenant_id = $2 AND tsv @@ `+vaultAnyTermQuery,
+		[]any{query, tenantID}, f, " ORDER BY score DESC LIMIT $%d", limit)
+	if err != nil {
 		return nil, err
 	}
-	return vaultSearchRowsToResults(scanned, "vault"), nil
+
+	// GROUP BY d.id covers the other d columns since id is the primary key.
+	chunkHits, err := selectSearchRows(ctx, `SELECT `+vaultDocCols+`,
+			MAX(ts_rank(c.tsv, `+vaultAnyTermQuery+`)) AS score
+		FROM vault_document_chunks c
+		JOIN vault_documents d ON d.id = c.document_id
+		WHERE c.tenant_id = $2 AND c.tsv @@ `+vaultAnyTermQuery,
+		[]any{query, tenantID}, f, " GROUP BY d.id ORDER BY score DESC LIMIT $%d", limit)
+	if err != nil {
+		return nil, err
+	}
+	return bestHitPerDoc(docHits, chunkHits), nil
+}
+
+// vectorSearch ranks docs by cosine similarity of the header embedding or of
+// the closest body chunk, whichever is higher.
+func (s *PGVaultStore) vectorSearch(ctx context.Context, embedding []float32, tenantID uuid.UUID, f vaultSearchScope, limit int) ([]store.VaultSearchResult, error) {
+	vecStr := vectorToString(embedding)
+	docHits, err := selectSearchRows(ctx, `SELECT id, tenant_id, agent_id, team_id, chat_id, scope, custom_scope, path, path_basename, title, doc_type, content_hash, summary, metadata, created_at, updated_at,
+			1 - (embedding <=> $1) AS score
+		FROM vault_documents
+		WHERE tenant_id = $2 AND embedding IS NOT NULL`,
+		[]any{vecStr, tenantID}, f, " ORDER BY embedding <=> $1 LIMIT $%d", limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// One doc can own several of the nearest chunks, so fetch extra rows to
+	// still end up with enough distinct docs after bestHitPerDoc.
+	chunkHits, err := selectSearchRows(ctx, `SELECT `+vaultDocCols+`,
+			1 - (c.embedding <=> $1) AS score
+		FROM vault_document_chunks c
+		JOIN vault_documents d ON d.id = c.document_id
+		WHERE c.tenant_id = $2 AND c.embedding IS NOT NULL`,
+		[]any{vecStr, tenantID}, f, " ORDER BY c.embedding <=> $1 LIMIT $%d", limit*3)
+	if err != nil {
+		return nil, err
+	}
+	return bestHitPerDoc(docHits, chunkHits), nil
+}
+
+// bestHitPerDoc keeps the highest score seen for each document, sorted by
+// score. mergeResults adds scores per doc, so duplicates must go first.
+func bestHitPerDoc(lists ...[]store.VaultSearchResult) []store.VaultSearchResult {
+	best := make(map[string]int)
+	var out []store.VaultSearchResult
+	for _, list := range lists {
+		for _, r := range list {
+			if i, ok := best[r.Document.ID]; ok {
+				if r.Score > out[i].Score {
+					out[i] = r
+				}
+				continue
+			}
+			best[r.Document.ID] = len(out)
+			out = append(out, r)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
+	return out
 }
 
 // vaultSearchRowsToResults converts a slice of vaultSearchRow to store.VaultSearchResult.

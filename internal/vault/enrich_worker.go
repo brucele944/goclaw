@@ -309,12 +309,6 @@ func (w *EnrichWorker) processChunk(ctx context.Context, items []eventbus.VaultD
 		}
 	}
 
-	// Resolve provider once per chunk (all items share tenantID)
-	provider, model := w.resolveProviderForTenant(ctx, tenantID)
-	if provider == nil {
-		slog.Warn("vault.enrich: no provider available", "tenant", tenantID)
-		return
-	}
 	docIDs := make([]string, len(pending))
 	for i, item := range pending {
 		docIDs[i] = item.DocID
@@ -327,6 +321,26 @@ func (w *EnrichWorker) processChunk(ctx context.Context, items []eventbus.VaultD
 	docMap := make(map[string]*store.VaultDocument, len(existingDocs))
 	for i := range existingDocs {
 		docMap[existingDocs[i].ID] = &existingDocs[i]
+	}
+
+	// Body chunks need no LLM, so they are indexed even without a provider.
+	// Docs whose body failed to index are kept out of the dedup map below,
+	// otherwise the next event for the same hash would be skipped and the
+	// doc would stay without chunks until someone runs a rescan.
+	bodyFailed := make(map[string]bool)
+	for _, item := range pending {
+		if doc := docMap[item.DocID]; doc != nil && doc.DocType != "media" && doc.DocType != "document" {
+			if err := indexBody(ctx, w.vault, tenantID, item.DocID, item.ContentHash, filepath.Join(item.Workspace, item.Path)); err != nil {
+				bodyFailed[item.DocID] = true
+			}
+		}
+	}
+
+	// Resolve provider once per chunk (all items share tenantID)
+	provider, model := w.resolveProviderForTenant(ctx, tenantID)
+	if provider == nil {
+		slog.Warn("vault.enrich: no provider available", "tenant", tenantID)
+		return
 	}
 
 	var all []prepared
@@ -446,7 +460,9 @@ func (w *EnrichWorker) processChunk(ctx context.Context, items []eventbus.VaultD
 
 	// Phase 4 — Record dedup + wikilinks.
 	for _, r := range embedded {
-		w.recordDedup(r.payload.DocID, r.payload.ContentHash)
+		if !bodyFailed[r.payload.DocID] {
+			w.recordDedup(r.payload.DocID, r.payload.ContentHash)
+		}
 		w.syncWikilinks(ctx, r.payload)
 	}
 }

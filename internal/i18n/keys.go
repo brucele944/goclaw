@@ -21,6 +21,10 @@ const (
 	MsgFailedToSave     = "error.failed_to_save"    // "failed to save %s: %s"
 	MsgInvalidUpdates   = "error.invalid_updates"   // "invalid updates"
 
+	// Agent deletion blocked by the vault orphan collision of #1550. Fixed by migration
+	// 000099; kept for installations still on an earlier schema version.
+	MsgAgentDeleteVaultConflict = "error.agent_delete_vault_conflict"
+
 	// --- Agent ---
 	MsgAgentNotFound                       = "error.agent_not_found"       // "agent not found: %s"
 	MsgCannotDeleteDefault                 = "error.cannot_delete_default" // "cannot delete the default agent"
@@ -296,15 +300,12 @@ const (
 	// output and no deliverable media, replacing the old meaningless "...".
 	MsgEmptyReplyFallback = "chat.empty_reply_fallback"
 
-	// Context over-budget abort (user-facing) — the conversation exceeded the
-	// context budget and compaction could not shrink it, so the run aborted before
-	// the model was called. Without this the channel would receive nothing at all.
-	MsgContextOverBudgetAbort = "chat.context_over_budget_abort"
-
 	// Model capability notices (user-facing) — the selected model's catalogue row
 	// declares it cannot accept image input, so the images in the message were
 	// not sent to it.
 	MsgModelWithoutVisionNotice = "chat.model_without_vision_notice"
+	// Shown when the request guard stops a run because the context budget is exhausted.
+	MsgContextBudgetExceeded = "chat.context_budget_exceeded"
 
 	// Tool progress announcements (user-facing)
 	MsgToolAnnouncementSingle = "progress.tool_announcement.single" // "I'll use %s to handle the next step."

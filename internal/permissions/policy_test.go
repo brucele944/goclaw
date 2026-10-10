@@ -91,6 +91,45 @@ func TestRoleFromScopes(t *testing.T) {
 	}
 }
 
+// TestIsProvisionMethod covers the ScopeProvision method allowlist (issue #1524):
+// exactly tenants.create and tenants.users.add, nothing else.
+func TestIsProvisionMethod(t *testing.T) {
+	allowed := []string{protocol.MethodTenantsCreate, protocol.MethodTenantsUsersAdd}
+	for _, method := range allowed {
+		if !IsProvisionMethod(method) {
+			t.Fatalf("IsProvisionMethod(%q) = false, want true", method)
+		}
+	}
+	denied := []string{
+		protocol.MethodTenantsUpdate,
+		protocol.MethodTenantsUsersRemove,
+		protocol.MethodAgentsCreate,
+		protocol.MethodAPIKeysCreate,
+		protocol.MethodConfigApply,
+		"tenants.nonexistent",
+	}
+	for _, method := range denied {
+		if IsProvisionMethod(method) {
+			t.Fatalf("IsProvisionMethod(%q) = true, want false", method)
+		}
+	}
+}
+
+func TestHasProvisionScope(t *testing.T) {
+	if !HasProvisionScope([]Scope{ScopeProvision}) {
+		t.Fatal("HasProvisionScope([operator.provision]) = false, want true")
+	}
+	if !HasProvisionScope([]Scope{ScopeRead, ScopeProvision}) {
+		t.Fatal("HasProvisionScope([operator.read operator.provision]) = false, want true")
+	}
+	if HasProvisionScope(nil) {
+		t.Fatal("HasProvisionScope(nil) = true, want false")
+	}
+	if HasProvisionScope([]Scope{ScopeAdmin}) {
+		t.Fatal("HasProvisionScope([operator.admin]) = true, want false")
+	}
+}
+
 // --- CanAccess: role-based method access ---
 
 func TestCanAccess_AdminMethods(t *testing.T) {
@@ -128,6 +167,8 @@ func TestCanAccess_WriteMethods(t *testing.T) {
 		protocol.MethodSessionsDelete,
 		protocol.MethodSessionsCompact,
 		protocol.MethodCronCreate,
+		protocol.MethodTeamsTaskCancel,
+		protocol.MethodTeamsTaskRetry,
 	}
 	for _, method := range writeMethods {
 		t.Run(method, func(t *testing.T) {

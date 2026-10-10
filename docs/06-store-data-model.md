@@ -92,7 +92,7 @@ Provider behaviour is declared as data instead of being switched on in Go. `llm_
 
 ### `llm_providers` declaration columns
 
-Added by migration `000098_provider_declaration` (the base row, including `provider_type`, `api_base`, `api_key`, `enabled`, and `settings`, comes from `000001_init_schema`):
+Added by migration `000100_provider_declaration` (the base row, including `provider_type`, `api_base`, `api_key`, `enabled`, and `settings`, comes from `000001_init_schema`):
 
 | Column | Type | Default | Meaning |
 |--------|------|---------|---------|
@@ -107,11 +107,11 @@ Added by migration `000098_provider_declaration` (the base row, including `provi
 
 Both enums are owned by `internal/providers/wire` and re-exported by `internal/store` (`WireAPI*`/`AuthKind*` constants, `ValidWireAPIs`/`ValidAuthKinds`); the store validates the declaration, the wire layer dispatches it, so the two cannot drift. The store fills an empty `wire_api`/`auth_kind` from the provider type's declared brand before validating, so a row created through any surface gets its brand's transport rather than an OpenAI default.
 
-Migration `000098` backfills the two columns from the legacy `provider_type` values (e.g. `anthropic_native` → `anthropic-messages`, `chatgpt_oauth` → `openai-codex-responses`, `ollama` → `ollama-native` with `auth_kind = 'none'`, `claude_cli`/`acp` → `cli-delegated`) and copies `api_base` into `exec_path` for the CLI-delegated rows.
+Migration `000100` backfills the two columns from the legacy `provider_type` values (e.g. `anthropic_native` → `anthropic-messages`, `chatgpt_oauth` → `openai-codex-responses`, `ollama` → `ollama-native` with `auth_kind = 'none'`, `claude_cli`/`acp` → `cli-delegated`) and copies `api_base` into `exec_path` for the CLI-delegated rows.
 
 ### `llm_models`
 
-Per-provider model declarations, created by migration `000098`. Scope is inherited through `provider_id` — there is no tenant column, so a model row is visible exactly where its provider is visible.
+Per-provider model declarations, created by migration `000100`. Scope is inherited through `provider_id` — there is no tenant column, so a model row is visible exactly where its provider is visible.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -138,7 +138,7 @@ Per-provider model declarations, created by migration `000098`. Scope is inherit
 
 ### `provider_quirks`
 
-Declared compatibility rules (JSONB `compat` fragments) that replace name/URL sniffing. Created by migration `000098`.
+Declared compatibility rules (JSONB `compat` fragments) that replace name/URL sniffing. Created by migration `000100`.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -157,7 +157,7 @@ Reads are enabled-only and tenant-scoped: bundled rows (`tenant_id IS NULL`) plu
 
 ### `provider_health` / `provider_error_counts`
 
-Durable provider cooldown state, created by migration `000100`. When a provider fails, its consecutive-failure count, cooldown deadline, and last error class are persisted instead of living in an in-memory map, so a gateway restart remembers the cooldown.
+Durable provider cooldown state, created by migration `000102`. When a provider fails, its consecutive-failure count, cooldown deadline, and last error class are persisted instead of living in an in-memory map, so a gateway restart remembers the cooldown.
 
 | Table | Primary Key | Columns |
 |-------|-------------|---------|
@@ -168,7 +168,7 @@ Durable provider cooldown state, created by migration `000100`. When a provider 
 
 ### `agents.model_roles`
 
-Added by migration `000099_agent_model_roles`: `model_roles JSONB NOT NULL DEFAULT '{}'` (SQLite `TEXT NOT NULL DEFAULT '{}'`), mapping a role name to a `"provider/model"` target, e.g. `{"coder":"openai/gpt-5"}`. An empty object means "no roles declared".
+Added by migration `000101_agent_model_roles`: `model_roles JSONB NOT NULL DEFAULT '{}'` (SQLite `TEXT NOT NULL DEFAULT '{}'`), mapping a role name to a `"provider/model"` target, e.g. `{"coder":"openai/gpt-5"}`. An empty object means "no roles declared".
 
 Role names are validated on write (≤ 32 chars, `[A-Za-z0-9_.-]`; at most 32 entries), and the target is split on the first `/` so vendor-prefixed model ids survive. Malformed entries are dropped on read rather than failing the whole map. A role whose provider is not in the registry falls back to the agent primary instead of routing to an unregistered provider.
 
@@ -176,7 +176,7 @@ Model selection precedence (highest first): explicit per-request override → ag
 
 Migration versions:
 
-- PostgreSQL: `000098_provider_declaration`, `000099_agent_model_roles`, `000100_provider_health`.
+- PostgreSQL: `000100_provider_declaration`, `000101_agent_model_roles`, `000102_provider_health`.
 - SQLite: schema v60 → v61 (declaration columns + `llm_models` + `provider_quirks`), v61 → v62 (`agents.model_roles`), v62 → v63 (`provider_health` + `provider_error_counts`). Current `SchemaVersion` is **63**. Fresh SQLite databases get all of these inline from `schema.sql`; the versioned patches exist for databases created before each bump.
 
 ---
@@ -729,7 +729,7 @@ flowchart TD
 | `000004_teams_v2` | FTS on `team_tasks` (tsv column) + `delegation_history` table |
 | `000005_phase4` | Additional team and delegation features |
 
-Provider storage is added by `000098_provider_declaration`, `000099_agent_model_roles`, and `000100_provider_health` (PostgreSQL) — see *Provider Declaration & Model Catalog Storage* above for their columns and the matching SQLite schema versions (v60 → v63).
+Provider storage is added by `000100_provider_declaration`, `000101_agent_model_roles`, and `000102_provider_health` (PostgreSQL) — see *Provider Declaration & Model Catalog Storage* above for their columns and the matching SQLite schema versions (v60 → v63).
 
 ### Required PostgreSQL Extensions
 

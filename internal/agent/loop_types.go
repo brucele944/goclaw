@@ -738,6 +738,7 @@ type RunResult struct {
 	// ("stop", "tool_calls", "length"); empty when the run never reached a
 	// response.
 	FinishReason string `json:"finishReason,omitempty"`
+	StopReason     string                `json:"stopReason,omitempty"`     // why the pipeline (not the model) ended the run
 }
 
 // MediaResult represents a media file produced by a tool during the agent run.

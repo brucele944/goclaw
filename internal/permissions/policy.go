@@ -168,6 +168,24 @@ func RoleFromScopes(scopes []Scope) Role {
 	return RoleViewer
 }
 
+// IsProvisionMethod reports whether method is one of the tenant-provisioning
+// RPCs that ScopeProvision exists to grant (issue #1524). ScopeProvision is a
+// least-privilege scope for automated tenant onboarding: it admits exactly
+// these two methods and nothing else — never a role promotion or a broad
+// admin bypass.
+func IsProvisionMethod(method string) bool {
+	switch method {
+	case protocol.MethodTenantsCreate, protocol.MethodTenantsUsersAdd:
+		return true
+	}
+	return false
+}
+
+// HasProvisionScope reports whether scopes include ScopeProvision.
+func HasProvisionScope(scopes []Scope) bool {
+	return slices.Contains(scopes, ScopeProvision)
+}
+
 // MethodRole returns the minimum role required for a given RPC method.
 //
 // Policy is fail-closed (default-deny): methods absent from every allowlist
@@ -268,6 +286,7 @@ func isAdminMethod(method string) bool {
 		protocol.MethodPairingDeny,
 		protocol.MethodPairingList,
 		protocol.MethodPairingRevoke,
+		protocol.MethodPairingUpdate,
 
 		// Teams — create/delete/update/member management.
 		protocol.MethodTeamsCreate,
@@ -351,6 +370,8 @@ func isWriteMethod(method string) bool {
 		protocol.MethodTeamsTaskComment,
 		protocol.MethodTeamsTaskCreate,
 		protocol.MethodTeamsTaskAssign,
+		protocol.MethodTeamsTaskCancel,
+		protocol.MethodTeamsTaskRetry,
 		protocol.MethodTeamsWorkspaceDelete,
 		protocol.MethodHooksTest,
 		protocol.MethodPairingRequest,

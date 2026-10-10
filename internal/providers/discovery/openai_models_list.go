@@ -79,7 +79,45 @@ func (d *openAIModelsList) listOpenAI(ctx context.Context, p ProviderRef) ([]Mod
 		// Legacy behaviour: the label is the model id.
 		models = append(models, ModelInfo{ID: m.ID, DisplayName: m.ID})
 	}
+	if p.ProviderType == requestyProviderType {
+		models = d.withRequestyManaged(ctx, base, headers, models)
+	}
 	return models, nil
+}
+
+// requestyProviderType is the brand whose /models/managed policies (curated ids
+// such as "claude-sonnet-4-5") are listed ahead of the key's model catalogue.
+const requestyProviderType = "requesty"
+
+// withRequestyManaged prepends Requesty's managed policies to catalog. The
+// managed list is best effort: the catalogue call already validated the key, so
+// a failure here just leaves the catalogue untouched.
+func (d *openAIModelsList) withRequestyManaged(ctx context.Context, base string, headers map[string]string, catalog []ModelInfo) []ModelInfo {
+	var payload struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := doJSON(ctx, http.MethodGet, base+"/models/managed", headers, nil, "requesty /models/managed", &payload); err != nil {
+		return catalog
+	}
+	seen := make(map[string]bool, len(payload.Data)+len(catalog))
+	merged := make([]ModelInfo, 0, len(payload.Data)+len(catalog))
+	for _, m := range payload.Data {
+		if strings.TrimSpace(m.ID) == "" || seen[m.ID] {
+			continue
+		}
+		seen[m.ID] = true
+		merged = append(merged, ModelInfo{ID: m.ID, DisplayName: m.ID})
+	}
+	for _, m := range catalog {
+		if seen[m.ID] {
+			continue
+		}
+		seen[m.ID] = true
+		merged = append(merged, m)
+	}
+	return merged
 }
 
 func (d *openAIModelsList) listAnthropic(ctx context.Context, p ProviderRef) ([]ModelInfo, error) {

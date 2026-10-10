@@ -12,6 +12,21 @@ import (
 // Version is set at build time via -ldflags "-X github.com/nextlevelbuilder/goclaw/cmd.Version=v1.0.0"
 var Version = "dev"
 
+// CommitSHA is set at build time via -ldflags "-X github.com/nextlevelbuilder/goclaw/cmd.CommitSHA=<sha>".
+// It records the exact source commit the binary was built from, so a running
+// image/binary can be lined up with a commit even when VCS metadata is
+// unavailable (e.g. Docker builds, where .git is excluded from the context).
+var CommitSHA = "unknown"
+
+// commitSuffix returns " (commit <sha>)" when CommitSHA was injected at build
+// time, so version/doctor/upgrade output can carry release provenance.
+func commitSuffix() string {
+	if CommitSHA == "" || CommitSHA == "unknown" {
+		return ""
+	}
+	return " (commit " + CommitSHA + ")"
+}
+
 var (
 	cfgFile string
 	verbose bool
@@ -64,7 +79,7 @@ func versionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("goclaw %s (protocol %d)\n", Version, protocol.ProtocolVersion)
+			fmt.Printf("goclaw %s%s (protocol %d)\n", Version, commitSuffix(), protocol.ProtocolVersion)
 		},
 	}
 }

@@ -41,6 +41,7 @@ ARG ENABLE_TSNET=false
 ARG ENABLE_REDIS=false
 ARG ENABLE_EMBEDUI=false
 ARG VERSION=
+ARG COMMIT_SHA=
 
 # Copy web UI dist — from web-builder when ENABLE_EMBEDUI=true, empty dir otherwise.
 COPY --from=web-dist /app/dist /src/internal/webui/dist
@@ -48,6 +49,7 @@ COPY --from=web-dist /app/dist /src/internal/webui/dist
 RUN set -eux; \
     if [ -z "$VERSION" ] && [ -f VERSION ]; then VERSION=$(cat VERSION); fi; \
     if [ -z "$VERSION" ]; then VERSION="dev"; fi; \
+    if [ -z "$COMMIT_SHA" ]; then COMMIT_SHA="unknown"; fi; \
     TAGS=""; \
     if [ "$ENABLE_EMBEDUI" = "true" ]; then TAGS="embedui"; fi; \
     if [ "$ENABLE_OTEL" = "true" ]; then \
@@ -61,7 +63,7 @@ RUN set -eux; \
     fi; \
     if [ -n "$TAGS" ]; then TAGS="-tags $TAGS"; fi; \
     CGO_ENABLED=0 GOOS=linux \
-    go build -ldflags="-s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=${VERSION}" \
+    go build -ldflags="-s -w -X github.com/nextlevelbuilder/goclaw/cmd.Version=${VERSION} -X github.com/nextlevelbuilder/goclaw/cmd.CommitSHA=${COMMIT_SHA}" \
     ${TAGS} -o /out/goclaw . && \
     CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-s -w" -o /out/pkg-helper ./cmd/pkg-helper
@@ -74,6 +76,7 @@ ARG ENABLE_PYTHON=false
 ARG ENABLE_NODE=false
 ARG ENABLE_FULL_SKILLS=false
 ARG ENABLE_CLAUDE_CLI=false
+ARG ENABLE_MEDIA_PROBES=true
 
 # Copy pinned Python deps (cleaned up after install).
 # requirements-base.txt: shared deps for ENABLE_PYTHON and ENABLE_FULL_SKILLS.
@@ -84,8 +87,18 @@ COPY docker/requirements-base.txt docker/requirements-skills.txt /tmp/
 # time.LoadLocation and Python zoneinfo in skill scripts) + optional runtimes.
 # ENABLE_FULL_SKILLS=true pre-installs all skill deps (larger image, no on-demand install needed).
 # Otherwise, skill packages are installed on-demand via the admin UI.
+# ENABLE_MEDIA_PROBES=true installs ffmpeg (for ffprobe) and poppler-utils (for pdfinfo), the
+# two binaries the media budget guard measures with. Without them read_video and read_audio
+# refuse the call and read_document falls back to the provider's 1000-page ceiling.
+# poppler-utils is skipped here when ENABLE_FULL_SKILLS already installs it below.
 RUN set -eux; \
     apk add --no-cache ca-certificates wget su-exec tzdata; \
+    if [ "$ENABLE_MEDIA_PROBES" = "true" ]; then \
+        apk add --no-cache ffmpeg; \
+        if [ "$ENABLE_FULL_SKILLS" != "true" ]; then \
+            apk add --no-cache poppler-utils; \
+        fi; \
+    fi; \
     if [ "$ENABLE_SANDBOX" = "true" ]; then \
         apk add --no-cache docker-cli; \
     fi; \

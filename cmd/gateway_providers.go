@@ -159,6 +159,8 @@ func configOpenAICompatBrands(cfg *config.Config) []configOpenAICompatBrand {
 	return []configOpenAICompatBrand{
 		{name: "openai", providerType: store.ProviderOpenAICompat, apiKey: p.OpenAI.APIKey, apiBase: p.OpenAI.APIBase, withRegistry: true},
 		{name: "atlascloud", providerType: store.ProviderAtlasCloud, apiKey: p.AtlasCloud.APIKey, apiBase: p.AtlasCloud.APIBase},
+		{name: "api_route", providerType: store.ProviderAPIRoute, apiKey: p.APIRoute.APIKey, apiBase: p.APIRoute.APIBase},
+		{name: "requesty", providerType: store.ProviderRequesty, apiKey: p.Requesty.APIKey, apiBase: p.Requesty.APIBase},
 		{name: "openrouter", providerType: store.ProviderOpenRouter, apiKey: p.OpenRouter.APIKey, apiBase: p.OpenRouter.APIBase},
 		{name: "groq", providerType: store.ProviderGroq, apiKey: p.Groq.APIKey, apiBase: p.Groq.APIBase},
 		{name: "deepseek", providerType: store.ProviderDeepSeek, apiKey: p.DeepSeek.APIKey, apiBase: p.DeepSeek.APIBase},

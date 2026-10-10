@@ -67,11 +67,10 @@ func TestValidateProviderURL(t *testing.T) {
 		{"public HTTPS", "https://api.openai.com/v1", "openai_compat", false},
 		{"public HTTP", "http://legit-provider.com/v1", "openai_compat", false},
 
-		// --- Scheme check: unconditional for ALL types including local ---
+		// --- Scheme check: unconditional for URL-based types ---
 		{"file scheme remote", "file:///etc/passwd", "openai_compat", true},
 		{"gopher scheme remote", "gopher://internal:25", "openai_compat", true},
 		{"file scheme ollama", "file:///etc/passwd", "ollama", true},       // H-1: scheme enforced even for local types
-		{"gopher scheme acp", "gopher://localhost:25", "acp", true},        // H-1: scheme enforced even for local types
 		{"file scheme claude_cli", "file:///bin/bash", "claude_cli", true}, // H-1: scheme enforced for URL-like Claude CLI values
 
 		// --- Local type: allowlist-only ---
@@ -79,9 +78,17 @@ func TestValidateProviderURL(t *testing.T) {
 		{"ollama 127.0.0.1", "http://127.0.0.1:11434/v1", "ollama", false},
 		{"ollama ::1", "http://[::1]:11434/v1", "ollama", false},
 		{"ollama host.docker.internal", "http://host.docker.internal:11434/v1", "ollama", false},
-		{"acp 127.0.0.1", "http://127.0.0.1:9090", "acp", false},
 		{"claude_cli command name", "claude", "claude_cli", false},
 		{"claude_cli absolute path", absClaudePath, "claude_cli", false},
+
+		// --- ACP: executable path / command, not a URL (issue #1481) ---
+		{"acp empty", "", "acp", false},
+		{"acp built-in gemini", "gemini", "acp", false},
+		{"acp built-in claude", "claude", "acp", false},
+		{"acp built-in codex", "codex", "acp", false},
+		{"acp URL rejected", "http://127.0.0.1:9090", "acp", true},
+		{"acp private URL rejected", "http://10.0.0.1:8080/v1", "acp", true},
+		{"acp relative rejected", "relative/acp", "acp", true},
 
 		// Local type with non-localhost hosts → blocked
 		{"ollama 169.254.169.254", "http://169.254.169.254/latest/meta-data/", "ollama", true},
@@ -91,7 +98,6 @@ func TestValidateProviderURL(t *testing.T) {
 		{"ollama link-local", "http://169.254.1.1:8080/v1", "ollama", true},
 		{"ollama .internal", "http://redis.internal:6379/v1", "ollama", true},
 		{"ollama gcp metadata", "http://metadata.google.internal/computeMetadata/v1/", "ollama", true},
-		{"acp private", "http://10.0.0.1:8080/v1", "acp", true},
 
 		// --- Remote type literal blocked IPs ---
 		{"remote localhost", "http://localhost:8080", "openai_compat", true},
@@ -189,7 +195,6 @@ func TestValidateProviderURL_LocalTypesIgnoreAllowPrivateFlag(t *testing.T) {
 		{"http://ollama:11434/v1", "ollama"},
 		{"http://host.lan:11434/v1", "ollama"},
 		{"http://10.0.0.5:11434/v1", "ollama"},
-		{"http://acp-sidecar:9090", "acp"},
 	}
 	for _, c := range cases {
 		if err := validateProviderURL(c.url, c.providerType); err == nil {
@@ -209,7 +214,6 @@ func TestValidateProviderURL_LocalTypeSchemeEnforced(t *testing.T) {
 	}{
 		{"file:///etc/passwd", "ollama"},
 		{"gopher://localhost:25", "ollama"},
-		{"file:///etc/passwd", "acp"},
 	}
 	for _, c := range cases {
 		err := validateProviderURL(c.url, c.providerType)
@@ -275,8 +279,6 @@ func TestValidateProviderURL_LocalTypeAllowedHosts(t *testing.T) {
 		{"http://127.0.0.1:11434/v1", "ollama"},
 		{"http://[::1]:11434/v1", "ollama"},
 		{"http://host.docker.internal:11434/v1", "ollama"},
-		{"http://localhost:9090", "acp"},
-		{"http://127.0.0.1:9090", "acp"},
 	}
 	for _, a := range allowed {
 		if err := validateProviderURL(a.url, a.providerType); err != nil {
@@ -314,6 +316,38 @@ func TestValidateProviderURL_ClaudeCLIExecutablePath(t *testing.T) {
 	}
 }
 
+func TestValidateProviderURL_ACPExecutablePath(t *testing.T) {
+	saveAndRestoreGlobals(t)
+	absBinary := filepath.Join(t.TempDir(), "gemini")
+
+	allowed := []string{
+		"",
+		"claude",
+		"codex",
+		"gemini",
+		absBinary,
+		filepath.Join(t.TempDir(), "Gemini.app", "Contents", "MacOS", "gemini"),
+	}
+	for _, raw := range allowed {
+		if err := validateProviderURL(raw, "acp"); err != nil {
+			t.Errorf("expected ACP executable %q to be allowed, got: %v", raw, err)
+		}
+	}
+
+	blocked := []string{
+		"file:///usr/local/bin/gemini",
+		"https://api.anthropic.com/v1",
+		"relative/gemini",
+		"gemini --dangerous-flag",
+		"http://localhost:9090",
+	}
+	for _, raw := range blocked {
+		if err := validateProviderURL(raw, "acp"); err == nil {
+			t.Errorf("expected ACP executable %q to be rejected", raw)
+		}
+	}
+}
+
 // --- Public remote URL always OK ---
 
 func TestValidateProviderURL_PublicHostOK(t *testing.T) {
@@ -345,9 +379,6 @@ func TestValidateProviderURL_OllamaAllowedHosts(t *testing.T) {
 		ollamaAllowedHostsFn = func() []string { return []string{"192.168.3.31", "ollama.lan"} }
 		if err := validateProviderURL("http://192.168.3.31:11434/v1", "ollama"); err != nil {
 			t.Errorf("expected configured LAN IP to be allowed, got: %v", err)
-		}
-		if err := validateProviderURL("http://ollama.lan:11434/v1", "acp"); err != nil {
-			t.Errorf("expected configured LAN hostname to be allowed for acp, got: %v", err)
 		}
 		// Case-insensitive host match, matching the existing style in this file.
 		if err := validateProviderURL("http://OLLAMA.LAN:11434/v1", "ollama"); err != nil {

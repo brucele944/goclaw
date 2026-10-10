@@ -29,7 +29,7 @@ func doctorCmd() *cobra.Command {
 
 func runDoctor() {
 	fmt.Println("goclaw doctor")
-	fmt.Printf("  Version:  %s (protocol %d)\n", Version, protocol.ProtocolVersion)
+	fmt.Printf("  Version:  %s%s (protocol %d)\n", Version, commitSuffix(), protocol.ProtocolVersion)
 	fmt.Printf("  OS:       %s/%s\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Printf("  Go:       %s\n", runtime.Version())
 	fmt.Println()
@@ -98,10 +98,14 @@ func runDoctor() {
 		checkDBProviders(db)
 		checkProvider("Anthropic (env)", cfg.Providers.Anthropic.APIKey)
 		checkProvider("OpenAI (env)", cfg.Providers.OpenAI.APIKey)
+		checkProvider("API Route (env)", cfg.Providers.APIRoute.APIKey)
+		checkProvider("Requesty (env)", cfg.Providers.Requesty.APIKey)
 		checkProvider("OpenRouter (env)", cfg.Providers.OpenRouter.APIKey)
 	} else {
 		checkProvider("Anthropic", cfg.Providers.Anthropic.APIKey)
 		checkProvider("OpenAI", cfg.Providers.OpenAI.APIKey)
+		checkProvider("API Route", cfg.Providers.APIRoute.APIKey)
+		checkProvider("Requesty", cfg.Providers.Requesty.APIKey)
 		checkProvider("OpenRouter", cfg.Providers.OpenRouter.APIKey)
 		checkProvider("Gemini", cfg.Providers.Gemini.APIKey)
 		checkProvider("Groq", cfg.Providers.Groq.APIKey)

@@ -14,7 +14,7 @@ type ContextState struct {
 	MemorySection  string // L0 auto-injected memory context for system prompt
 	Summary        string // session summary for context continuity
 	HadBootstrap   bool
-	OverheadTokens int // system prompt + context files (accurate via TokenCounter)
+	OverheadTokens int // system prompt + tool schemas, in BudgetCounter units
 
 	// EffectiveContextWindow is the context window size (in tokens) resolved
 	// per-run from the provider/model pair via ModelRegistry. Resolved ONCE in
@@ -109,6 +109,7 @@ type CompactState struct {
 	CheckpointFlushedMsgs  int
 	MemoryFlushedThisCycle bool
 	CompactionCount        int
+	Unavailable            bool // CompactMessages returned ErrNotCompacted: don't retry this run
 }
 
 // EvolutionState: owned by skill evolution nudge logic.
@@ -144,4 +145,5 @@ type RunResult struct {
 	// of the response that ended the run.
 	FinalToolCalls []providers.ToolCall
 	FinishReason   string
+	StopReason     string
 }

@@ -19,6 +19,8 @@ func init() {
 		MsgFailedToDelete:   "не удалось удалить %s: %s",
 		MsgFailedToSave:     "не удалось сохранить %s: %s",
 		MsgInvalidUpdates:   "неверные обновления",
+		// TODO(i18n): translate to ru
+		MsgAgentDeleteVaultConflict: "failed to delete agent: a vault document of this agent is at a path another deleted owner already orphaned; delete or re-path this agent's vault documents first, or upgrade to schema version 99 or later",
 
 		// Agent
 		MsgAgentNotFound:                       "агент не найден: %s",
@@ -249,6 +251,7 @@ func init() {
 		MsgSkillNudge70Pct:          "[Система] Вы использовали 70% бюджета итераций. Подумайте, могут ли какие-либо шаблоны из этой сессии стать хорошим навыком.",
 		MsgSkillNudge90Pct:          "[Система] Вы использовали 90% бюджета итераций. Если эта сессия включала повторно используемые шаблоны, подумайте о сохранении их как навыка до завершения.",
 		MsgModelWithoutVisionNotice: "⚠️ Выбранная модель не принимает изображения, поэтому изображения из вашего сообщения не были отправлены. Чтобы отправить их, переключитесь на модель с поддержкой изображений.",
+		MsgContextBudgetExceeded: "⚠️ Диалог стал слишком длинным для контекстного окна модели, поэтому я остановился, не ответив. Некоторые действия инструментов в этом ходе могли уже выполниться. Пожалуйста, начните новую сессию, чтобы продолжить.",
 
 		MsgInvalidRole: "неверная роль: допустимые значения — owner, admin, operator, member, viewer",
 

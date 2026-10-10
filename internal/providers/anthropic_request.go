@@ -36,15 +36,15 @@ func SplitSystemPromptForCache(content string) []map[string]any {
 
 // buildRawBlock reconstructs a complete content block from streaming data.
 // This is needed to preserve thinking blocks (with signatures) for tool use passback.
-func (p *AnthropicProvider) buildRawBlock(blockType string, result *ChatResponse, toolCallJSON map[int]string, _ int) json.RawMessage {
+func (p *AnthropicProvider) buildRawBlock(blockType string, result *ChatResponse, toolCallJSON map[int]string, thinkingText, thinkingSignature, redactedData string) json.RawMessage {
 	switch blockType {
 	case "thinking":
 		block := map[string]any{
 			"type":     "thinking",
-			"thinking": result.Thinking,
+			"thinking": thinkingText,
 		}
-		if result.ThinkingSignature != "" {
-			block["signature"] = result.ThinkingSignature
+		if thinkingSignature != "" {
+			block["signature"] = thinkingSignature
 		}
 		if b, err := json.Marshal(block); err == nil {
 			return b
@@ -78,9 +78,14 @@ func (p *AnthropicProvider) buildRawBlock(blockType string, result *ChatResponse
 			}
 		}
 	case "redacted_thinking":
-		// Pass through as-is (we don't have the encrypted data in streaming)
+		// The encrypted payload arrives on content_block_start and must be
+		// replayed unchanged. A block with only "type" is rejected on the
+		// next tool-result request.
 		block := map[string]any{
 			"type": "redacted_thinking",
+		}
+		if redactedData != "" {
+			block["data"] = redactedData
 		}
 		if b, err := json.Marshal(block); err == nil {
 			return b
@@ -233,18 +238,38 @@ func (p *AnthropicProvider) buildRequestBody(model string, req ChatRequest, stre
 		}
 	}
 
-	// Enable extended thinking if thinking_level is set
+	// Enable extended thinking if thinking_level is set.
+	// Claude Opus 4.7+ and Claude 5 reject thinking.type=enabled. Those models
+	// take thinking.type=adaptive plus output_config.effort.
 	if level, ok := req.Options[OptThinkingLevel].(string); ok && level != "" && level != "off" {
-		budget := anthropicThinkingBudget(level)
-		body["thinking"] = map[string]any{
-			"type":          "enabled",
-			"budget_tokens": budget,
-		}
-		// Anthropic requires no temperature when thinking is enabled
 		delete(body, "temperature")
-		// Ensure max_tokens accommodates thinking budget + response
-		if maxTok, ok := body["max_tokens"].(int); !ok || maxTok < budget+4096 {
-			body["max_tokens"] = budget + 8192
+		if anthropicUsesAdaptiveThinking(model) {
+			// display defaults to "omitted" on these models, which hides thinking
+			// text. "summarized" keeps the reasoning visible. OptStripThinking
+			// asks for the omitted form; the signature is still returned for
+			// tool-loop passback.
+			display := "summarized"
+			if strip, _ := req.Options[OptStripThinking].(bool); strip {
+				display = "omitted"
+			}
+			body["thinking"] = map[string]any{
+				"type":    "adaptive",
+				"display": display,
+			}
+			body["output_config"] = map[string]any{"effort": anthropicEffort(level)}
+			if maxTok, ok := body["max_tokens"].(int); !ok || maxTok < 16000 {
+				body["max_tokens"] = 16000
+			}
+		} else {
+			budget := anthropicThinkingBudget(level)
+			body["thinking"] = map[string]any{
+				"type":          "enabled",
+				"budget_tokens": budget,
+			}
+			// Ensure max_tokens accommodates thinking budget + response
+			if maxTok, ok := body["max_tokens"].(int); !ok || maxTok < budget+4096 {
+				body["max_tokens"] = budget + 8192
+			}
 		}
 	}
 
@@ -316,6 +341,62 @@ func anthropicSkipsTemperature(model string) bool {
 		}
 	}
 	return false
+}
+
+// anthropicUsesAdaptiveThinking reports models that reject thinking.type=enabled
+// and require thinking.type=adaptive. Opus 4.7+ and the Claude 5 family
+// (Sonnet 5, Opus 5, Fable, Mythos) return HTTP 400 for a manual budget.
+func anthropicUsesAdaptiveThinking(model string) bool {
+	m := strings.ToLower(model)
+	if strings.Contains(m, "claude-fable") || strings.Contains(m, "claude-mythos") {
+		return true
+	}
+	for _, family := range []string{"claude-opus-", "claude-sonnet-"} {
+		after, ok := strings.CutPrefix(m, family)
+		if !ok {
+			continue
+		}
+		majorPart, afterMajor, hasMinor := strings.Cut(after, "-")
+		major, err := strconv.Atoi(majorPart)
+		if err != nil {
+			continue
+		}
+		if major > 4 {
+			return true
+		}
+		if major != 4 || !hasMinor {
+			continue
+		}
+		minorPart, _, _ := strings.Cut(afterMajor, "-")
+		minor, err := strconv.Atoi(minorPart)
+		// Dated snapshots such as claude-sonnet-4-20250514 put an 8-digit
+		// date in this position. Those are pre-4.5 models and still use
+		// manual thinking.
+		if err == nil && minor >= 7 && minor < 100 {
+			return true
+		}
+	}
+	return false
+}
+
+// anthropicManualThinking reports whether the body uses legacy
+// thinking.type=enabled, which still needs the interleaved-thinking beta header.
+func anthropicManualThinking(body map[string]any) bool {
+	thinking, ok := body["thinking"].(map[string]any)
+	if !ok {
+		return false
+	}
+	typ, _ := thinking["type"].(string)
+	return typ == "enabled"
+}
+
+func anthropicEffort(level string) string {
+	switch level {
+	case "low", "medium", "high", "xhigh", "max":
+		return level
+	default:
+		return "high"
+	}
 }
 
 // anthropicThinkingBudget maps a thinking level to a token budget.

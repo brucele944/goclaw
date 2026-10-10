@@ -83,3 +83,55 @@ func TestHandleSendFailure_NonForwardTextOnlyDropped(t *testing.T) {
 		t.Fatalf("expected no notice sent for non-forward text-only failure, got: %+v", ch.lastMsg)
 	}
 }
+
+// Issue #1475: the agent loop signals NO_REPLY / silent replies by publishing
+// an outbound message with empty content plus the inbound routing metadata
+// (placeholder_key / local_key). Slack, Telegram and Discord implement an
+// empty-content branch in Send() that deletes the streamed "Thinking..."
+// placeholder — the stray partial draft left behind when delivery is
+// suppressed. deliverOutbound must not drop these cleanup signals before
+// they reach the channel.
+func TestDeliverOutbound_EmptyContentWithPlaceholderMetaReachesSend(t *testing.T) {
+	t.Parallel()
+
+	mgr := NewManager(bus.New())
+	ch := newMockChannel("slack-main", TypeSlack)
+	mgr.channels["slack-main"] = ch
+
+	msg := bus.OutboundMessage{
+		Channel: "slack-main",
+		ChatID:  "C012345",
+		Content: "",
+		Metadata: map[string]string{
+			"placeholder_key": "C012345:thread:1727500000.000100",
+			"local_key":       "C012345:thread:1727500000.000100",
+		},
+	}
+
+	mgr.deliverOutbound(context.Background(), msg)
+
+	if ch.lastMsg.Content != "" || ch.lastMsg.ChatID != "C012345" {
+		t.Fatal("empty-content cleanup signal with placeholder metadata was dropped before reaching channel.Send — stray partial draft is never deleted (issue #1475)")
+	}
+}
+
+// The media-gone skip must keep working for empty messages that carry no
+// placeholder routing metadata: those are NOT cleanup signals, and delivering
+// them would make channels without an empty-content branch render empty bubbles.
+func TestDeliverOutbound_EmptyContentWithoutMetaStillSkipped(t *testing.T) {
+	t.Parallel()
+
+	mgr := NewManager(bus.New())
+	ch := newMockChannel("feishu-main", TypeFeishu)
+	mgr.channels["feishu-main"] = ch
+
+	mgr.deliverOutbound(context.Background(), bus.OutboundMessage{
+		Channel: "feishu-main",
+		ChatID:  "oc_1",
+		Content: "",
+	})
+
+	if ch.lastMsg.ChatID != "" {
+		t.Fatalf("empty content without routing metadata should be skipped, got: %+v", ch.lastMsg)
+	}
+}

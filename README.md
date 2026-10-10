@@ -67,7 +67,7 @@ Single binary. Production-tested. Agents that orchestrate for you.
 - **Agent Teams & Orchestration** — Shared task boards, inter-agent delegation (sync/async), 3 orchestration modes (auto/explicit/manual)
 - **Self-Evolution** — Metrics → suggestions → auto-adapt with guardrails. Agents refine their own communication style
 - **Multi-Tenant PostgreSQL** — Per-user workspaces, per-user context files, encrypted API keys (AES-256-GCM), RBAC, isolated sessions
-- **20+ LLM Providers** — Anthropic (native HTTP+SSE with prompt caching), OpenAI, OpenRouter, Groq, DeepSeek, Gemini, Mistral, xAI, MiniMax, DashScope, Claude CLI, Codex, ACP, and any OpenAI-compatible endpoint
+- **20+ LLM Providers** — Anthropic (native HTTP+SSE with prompt caching), OpenAI, OpenRouter, Requesty, Groq, DeepSeek, Gemini, Mistral, xAI, MiniMax, DashScope, Claude CLI, Codex, ACP, and any OpenAI-compatible endpoint
 - **7 Messaging Channels** — Telegram, Discord, Slack, Zalo OA, Zalo Personal, Feishu/Lark, WhatsApp
 - **Production Security** — 5-layer permission system, rate limiting, prompt injection detection, SSRF protection, AES-256-GCM encryption
 - **Single Binary** — ~25 MB static Go binary, no Node.js runtime, <1s startup, runs on a $5 VPS
@@ -223,13 +223,17 @@ When `GOCLAW_*_API_KEY` environment variables are set, the gateway auto-onboards
 > | Image | Description |
 > |-------|-------------|
 > | `latest` | Backend + embedded web UI + Python (**recommended**) |
-> | `latest-base` | Backend API-only, no web UI, no runtimes |
+> | `latest-base` | Backend API-only, no web UI, no runtimes, no media probes (`read_video` and `read_audio` refuse without `ffprobe`; `read_document` falls back to the 1000-page ceiling without `pdfinfo`) |
 > | `latest-full` | All runtimes + skill dependencies pre-installed |
 > | `latest-otel` | Latest + OpenTelemetry tracing |
 > | `goclaw-web` | Standalone nginx + React SPA (for custom reverse proxy) |
 >
 > For custom builds (Tailscale, Redis): `docker build --build-arg ENABLE_TSNET=true ...`
 > See the [Deployment Guide](https://docs.goclaw.sh/#deploy-docker-compose) for details.
+
+## Easypanel
+
+[Easypanel](https://easypanel.io) is a self-hosted Docker deployment platform, and GoClaw has a one-click deployment template there: https://easypanel.io/templates/goclaw. It deploys the full stack (Postgres with pgvector, the GoClaw backend, headless Chrome for browser automation, and the web UI) - you'll still need to set your `GOCLAW_*_API_KEY` after deploying.
 
 ## Updating
 

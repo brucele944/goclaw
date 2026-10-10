@@ -232,6 +232,23 @@ var brands = map[string]Brand{
 		Reflect:              ReflectConfigAndDB,
 		ThinkingFromSettings: true,
 	},
+	"api_route": {
+		ProviderType:         "api_route",
+		API:                  OpenAICompletions,
+		BaseURL:              "https://global.api-route.com/v1",
+		Model:                "gpt-5.4-mini",
+		Reflect:              ReflectConfigAndDB,
+	},
+	"requesty": {
+		ProviderType:         "requesty",
+		API:                  OpenAICompletions,
+		BaseURL:              "https://router.requesty.ai/v1",
+		Model:                "openai/gpt-4o-mini",
+		SiteURL:              "https://goclaw.sh",
+		SiteTitle:            "GoClaw",
+		Reflect:              ReflectConfigAndDB,
+		ThinkingFromSettings: true,
+	},
 	"aimlapi": {
 		ProviderType: "aimlapi",
 		API:          OpenAICompletions,

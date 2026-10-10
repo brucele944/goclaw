@@ -51,6 +51,12 @@ func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest,
 	// Track thinking token count by accumulated chunk size
 	thinkingChars := 0
 	var thinkingSignature strings.Builder
+	// Per-block text and signature. content_block_stop runs before
+	// result.ThinkingSignature is assigned, and each thinking block needs its
+	// own signature for tool-loop passback.
+	var blockThinking strings.Builder
+	var blockSignature strings.Builder
+	var redactedData string
 
 	sse := NewSSEScanner(cb)
 	for sse.Next() {
@@ -76,6 +82,9 @@ func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest,
 		case "content_block_start":
 			var ev anthropicContentBlockStartEvent
 			if err := json.Unmarshal([]byte(data), &ev); err == nil {
+				blockThinking.Reset()
+				blockSignature.Reset()
+				redactedData = ev.ContentBlock.Data
 				currentBlockType = ev.ContentBlock.Type
 				if ev.ContentBlock.Type == "tool_use" {
 					result.ToolCalls = append(result.ToolCalls, ToolCall{
@@ -101,6 +110,7 @@ func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest,
 					// Always count raw thinking bytes for billing estimation
 					// below, even when stripping user-visible output.
 					thinkingChars += len(ev.Delta.Thinking)
+					blockThinking.WriteString(ev.Delta.Thinking)
 					if !stripThinking {
 						result.Thinking += ev.Delta.Thinking
 						if onChunk != nil {
@@ -113,6 +123,7 @@ func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest,
 						toolCallJSON[idx] += ev.Delta.PartialJSON
 					}
 				case "signature_delta":
+					blockSignature.WriteString(ev.Delta.Signature)
 					thinkingSignature.WriteString(ev.Delta.Signature)
 				}
 			}
@@ -121,7 +132,7 @@ func (p *AnthropicProvider) chatStreamImpl(ctx context.Context, req ChatRequest,
 			// Reconstruct the complete content block for RawAssistantContent
 			if len(rawContentBlocks) > 0 {
 				idx := len(rawContentBlocks) - 1
-				block := p.buildRawBlock(currentBlockType, result, toolCallJSON, idx)
+				block := p.buildRawBlock(currentBlockType, result, toolCallJSON, blockThinking.String(), blockSignature.String(), redactedData)
 				if block != nil {
 					rawContentBlocks[idx] = block
 				}

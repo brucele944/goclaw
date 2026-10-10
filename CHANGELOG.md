@@ -43,7 +43,7 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   *what they are* instead of it being inferred in Go: `llm_providers` gains `wire_api`
   (transport family), `auth_kind` (how credentials are obtained), `exec_path` and a
   versioned `settings` blob, backfilled from the existing `provider_type` values
-  (migration `000098`; SQLite schema version 61). Two new tables carry the data that was
+  (migration `000100`; SQLite schema version 61). Two new tables carry the data that was
   previously code or absent: `llm_models` (per-model context/output caps, cost, modalities,
   reasoning, tokenizer, compat, provenance) and `provider_quirks` (declared compatibility,
   nullable `tenant_id` for tenant overrides).
@@ -100,7 +100,7 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   repeated on every agent. Cooldown is now durable: `provider_health` (consecutive failures,
   `cooldown_until`, last error class, last probe) and `provider_error_counts` (error-class
   histogram) carry the state that used to live only in the fallback wrapper's in-memory map
-  — migration `000100`, SQLite schema version 63. The in-memory tracker stays the fast path
+  — migration `000102`, SQLite schema version 63. The in-memory tracker stays the fast path
   but reads the persisted deadline whenever a key has no local state and writes every
   failure/probe/success through, so a restart no longer forgets an active cooldown (and no
   longer burns a fresh probe on boot). Cooldown stays bounded: `providers.MaxCooldown` (1h)
@@ -148,7 +148,7 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   provider that is not in the registry fails the request (`provider not found: <name>`)
   instead of silently running somewhere else; with no registry wired the pin is logged and
   ignored while the model override still applies, and the response reports the effective
-  model. `agents.model_roles` (JSONB, PG migration `000099`, SQLite schema version 62)
+  model. `agents.model_roles` (JSONB, PG migration `000101`, SQLite schema version 62)
   declares role → `provider/model` targets per agent (e.g.
   `{"summarizer":"anthropic/claude-haiku-4-5"}`), settable through the agent update
   endpoint, validated on write (`role names are [A-Za-z0-9_.-]`, values must split into
@@ -204,6 +204,20 @@ All notable changes to GoClaw are documented here. For full documentation, see [
   session surfaces can show it per turn.
 
 ### Added
+
+- **Task detail dialog shows the full task UUID with one-click copy** — the
+  short identifier (`T-015-cc8e`) carries only the last four hex characters of
+  the UUID, while the agent-facing `team_tasks` tool and RPCs take the full
+  UUID, so a human had no way to name a task to the lead from the dashboard.
+
+- **Dashboard can cancel and retry stuck team tasks** — new WS RPCs
+  `teams.tasks.cancel` (any task not yet completed/cancelled; optional reason is
+  posted as a comment) and `teams.tasks.retry` (stale / failed / cancelled /
+  in_review, and blocked tasks that nothing blocks any more; a human comment is
+  required and is both posted on the task and appended to the assignment prompt).
+  Task detail dialog gets Retry and Cancel buttons. Previously these transitions
+  were reachable only through the lead agent's `team_tasks` tool, so a task that
+  ended up blocked or stale could not be recovered from the UI (#506).
 
 - **Behavior UX sidecar delivery overrides** — Adds sidecar-generated Quick
   Acknowledgement and Intermediate Replies with provider/model, timeout, token,

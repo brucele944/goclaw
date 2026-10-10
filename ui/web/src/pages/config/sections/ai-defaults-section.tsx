@@ -215,7 +215,7 @@ export function AiDefaultsSection({ data, onSave, saving }: Props) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor={`${uid}-pruning-mode`}>{t("agents.pruning.mode")}</Label>
-              <Select value={pruning.mode ?? "auto"} onValueChange={(v) => updateNested("contextPruning", { mode: v })}>
+              <Select value={pruning.mode ?? "cache-ttl"} onValueChange={(v) => updateNested("contextPruning", { mode: v })}>
                 <SelectTrigger id={`${uid}-pruning-mode`}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="off">{t("agents.pruning.modeOff")}</SelectItem>
